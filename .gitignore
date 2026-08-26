@@ -141,3 +141,43 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# ==========================================
+# FRONTEND (Node / React / Vue / Angular)
+# ==========================================
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+# ==========================================
+# BACKEND (Spring Boot - Maven / Gradle)
+# ==========================================
+# Archivos de compilación Maven/Gradle
+target/
+build/
+.gradle/
+.mvn/
+bin/
+
+# Logs y ejecutables Java
+*.jar
+*.war
+*.class
+*.log
+
+# Archivos de configuración local de Spring
+application-local.properties
+application-local.yml
+
+# ==========================================
+# EDITORES E IDEs (VS Code, IntelliJ, Eclipse)
+# ==========================================
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store
