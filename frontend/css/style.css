@@ -1,0 +1,93 @@
+/* ==========================================
+   PALETA DE COLORES - VETERINARIA GATYPERRY
+   ========================================== */
+:root {
+  --gp-verde-petroleo: #103E3E; /* Principal: Navbar, Footer, Fondos */
+  --gp-naranja: #FF7900;        /* Botones, Call to Action, Detalles */
+  --gp-crema: #F7F4E9;          /* Fondos claros y secciones */
+  --gp-rosa-durazno: #F2C3A8;   /* Ilustraciones, fondos secundarios */
+  --gp-lavanda: #B8A7C9;        /* Detalles, tarjetas, elementos decorativos */
+  --gp-gris-verdoso: #5F7472;   /* Texto secundario */
+}
+
+/* Base y Estructura */
+body {
+  background-color: var(--gp-crema);
+  color: #1a1a1a;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
+/* Navbar y Footer (Verde Petróleo) */
+.navbar, 
+.topbar,
+footer {
+  background-color: var(--gp-verde-petroleo) !important;
+}
+
+.navbar .nav-link,
+.navbar-brand,
+footer p,
+footer h5,
+footer h6,
+footer a {
+  color: var(--gp-crema) !important;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active,
+footer a:hover {
+  color: var(--gp-naranja) !important;
+}
+
+/* Botones Principales (Naranja Cálido) */
+.btn-primary,
+.btn-gp {
+  background-color: var(--gp-naranja) !important;
+  border-color: var(--gp-naranja) !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-gp:hover {
+  background-color: #e06a00 !important;
+  border-color: #e06a00 !important;
+}
+
+/* Botones Secundarios y Delineados */
+.btn-outline-primary,
+.btn-outline-gp {
+  color: var(--gp-crema) !important;
+  border-color: var(--gp-naranja) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-gp:hover {
+  background-color: var(--gp-naranja) !important;
+  color: #ffffff !important;
+}
+
+/* Textos Secundarios */
+.text-muted,
+.text-secondary,
+.text-gp-muted {
+  color: var(--gp-gris-verdoso) !important;
+}
+
+/* Tarjetas y Detalle Decorativo */
+.card {
+  background-color: #ffffff;
+  border: 2px solid var(--gp-lavanda);
+  border-radius: 12px;
+}
+
+.badge-gp {
+  background-color: var(--gp-rosa-durazno);
+  color: var(--gp-verde-petroleo);
+}
