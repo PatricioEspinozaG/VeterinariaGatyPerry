@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito - Gaty Perry</title>
+    <link rel="icon" href="img/logo-nav.gif" type="image/gif">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+
+<body>
+    <div id="navbar"></div>
+    <main>
+        <section class="page-hero">
+            <div class="container"><span class="eyebrow">Compra simulada</span>
+                <h1 class="display-5 fw-bold mt-3">Carrito de productos</h1>
+                <p class="lead">Revisa cantidades y stock antes de finalizar.</p>
+            </div>
+        </section>
+        <section class="section-space">
+            <div class="container">
+                <div id="mensajeCarrito"></div>
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div id="productosCarrito"></div>
+                                <div id="carritoVacio" class="text-center py-5 d-none">
+                                    <div class="display-5">0</div>
+                                    <h2 class="h4 mt-2">Tu carrito está vacío</h2>
+                                    <p class="text-secondary">Agrega productos desde el catálogo.</p><a
+                                        href="productos.html" class="btn btn-primary">Ver productos</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card summary-card shadow-sm">
+                            <div class="card-body p-4">
+                                <h2 class="h4">Resumen</h2>
+                                <div class="d-flex justify-content-between mt-4"><span>Unidades</span><strong
+                                        id="totalUnidades">0</strong></div>
+                                <div class="d-flex justify-content-between mt-2"><span>Subtotal</span><strong
+                                        id="subtotal">$0</strong></div>
+                                <div class="d-flex justify-content-between mt-2"><span>Envío simulado</span><strong
+                                        id="envio">$0</strong></div>
+                                <hr>
+                                <div class="d-flex justify-content-between"><span class="fw-bold">Total</span><strong
+                                        id="total" class="fs-4">$0</strong></div><button id="btnComprar"
+                                    class="btn btn-primary w-100 mt-4" disabled>Finalizar compra</button><button
+                                    id="btnVaciar" class="btn btn-outline-danger w-100 mt-2" disabled>Vaciar
+                                    carrito</button><a href="productos.html" class="btn btn-link w-100 mt-2">Continuar
+                                    comprando</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div id="footer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/datos.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/utilidades.js"></script>
+    <script src="js/componentes.js"></script>
+    <script src="js/carrito.js"></script>
+</body>
+
+</html>

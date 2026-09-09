@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - Gaty Perry</title>
+    <link rel="icon" href="img/logo-nav.gif" type="image/gif">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+
+<body>
+    <div id="navbar"></div>
+    <main>
+        <section class="page-hero">
+            <div class="container"><span class="eyebrow">Medicamentos y vacunas</span>
+                <h1 class="display-5 fw-bold mt-3">Catálogo de productos</h1>
+                <p class="lead">Compra simulada para la evaluación. Los medicamentos requieren indicación profesional.
+                </p>
+            </div>
+        </section>
+        <section class="section-space">
+            <div class="container">
+                <div id="mensajeProductos"></div>
+                <div class="filter-panel mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-4"><label class="form-label" for="buscarProducto">Buscar</label><input
+                                id="buscarProducto" type="search" class="form-control"
+                                placeholder="Ej. antiparasitario"></div>
+                        <div class="col-md-3"><label class="form-label" for="categoriaProducto">Categoría</label><select
+                                id="categoriaProducto" class="form-select"></select></div>
+                        <div class="col-md-3"><label class="form-label"
+                                for="disponibilidadProducto">Disponibilidad</label><select id="disponibilidadProducto"
+                                class="form-select">
+                                <option value="">Todos</option>
+                                <option value="disponible">Con stock</option>
+                                <option value="agotado">Sin stock</option>
+                            </select></div>
+                        <div class="col-md-2 d-flex align-items-end"><button id="limpiarFiltros"
+                                class="btn btn-outline-secondary w-100">Limpiar</button></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p id="cantidadProductos" class="text-secondary mb-0"></p><a href="carrito.html"
+                        class="btn btn-outline-primary">Ver carrito</a>
+                </div>
+                <div id="listaProductos" class="row g-4"></div>
+            </div>
+        </section>
+    </main>
+    <div id="footer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/datos.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/utilidades.js"></script>
+    <script src="js/componentes.js"></script>
+    <script src="js/productos.js"></script>
+</body>
+
+</html>
