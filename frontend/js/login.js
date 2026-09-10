@@ -5,8 +5,12 @@ const passwordLogin = document.querySelector("#password");
 function validarLogin(campoActivo = null, validarTodos = false) {
     const emailValido = VeterinariaUtils.correoPermitido(emailLogin.value);
     const passwordValida = passwordLogin.value.length >= 4 && passwordLogin.value.length <= 10;
-    emailLogin.classList.toggle("is-invalid", (validarTodos || campoActivo === emailLogin) && !emailValido);
-    passwordLogin.classList.toggle("is-invalid", (validarTodos || campoActivo === passwordLogin) && !passwordValida);
+    if (validarTodos || campoActivo === emailLogin) {
+        emailLogin.classList.toggle("is-invalid", !emailValido);
+    }
+    if (validarTodos || campoActivo === passwordLogin) {
+        passwordLogin.classList.toggle("is-invalid", !passwordValida);
+    }
     return emailValido && passwordValida;
 }
 

@@ -141,6 +141,44 @@ document.querySelector("#tablaProductos").addEventListener("click", event => {
     }
 });
 
+const camposProducto = {
+    codigo: document.querySelector("#codigoProducto"),
+    nombre: document.querySelector("#nombreProducto"),
+    categoria: document.querySelector("#categoriaAdmin"),
+    principioActivo: document.querySelector("#activoProducto"),
+    presentacion: document.querySelector("#presentacionProducto"),
+    especie: document.querySelector("#especieProducto"),
+    precio: document.querySelector("#precioProducto"),
+    stock: document.querySelector("#stockProducto"),
+    stockCritico: document.querySelector("#criticoProducto")
+};
+
+function validarProducto(campoActivo = null, validarTodos = false) {
+    const productos = VeterinariaStorage.obtenerProductos();
+    const codigo = camposProducto.codigo.value.trim().toUpperCase();
+    const valido = {
+        codigo: codigo.length >= 3 && (codigoEditando || !productos.some(producto => producto.codigo === codigo)),
+        nombre: camposProducto.nombre.value.trim().length > 0 && camposProducto.nombre.value.trim().length <= 100,
+        categoria: Boolean(camposProducto.categoria.value),
+        principioActivo: camposProducto.principioActivo.value.trim().length > 0 && camposProducto.principioActivo.value.trim().length <= 100,
+        presentacion: camposProducto.presentacion.value.trim().length > 0 && camposProducto.presentacion.value.trim().length <= 100,
+        especie: Boolean(camposProducto.especie.value),
+        precio: camposProducto.precio.value !== "" && Number.isFinite(Number(camposProducto.precio.value)) && Number(camposProducto.precio.value) >= 0,
+        stock: camposProducto.stock.value !== "" && Number.isInteger(Number(camposProducto.stock.value)) && Number(camposProducto.stock.value) >= 0,
+        stockCritico: camposProducto.stockCritico.value !== "" && Number.isInteger(Number(camposProducto.stockCritico.value)) && Number(camposProducto.stockCritico.value) >= 0
+    };
+    Object.entries(valido).forEach(([clave, resultado]) => {
+        const campo = camposProducto[clave];
+        if (validarTodos || campo === campoActivo) campo.classList.toggle("is-invalid", !resultado);
+    });
+    return Object.values(valido).every(Boolean);
+}
+
+Object.values(camposProducto).forEach(campo => {
+    campo.addEventListener("input", () => validarProducto(campo));
+    campo.addEventListener("change", () => validarProducto(campo));
+});
+
 document.querySelector("#formProducto").addEventListener("submit", event => {
     event.preventDefault();
     const codigo = document.querySelector("#codigoProducto").value.trim().toUpperCase();
@@ -153,10 +191,7 @@ document.querySelector("#formProducto").addEventListener("submit", event => {
     const stock = Number(document.querySelector("#stockProducto").value);
     const stockCritico = Number(document.querySelector("#criticoProducto").value);
     const productos = VeterinariaStorage.obtenerProductos();
-    const codigoInvalido = codigo.length < 3 || (!codigoEditando && productos.some(producto => producto.codigo === codigo));
-    document.querySelector("#codigoProducto").classList.toggle("is-invalid", codigoInvalido);
-    document.querySelector("#nombreProducto").classList.toggle("is-invalid", !nombre || nombre.length > 100);
-    if (codigoInvalido || !nombre || !categoria || !principioActivo || !presentacion || precio < 0 || !Number.isFinite(precio) || stock < 0 || !Number.isInteger(stock) || stockCritico < 0 || !Number.isInteger(stockCritico)) return VeterinariaUtils.mostrarMensaje(mensajeAdmin, "Revisa los campos del producto.", "danger");
+    if (!validarProducto(null, true)) return VeterinariaUtils.mostrarMensaje(mensajeAdmin, "Revisa los campos del producto.", "danger");
     const datos = { codigo, nombre, categoria, principioActivo, presentacion, especie, precio, stock, stockCritico };
     if (codigoEditando) {
         const indice = productos.findIndex(producto => producto.codigo === codigoEditando);

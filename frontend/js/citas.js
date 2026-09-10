@@ -44,6 +44,37 @@ mascotaExistente.addEventListener("change", () => {
     especieMascota.value = mascota.especie;
 });
 
+const camposCita = {
+    mascota: document.querySelector("#mascota"),
+    raza: document.querySelector("#razaMascota"),
+    edad: edadMascota,
+    especie: especieMascota,
+    servicio: servicioCita,
+    fecha: document.querySelector("#fechaCita"),
+    hora: document.querySelector("#horaCita")
+};
+
+function validarCita(campoActivo = null, validarTodos = false) {
+    const valido = {
+        mascota: camposCita.mascota.value.trim().length > 0 && camposCita.mascota.value.trim().length <= 50,
+        raza: camposCita.raza.value.trim().length > 0 && camposCita.raza.value.trim().length <= 60,
+        edad: camposCita.edad.value !== "" && Number.isInteger(Number(camposCita.edad.value)) && Number(camposCita.edad.value) >= 0 && Number(camposCita.edad.value) <= 40,
+        especie: Boolean(camposCita.especie.value),
+        servicio: Boolean(camposCita.servicio.value),
+        fecha: VeterinariaUtils.fechaNoAnterior(camposCita.fecha.value),
+        hora: Boolean(camposCita.hora.value)
+    };
+    Object.entries(valido).forEach(([clave, resultado]) => {
+        if (validarTodos || camposCita[clave] === campoActivo) camposCita[clave].classList.toggle("is-invalid", !resultado);
+    });
+    return Object.values(valido).every(Boolean);
+}
+
+Object.values(camposCita).forEach(campo => {
+    campo.addEventListener("input", () => validarCita(campo));
+    campo.addEventListener("change", () => validarCita(campo));
+});
+
 function renderCitas() {
     const citas = sesionCitas ? VeterinariaStorage.obtenerCitas().filter(cita => cita.usuarioEmail === sesionCitas.email) : [];
     document.querySelector("#cantidadCitas").textContent = `${citas.length} registrada${citas.length === 1 ? "" : "s"}`;
@@ -64,7 +95,7 @@ formCita.addEventListener("submit", event => {
     const servicio = servicioCita.value;
     const fecha = document.querySelector("#fechaCita").value;
     const hora = document.querySelector("#horaCita").value;
-    if (!mascota || !especie || !raza || !Number.isInteger(edad) || edad < 0 || edad > 40 || !servicio || !fecha || !hora || !VeterinariaUtils.fechaNoAnterior(fecha)) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeCitas"), "Completa los datos y selecciona una fecha igual o posterior a hoy.", "danger");
+    if (!validarCita(null, true)) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeCitas"), "Completa los datos y selecciona una fecha igual o posterior a hoy.", "danger");
     let mascotaGuardada = mascotasActuales().find(item => item.id === Number(mascotaExistente.value));
     if (!mascotaGuardada) {
         mascotaGuardada = { id: Date.now(), usuarioEmail: sesionCitas.email, nombre: mascota, especie, raza, edad };
