@@ -30,8 +30,11 @@
                             <h2 class="h4 mb-4">Nueva solicitud</h2>
                             <div id="avisoSesion"></div>
                             <form id="formCita" novalidate>
-                                <div class="mb-3"><label for="mascota" class="form-label">Nombre de la
-                                        mascota</label><input id="mascota" class="form-control" maxlength="50" required>
+                                <div class="mb-3"><label for="mascotaExistente" class="form-label">Mis mascotas</label><select id="mascotaExistente" class="form-select"><option value="">Registrar una nueva mascota</option></select></div>
+                                <div class="mb-3"><label for="mascota" class="form-label">Nombre de la mascota</label><input id="mascota" class="form-control" maxlength="50" required></div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-sm-6"><label for="razaMascota" class="form-label">Raza</label><input id="razaMascota" class="form-control" maxlength="60" required></div>
+                                    <div class="col-sm-6"><label for="edadMascota" class="form-label">Edad</label><input id="edadMascota" type="number" min="0" max="40" inputmode="numeric" class="form-control" required></div>
                                 </div>
                                 <div class="mb-3"><label for="especie" class="form-label">Especie</label><select
                                         id="especie" class="form-select" required>

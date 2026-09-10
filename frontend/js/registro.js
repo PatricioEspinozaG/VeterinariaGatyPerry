@@ -3,7 +3,7 @@ const region = document.querySelector("#region");
 const comuna = document.querySelector("#comuna");
 
 function correoPermitido(email) {
-    return /^[\w.+-]+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/i.test(email);
+    return VeterinariaUtils.correoPermitido(email);
 }
 
 function rutValido(valor) {
@@ -23,8 +23,8 @@ function rutValido(valor) {
 }
 
 function marcar(campo, valido) {
-    campo.classList.remove("is-valid", "is-invalid");
-    campo.classList.add(valido ? "is-valid" : "is-invalid");
+    campo.classList.remove("is-valid");
+    campo.classList.toggle("is-invalid", !valido);
     return valido;
 }
 
@@ -37,29 +37,44 @@ function cargarComunas() {
     comuna.innerHTML = VeterinariaDatos.regiones[region.value].map(nombre => `<option value="${nombre}">${nombre}</option>`).join("");
 }
 
+const camposRegistro = {
+    nombre: document.querySelector("#nombre"),
+    apellidos: document.querySelector("#apellidos"),
+    rut: document.querySelector("#rut"),
+    email: document.querySelector("#email"),
+    password: document.querySelector("#password"),
+    confirmar: document.querySelector("#confirmarPassword"),
+    direccion: document.querySelector("#direccion")
+};
+
+function validarRegistro(campoActivo = null, validarTodos = false) {
+    const resultados = {
+        nombre: camposRegistro.nombre.value.trim().length >= 2 && camposRegistro.nombre.value.trim().length <= 50,
+        apellidos: camposRegistro.apellidos.value.trim().length >= 2 && camposRegistro.apellidos.value.trim().length <= 100,
+        rut: rutValido(camposRegistro.rut.value),
+        email: correoPermitido(camposRegistro.email.value) && camposRegistro.email.value.trim().length <= 100,
+        password: camposRegistro.password.value.length >= 4 && camposRegistro.password.value.length <= 10,
+        confirmar: camposRegistro.confirmar.value === camposRegistro.password.value && camposRegistro.confirmar.value.length > 0,
+        direccion: camposRegistro.direccion.value.trim().length > 0 && camposRegistro.direccion.value.trim().length <= 300
+    };
+    Object.entries(resultados).forEach(([clave, valido]) => {
+        if (validarTodos || camposRegistro[clave] === campoActivo) marcar(camposRegistro[clave], valido);
+    });
+    return Object.values(resultados).every(Boolean);
+}
+
+Object.values(camposRegistro).forEach(campo => {
+    campo.addEventListener("input", () => validarRegistro(campo));
+});
+
 formRegistro.addEventListener("submit", event => {
     event.preventDefault();
-    const nombre = document.querySelector("#nombre");
-    const apellidos = document.querySelector("#apellidos");
-    const rut = document.querySelector("#rut");
-    const email = document.querySelector("#email");
-    const password = document.querySelector("#password");
-    const confirmar = document.querySelector("#confirmarPassword");
-    const direccion = document.querySelector("#direccion");
-    const validaciones = [
-        marcar(nombre, nombre.value.trim().length >= 2 && nombre.value.trim().length <= 50),
-        marcar(apellidos, apellidos.value.trim().length >= 2 && apellidos.value.trim().length <= 100),
-        marcar(rut, rutValido(rut.value)),
-        marcar(email, correoPermitido(email.value.trim()) && email.value.length <= 100),
-        marcar(password, password.value.length >= 4 && password.value.length <= 10),
-        marcar(confirmar, confirmar.value === password.value && confirmar.value.length > 0),
-        marcar(direccion, direccion.value.trim().length > 0 && direccion.value.trim().length <= 300)
-    ];
-    if (validaciones.includes(false)) return;
+    const { nombre, apellidos, rut, email, password, confirmar, direccion } = camposRegistro;
+    if (!validarRegistro(null, true)) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeRegistro"), "Revisa los campos marcados antes de continuar.", "danger");
 
     const usuarios = VeterinariaStorage.obtenerUsuarios();
     if (usuarios.some(usuario => usuario.email.toLowerCase() === email.value.trim().toLowerCase())) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeRegistro"), "Ese correo ya está registrado.", "danger");
-    if (usuarios.some(usuario => usuario.rut.replace(/\W/g, "") === rut.value.replace(/\W/g, ""))) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeRegistro"), "Ese RUN ya está registrado.", "danger");
+    if (usuarios.some(usuario => usuario.rut.replace(/[.\-]/g, "").toUpperCase() === rut.value.replace(/[.\-]/g, "").toUpperCase())) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeRegistro"), "Ese RUN ya está registrado.", "danger");
 
     usuarios.push({ id: Date.now(), rut: rut.value.trim(), nombre: nombre.value.trim(), apellidos: apellidos.value.trim(), email: email.value.trim().toLowerCase(), password: password.value, rol: "cliente", activo: true, region: region.value, comuna: comuna.value, direccion: direccion.value.trim() });
     VeterinariaStorage.guardarUsuarios(usuarios);

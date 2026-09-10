@@ -2,6 +2,14 @@ const formCita = document.querySelector("#formCita");
 const listaCitas = document.querySelector("#listaCitas");
 const sesionCitas = VeterinariaStorage.obtenerSesion();
 const servicioCita = document.querySelector("#servicioCita");
+const mascotaExistente = document.querySelector("#mascotaExistente");
+const especieMascota = document.querySelector("#especie");
+const edadMascota = document.querySelector("#edadMascota");
+
+edadMascota.addEventListener("input", () => {
+    const digitos = edadMascota.value.replace(/\D/g, "").slice(0, 2);
+    edadMascota.value = digitos && Number(digitos) <= 40 ? digitos : digitos ? "40" : "";
+});
 
 servicioCita.innerHTML = '<option value="">Selecciona un servicio</option>' + VeterinariaDatos.servicios.map(servicio => `<option value="${servicio.codigo}">${servicio.nombre} - ${VeterinariaUtils.formatearPrecio(servicio.precio)}</option>`).join("");
 const servicioPreseleccionado = VeterinariaUtils.parametro("servicio");
@@ -13,6 +21,29 @@ if (!sesionCitas || sesionCitas.rol !== "cliente") {
     document.querySelector("#avisoSesion").innerHTML = '<div class="alert alert-warning">Debes <a href="login.html">iniciar sesión como cliente</a> para solicitar una hora.</div>';
 }
 
+function mascotasActuales() {
+    return sesionCitas ? VeterinariaStorage.obtenerMascotas().filter(mascota => mascota.usuarioEmail === sesionCitas.email) : [];
+}
+
+function renderMascotas() {
+    mascotaExistente.innerHTML = '<option value="">Registrar una nueva mascota</option>' + mascotasActuales().map(mascota => `<option value="${mascota.id}">${VeterinariaUtils.escaparHTML(mascota.nombre)} · ${VeterinariaUtils.escaparHTML(mascota.especie)}</option>`).join("");
+}
+
+mascotaExistente.addEventListener("change", () => {
+    const mascota = mascotasActuales().find(item => item.id === Number(mascotaExistente.value));
+    if (!mascota) {
+        document.querySelector("#mascota").value = "";
+        document.querySelector("#razaMascota").value = "";
+        document.querySelector("#edadMascota").value = "";
+        especieMascota.value = "";
+        return;
+    }
+    document.querySelector("#mascota").value = mascota.nombre;
+    document.querySelector("#razaMascota").value = mascota.raza;
+    document.querySelector("#edadMascota").value = mascota.edad;
+    especieMascota.value = mascota.especie;
+});
+
 function renderCitas() {
     const citas = sesionCitas ? VeterinariaStorage.obtenerCitas().filter(cita => cita.usuarioEmail === sesionCitas.email) : [];
     document.querySelector("#cantidadCitas").textContent = `${citas.length} registrada${citas.length === 1 ? "" : "s"}`;
@@ -20,7 +51,7 @@ function renderCitas() {
         listaCitas.innerHTML = '<div class="card-soft text-center"><h3 class="h5">Aún no tienes solicitudes</h3><p class="text-secondary mb-0">Completa el formulario para crear la primera.</p></div>';
         return;
     }
-    listaCitas.innerHTML = citas.map(cita => { const servicio = VeterinariaDatos.servicios.find(item => item.codigo === cita.servicio); return `<article class="card-soft mb-3"><div class="d-flex justify-content-between gap-3"><div><span class="product-code">${cita.fecha} · ${cita.hora}</span><h3 class="h5 mt-1 mb-1">${VeterinariaUtils.escaparHTML(cita.mascota)}</h3><p class="text-secondary mb-0">${VeterinariaUtils.escaparHTML(servicio?.nombre || cita.servicio)}</p></div><span class="badge-status ${cita.estado === "Confirmada" ? "stock-ok" : cita.estado === "Cancelada" ? "stock-out" : "stock-low"}">${cita.estado}</span></div></article>`; }).join("");
+    listaCitas.innerHTML = citas.map(cita => { const servicio = VeterinariaDatos.servicios.find(item => item.codigo === cita.servicio); return `<article class="card-soft mb-3"><div class="cita-resumen"><div><span class="product-code">${cita.fecha} · ${cita.hora}</span><h3 class="h5 mt-1 mb-1">${VeterinariaUtils.escaparHTML(cita.mascota)}</h3><p class="text-secondary mb-0">${VeterinariaUtils.escaparHTML(servicio?.nombre || cita.servicio)}</p></div><span class="badge-status cita-estado ${cita.estado === "Confirmada" ? "stock-ok" : cita.estado === "Cancelada" ? "stock-out" : "stock-low"}">${cita.estado}</span></div></article>`; }).join("");
 }
 
 formCita.addEventListener("submit", event => {
@@ -28,17 +59,28 @@ formCita.addEventListener("submit", event => {
     if (!sesionCitas || sesionCitas.rol !== "cliente") return;
     const mascota = document.querySelector("#mascota").value.trim();
     const especie = document.querySelector("#especie").value;
+    const raza = document.querySelector("#razaMascota").value.trim();
+    const edad = Number(document.querySelector("#edadMascota").value);
     const servicio = servicioCita.value;
     const fecha = document.querySelector("#fechaCita").value;
     const hora = document.querySelector("#horaCita").value;
-    if (!mascota || !especie || !servicio || !fecha || !hora) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeCitas"), "Completa mascota, especie, servicio, fecha y hora.", "danger");
+    if (!mascota || !especie || !raza || !Number.isInteger(edad) || edad < 0 || edad > 40 || !servicio || !fecha || !hora || !VeterinariaUtils.fechaNoAnterior(fecha)) return VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeCitas"), "Completa los datos y selecciona una fecha igual o posterior a hoy.", "danger");
+    let mascotaGuardada = mascotasActuales().find(item => item.id === Number(mascotaExistente.value));
+    if (!mascotaGuardada) {
+        mascotaGuardada = { id: Date.now(), usuarioEmail: sesionCitas.email, nombre: mascota, especie, raza, edad };
+        const mascotas = VeterinariaStorage.obtenerMascotas();
+        mascotas.push(mascotaGuardada);
+        VeterinariaStorage.guardarMascotas(mascotas);
+    }
     const citas = VeterinariaStorage.obtenerCitas();
-    citas.push({ id: Date.now(), usuarioEmail: sesionCitas.email, usuarioNombre: sesionCitas.nombre, mascota, especie, servicio, fecha, hora, motivo: document.querySelector("#motivoCita").value.trim(), estado: "Pendiente" });
+    citas.push({ id: Date.now(), usuarioEmail: sesionCitas.email, usuarioNombre: sesionCitas.nombre, mascotaId: mascotaGuardada.id, mascota, especie, servicio, fecha, hora, motivo: document.querySelector("#motivoCita").value.trim(), estado: "Pendiente" });
     VeterinariaStorage.guardarCitas(citas);
     formCita.reset();
     servicioCita.value = "";
     VeterinariaUtils.mostrarMensaje(document.querySelector("#mensajeCitas"), "Solicitud creada. Recepción debe confirmarla.");
+    renderMascotas();
     renderCitas();
 });
 
+renderMascotas();
 renderCitas();

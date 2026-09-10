@@ -53,6 +53,15 @@ function cargarNavbar() {
             </div>
         </nav>`;
 
+    if (sesion && ["admin.html", "citas.html"].includes(pagina)) {
+        const encabezado = document.querySelector("main .container > .d-flex");
+        const hero = document.querySelector(".page-hero .container");
+        const contenedor = encabezado || hero || document.querySelector("main .container");
+        if (contenedor) {
+            contenedor.insertAdjacentHTML("afterbegin", '<div class="session-bar"><button id="btnCerrarSesionNavbar" class="btn btn-outline-danger btn-sm">Cerrar sesión</button></div>');
+        }
+    }
+
     document.querySelector("#btnCerrarSesionNavbar")?.addEventListener("click", cerrarSesion);
     actualizarContadorCarrito();
 }
@@ -65,8 +74,7 @@ function menuSesion(sesion) {
     const acceso = sesion.rol === "admin" || sesion.rol === "recepcion"
         ? `<a class="btn btn-dark btn-sm" href="admin.html">Administración</a>`
         : `<a class="btn btn-outline-primary btn-sm" href="citas.html">Mis citas</a>`;
-    return `<li class="nav-item ms-lg-2">${acceso}</li>
-        <li class="nav-item"><button id="btnCerrarSesionNavbar" class="btn btn-link nav-link">Salir</button></li>`;
+    return `<li class="nav-item ms-lg-2">${acceso}</li>`;
 }
 
 function cargarFooter() {

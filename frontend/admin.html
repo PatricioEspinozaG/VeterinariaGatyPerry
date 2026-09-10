@@ -15,13 +15,13 @@
 <body>
     <div id="navbar"></div>
     <main class="bg-cream">
-        <section class="section-space">
+        <section class="section-space admin-section">
             <div class="container">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
                     <div><span class="eyebrow">Gestión interna</span>
                         <h1 class="display-6 fw-bold mt-3">Panel de administración</h1>
                         <p id="saludoAdmin" class="text-secondary mb-0"></p>
-                    </div><button id="btnCerrarSesion" class="btn btn-outline-danger">Cerrar sesión</button>
+                    </div>
                 </div>
                 <div id="mensajeAdmin"></div>
                 <div class="row g-3 mb-4">
@@ -78,8 +78,9 @@
                     </section>
                     <section id="panelUsuarios" class="tab-pane fade solo-admin">
                         <div class="card shadow-sm">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <h2 class="h5 mb-0">Usuarios registrados</h2>
+                                <button id="btnNuevoUsuario" class="btn btn-primary btn-sm">Nuevo usuario</button>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -147,8 +148,13 @@
                                     id="nombreProducto" class="form-control" maxlength="100">
                                 <div class="invalid-feedback">Nombre obligatorio, máximo 100 caracteres.</div>
                             </div>
-                            <div class="col-md-6"><label for="categoriaAdmin" class="form-label">Categoría</label><input
-                                    id="categoriaAdmin" class="form-control" maxlength="50"></div>
+                            <div class="col-md-6"><label for="categoriaAdmin" class="form-label">Categoría</label><select
+                                    id="categoriaAdmin" class="form-select">
+                                    <option value="Alimento">Alimento</option>
+                                    <option value="Medicamento">Medicamento</option>
+                                    <option value="Higiene">Higiene</option>
+                                    <option value="Accesorio">Accesorio</option>
+                                </select></div>
                             <div class="col-md-6"><label for="activoProducto" class="form-label">Principio
                                     activo</label><input id="activoProducto" class="form-control" maxlength="100"></div>
                             <div class="col-md-6"><label for="presentacionProducto"
@@ -173,6 +179,33 @@
                     <div class="modal-footer"><button type="button" class="btn btn-outline-secondary"
                             data-bs-dismiss="modal">Cancelar</button><button type="submit"
                             class="btn btn-primary">Guardar</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="tituloModalUsuario" class="modal-title h5">Nuevo usuario</h2>
+                    <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="formUsuario" novalidate>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label for="nombreUsuario" class="form-label">Nombre</label><input id="nombreUsuario" class="form-control" maxlength="50"><div class="invalid-feedback">Entre 2 y 50 caracteres.</div></div>
+                            <div class="col-md-6"><label for="apellidosUsuario" class="form-label">Apellidos</label><input id="apellidosUsuario" class="form-control" maxlength="100"><div class="invalid-feedback">Entre 2 y 100 caracteres.</div></div>
+                            <div class="col-md-6"><label for="rutUsuario" class="form-label">RUN</label><input id="rutUsuario" class="form-control" placeholder="19011022-K"><div class="invalid-feedback">RUN chileno válido y único.</div></div>
+                            <div class="col-md-6"><label for="emailUsuario" class="form-label">Correo</label><input id="emailUsuario" type="email" class="form-control" maxlength="100"><div class="invalid-feedback">Usa @duoc.cl, @profesor.duoc.cl o @gmail.com.</div></div>
+                            <div class="col-md-6"><label for="passwordUsuario" class="form-label">Contraseña</label><input id="passwordUsuario" type="password" class="form-control" minlength="4" maxlength="10"><div class="invalid-feedback">Entre 4 y 10 caracteres.</div></div>
+                            <div class="col-md-6"><label for="rolUsuario" class="form-label">Rol</label><select id="rolUsuario" class="form-select"><option value="cliente">Cliente</option><option value="recepcion">Recepción</option><option value="admin">Administrador</option></select></div>
+                            <div class="col-md-6"><label for="regionUsuario" class="form-label">Región</label><select id="regionUsuario" class="form-select"></select></div>
+                            <div class="col-md-6"><label for="comunaUsuario" class="form-label">Comuna</label><select id="comunaUsuario" class="form-select"></select></div>
+                            <div class="col-12"><label for="direccionUsuario" class="form-label">Dirección</label><input id="direccionUsuario" class="form-control" maxlength="300"><div class="invalid-feedback">Dirección obligatoria, máximo 300 caracteres.</div></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Guardar usuario</button></div>
                 </form>
             </div>
         </div>

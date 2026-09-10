@@ -32,5 +32,17 @@ const VeterinariaUtils = (() => {
         return new URLSearchParams(window.location.search).get(nombre);
     }
 
-    return { formatearPrecio, normalizarTexto, escaparHTML, mostrarMensaje, estadoStock, parametro };
+    function correoPermitido(email) {
+        return /^[\w.+-]+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/i.test(String(email).trim());
+    }
+
+    function fechaNoAnterior(fecha) {
+        if (!fecha) return false;
+        const hoy = new Date();
+        const fechaLocal = new Date(`${fecha}T00:00:00`);
+        const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        return fechaLocal >= hoyLocal;
+    }
+
+    return { formatearPrecio, normalizarTexto, escaparHTML, mostrarMensaje, estadoStock, parametro, correoPermitido, fechaNoAnterior };
 })();
