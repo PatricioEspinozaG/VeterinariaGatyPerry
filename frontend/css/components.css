@@ -303,6 +303,12 @@
     white-space: nowrap;
 }
 
+.toolbar-responsive {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 .admin-section {
     padding-top: 2.5rem;
 }
@@ -327,11 +333,28 @@
 .map-frame iframe {
     display: block;
     width: 100%;
-    height: 190px;
+    height: clamp(190px, 25vw, 300px);
     border: 0;
 }
 
 @media (max-width: 575.98px) {
+    main .section-space > .container > .row {
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    .footer-brand {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    .footer-brand img {
+        width: 100%;
+        max-width: 230px;
+    }
+
     .admin-section {
         padding-top: 1rem;
     }
