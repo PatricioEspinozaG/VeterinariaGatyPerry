@@ -16,7 +16,7 @@ const camposContacto = {
 function validarContacto(campoActivo = null, validarTodos = false) {
     const resultados = {
         nombre: camposContacto.nombre.value.trim().length >= 3 && camposContacto.nombre.value.trim().length <= 100,
-        email: !camposContacto.email.value.trim() || VeterinariaUtils.correoPermitido(camposContacto.email.value),
+        email: VeterinariaUtils.correoPermitido(camposContacto.email.value),
         asunto: camposContacto.asunto.value.trim().length >= 5 && camposContacto.asunto.value.trim().length <= 100,
         comentario: camposContacto.comentario.value.trim().length >= 10 && camposContacto.comentario.value.trim().length <= 500
     };

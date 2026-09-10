@@ -1,5 +1,7 @@
 const sesionAdmin = VeterinariaStorage.obtenerSesion();
-if (!sesionAdmin || !["admin", "recepcion"].includes(sesionAdmin.rol)) window.location.href = "login.html";
+if (!sesionAdmin || !["admin", "recepcion"].includes(sesionAdmin.rol)) {
+    window.location.href = "login.html";
+} else {
 
 const esAdministrador = sesionAdmin?.rol === "admin";
 const mensajeAdmin = document.querySelector("#mensajeAdmin");
@@ -24,6 +26,12 @@ function rutValido(valor) {
 }
 
 document.querySelector("#saludoAdmin").textContent = `${sesionAdmin.nombre} · ${sesionAdmin.rol}`;
+
+const categoriaAdmin = document.querySelector("#categoriaAdmin");
+categoriaAdmin.innerHTML = [...new Set(VeterinariaDatos.productos.map(producto => producto.categoria))]
+    .sort()
+    .map(categoria => `<option value="${VeterinariaUtils.escaparHTML(categoria)}">${VeterinariaUtils.escaparHTML(categoria)}</option>`)
+    .join("");
 
 if (!esAdministrador) {
     document.querySelectorAll(".solo-admin").forEach(elemento => elemento.classList.add("d-none"));
@@ -262,6 +270,7 @@ Object.values(camposUsuario).forEach(campo => {
 
 document.querySelector("#formUsuario").addEventListener("submit", event => {
     event.preventDefault();
+    const usuarios = VeterinariaStorage.obtenerUsuarios();
     const resultado = validarFormularioUsuario(null, true);
     if (!resultado.valido) return VeterinariaUtils.mostrarMensaje(mensajeAdmin, "Revisa los datos del usuario. Hay campos inválidos o duplicados.", "danger");
     const datos = { rut: camposUsuario.rut.value.trim(), nombre: camposUsuario.nombre.value.trim(), apellidos: camposUsuario.apellidos.value.trim(), email: resultado.emailNormalizado, password: camposUsuario.password.value, rol: document.querySelector("#rolUsuario").value, activo: true, region: document.querySelector("#regionUsuario").value, comuna: document.querySelector("#comunaUsuario").value, direccion: camposUsuario.direccion.value.trim() };
@@ -302,3 +311,4 @@ function renderTodo() {
 }
 
 renderTodo();
+}

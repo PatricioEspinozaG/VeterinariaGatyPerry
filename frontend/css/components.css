@@ -33,6 +33,26 @@
     font-weight: 800;
 }
 
+.service-image {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.service-visual {
+    position: relative;
+    width: 100%;
+    height: clamp(120px, 18vw, 180px);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: linear-gradient(145deg, #E3EEE9, #F6E1D9);
+    border-radius: 1rem;
+}
+
 .service-price,
 .product-price {
     color: #C35600;
@@ -125,6 +145,20 @@
     font-weight: 900;
 }
 
+.product-visual img {
+    width: 100%;
+    height: 145px;
+    object-fit: contain;
+}
+
+.product-visual-detail {
+    min-height: 360px;
+}
+
+.product-visual-detail img {
+    height: clamp(220px, 35vw, 360px);
+}
+
 .product-code {
     font-size: .78rem;
     font-weight: 800;
@@ -211,6 +245,12 @@
     border-radius: 1rem;
     background: #E7EFEA;
     font-size: 1.6rem;
+}
+
+.cart-image img {
+    width: 100%;
+    height: 72px;
+    object-fit: contain;
 }
 
 .table > :not(caption) > *> * {

@@ -44,5 +44,32 @@ const VeterinariaUtils = (() => {
         return fechaLocal >= hoyLocal;
     }
 
-    return { formatearPrecio, normalizarTexto, escaparHTML, mostrarMensaje, estadoStock, parametro, correoPermitido, fechaNoAnterior };
+    function imagenProducto(categoria) {
+        const rutas = {
+            antibioticos: "img/productos/antibioticos.svg",
+            antiparasitarios: "img/productos/antiparasitarios.svg",
+            antiinflamatorios: "img/productos/antiinflamatorios.svg",
+            dermatologia: "img/productos/dermatologia.svg",
+            digestivo: "img/productos/digestivo.svg",
+            cardiaco: "img/productos/cardiaco.svg",
+            analgesicos: "img/productos/analgesicos.svg",
+            vacunas: "img/productos/vacunas.svg",
+            suplementos: "img/productos/suplementos.svg"
+        };
+        return rutas[normalizarTexto(categoria)] || "img/productos/antibioticos.svg";
+    }
+
+    function imagenServicio(categoria) {
+        const rutas = {
+            consultas: "img/servicios/consultas.svg",
+            vacunacion: "img/servicios/vacunacion.svg",
+            cirugia: "img/servicios/cirugia.svg",
+            desparasitacion: "img/servicios/desparasitacion.svg",
+            examenes: "img/servicios/examenes.svg",
+            otros: "img/servicios/otros.svg"
+        };
+        return rutas[normalizarTexto(categoria)] || "img/servicios/otros.svg";
+    }
+
+    return { formatearPrecio, normalizarTexto, escaparHTML, mostrarMensaje, estadoStock, parametro, correoPermitido, fechaNoAnterior, imagenProducto, imagenServicio };
 })();
