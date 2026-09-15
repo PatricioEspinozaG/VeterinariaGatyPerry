@@ -65,6 +65,7 @@ a {
 
 .navbar-brand-center {
     flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -109,6 +110,20 @@ a {
 
 .navbar-collapse {
     flex-grow: 0;
+}
+
+.navbar-toggler {
+    flex-shrink: 0;
+}
+
+@media (max-width: 575.98px) {
+    .navbar-brand img {
+        width: 205px;
+    }
+
+    .brand-eyebrow {
+        display: none;
+    }
 }
 
 .navbar-nav .nav-link {

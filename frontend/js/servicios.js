@@ -21,7 +21,8 @@ function renderServicios() {
     cantidadServicios.textContent = `${filtrados.length} servicio${filtrados.length === 1 ? "" : "s"}`;
     filtrados.forEach(servicio => {
         listaServicios.innerHTML += `<div class="col-md-6 col-xl-4"><article class="card-soft d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start gap-3"><div class="service-symbol">${servicio.codigo.slice(0, 2)}</div><span class="badge text-bg-light">${VeterinariaUtils.escaparHTML(servicio.categoria)}</span></div>
+            <div class="service-visual"><img class="service-image" src="${VeterinariaUtils.imagenServicio(servicio.categoria)}" alt="${VeterinariaUtils.escaparHTML(`Servicio de ${servicio.categoria}`)}" loading="lazy"></div>
+            <span class="badge text-bg-light align-self-start mt-3">${VeterinariaUtils.escaparHTML(servicio.categoria)}</span>
             <h2 class="h5 mt-3">${VeterinariaUtils.escaparHTML(servicio.nombre)}</h2>
             <p class="text-secondary mb-1">${VeterinariaUtils.escaparHTML(servicio.especie)} · ${servicio.duracion}</p>
             ${servicio.observacion ? `<p class="small text-secondary">${VeterinariaUtils.escaparHTML(servicio.observacion)}</p>` : ""}

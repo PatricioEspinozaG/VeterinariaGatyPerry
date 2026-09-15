@@ -4,7 +4,8 @@ const VeterinariaStorage = (() => {
         carrito: "vsm_carrito",
         usuarios: "vsm_usuarios",
         sesion: "vsm_sesion",
-        citas: "vsm_citas"
+        citas: "vsm_citas",
+        mascotas: "vsm_mascotas"
     };
 
     const usuariosIniciales = [
@@ -36,6 +37,7 @@ const VeterinariaStorage = (() => {
         if (!localStorage.getItem(CLAVES.usuarios)) guardar(CLAVES.usuarios, clonar(usuariosIniciales));
         if (!localStorage.getItem(CLAVES.carrito)) guardar(CLAVES.carrito, []);
         if (!localStorage.getItem(CLAVES.citas)) guardar(CLAVES.citas, []);
+        if (!localStorage.getItem(CLAVES.mascotas)) guardar(CLAVES.mascotas, []);
     }
 
     function obtenerProductos() { inicializar(); return leer(CLAVES.productos, []); }
@@ -54,6 +56,8 @@ const VeterinariaStorage = (() => {
     function cerrarSesion() { localStorage.removeItem(CLAVES.sesion); }
     function obtenerCitas() { inicializar(); return leer(CLAVES.citas, []); }
     function guardarCitas(citas) { guardar(CLAVES.citas, citas); }
+    function obtenerMascotas() { inicializar(); return leer(CLAVES.mascotas, []); }
+    function guardarMascotas(mascotas) { guardar(CLAVES.mascotas, mascotas); }
 
     inicializar();
 
@@ -62,6 +66,7 @@ const VeterinariaStorage = (() => {
         obtenerCarrito, guardarCarrito, vaciarCarrito,
         obtenerUsuarios, guardarUsuarios,
         obtenerSesion, guardarSesion, cerrarSesion,
-        obtenerCitas, guardarCitas
+        obtenerCitas, guardarCitas,
+        obtenerMascotas, guardarMascotas
     };
 })();

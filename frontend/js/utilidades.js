@@ -32,5 +32,44 @@ const VeterinariaUtils = (() => {
         return new URLSearchParams(window.location.search).get(nombre);
     }
 
-    return { formatearPrecio, normalizarTexto, escaparHTML, mostrarMensaje, estadoStock, parametro };
+    function correoPermitido(email) {
+        return /^[\w.+-]+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/i.test(String(email).trim());
+    }
+
+    function fechaNoAnterior(fecha) {
+        if (!fecha) return false;
+        const hoy = new Date();
+        const fechaLocal = new Date(`${fecha}T00:00:00`);
+        const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        return fechaLocal >= hoyLocal;
+    }
+
+    function imagenProducto(categoria) {
+        const rutas = {
+            antibioticos: "img/productos/antibioticos.svg",
+            antiparasitarios: "img/productos/antiparasitarios.svg",
+            antiinflamatorios: "img/productos/antiinflamatorios.svg",
+            dermatologia: "img/productos/dermatologia.svg",
+            digestivo: "img/productos/digestivo.svg",
+            cardiaco: "img/productos/cardiaco.svg",
+            analgesicos: "img/productos/analgesicos.svg",
+            vacunas: "img/productos/vacunas.svg",
+            suplementos: "img/productos/suplementos.svg"
+        };
+        return rutas[normalizarTexto(categoria)] || "img/productos/antibioticos.svg";
+    }
+
+    function imagenServicio(categoria) {
+        const rutas = {
+            consultas: "img/servicios/consultas.svg",
+            vacunacion: "img/servicios/vacunacion.svg",
+            cirugia: "img/servicios/cirugia.svg",
+            desparasitacion: "img/servicios/desparasitacion.svg",
+            examenes: "img/servicios/examenes.svg",
+            otros: "img/servicios/otros.svg"
+        };
+        return rutas[normalizarTexto(categoria)] || "img/servicios/otros.svg";
+    }
+
+    return { formatearPrecio, normalizarTexto, escaparHTML, mostrarMensaje, estadoStock, parametro, correoPermitido, fechaNoAnterior, imagenProducto, imagenServicio };
 })();

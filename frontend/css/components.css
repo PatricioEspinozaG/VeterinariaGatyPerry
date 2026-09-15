@@ -12,6 +12,10 @@
     box-shadow: 0 8px 22px rgba(16, 62, 62, .06);
 }
 
+.contact-info-card {
+    height: auto;
+}
+
 .card-soft h3 {
     font-size: 1.15rem;
 }
@@ -27,6 +31,26 @@
     background: var(--durazno);
     font-size: 1.35rem;
     font-weight: 800;
+}
+
+.service-image {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.service-visual {
+    position: relative;
+    width: 100%;
+    height: clamp(120px, 18vw, 180px);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: linear-gradient(145deg, #E3EEE9, #F6E1D9);
+    border-radius: 1rem;
 }
 
 .service-price,
@@ -121,6 +145,20 @@
     font-weight: 900;
 }
 
+.product-visual img {
+    width: 100%;
+    height: 145px;
+    object-fit: contain;
+}
+
+.product-visual-detail {
+    min-height: 360px;
+}
+
+.product-visual-detail img {
+    height: clamp(220px, 35vw, 360px);
+}
+
 .product-code {
     font-size: .78rem;
     font-weight: 800;
@@ -149,6 +187,19 @@
     padding: .35rem .6rem;
     font-size: .78rem;
     font-weight: 800;
+}
+
+.cita-resumen {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .75rem;
+}
+
+.cita-estado {
+    align-self: center;
+    min-width: 6.5rem;
+    text-align: center;
 }
 
 .form-card {
@@ -194,6 +245,12 @@
     border-radius: 1rem;
     background: #E7EFEA;
     font-size: 1.6rem;
+}
+
+.cart-image img {
+    width: 100%;
+    height: 72px;
+    object-fit: contain;
 }
 
 .table > :not(caption) > *> * {
@@ -257,6 +314,108 @@
     height: auto;
     max-height: 68px;
     object-fit: contain;
+}
+
+.contact-map h2 {
+    margin-bottom: .75rem;
+}
+
+.session-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin-top: 1rem;
+    flex-basis: 100%;
+}
+
+.page-hero .session-bar {
+    position: absolute;
+    top: 0;
+    right: 12px;
+    margin-top: 0;
+}
+
+.page-hero .container {
+    position: relative;
+}
+
+.session-bar .btn {
+    white-space: nowrap;
+}
+
+.toolbar-responsive {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.admin-section {
+    padding-top: 2.5rem;
+}
+
+.admin-section .session-bar {
+    order: 2;
+    flex-basis: auto;
+    margin-top: .25rem;
+}
+
+.admin-section .d-flex > div:first-child {
+    order: 1;
+}
+
+.map-frame {
+    overflow: hidden;
+    border: 1px solid var(--linea);
+    border-radius: 1.25rem;
+    box-shadow: var(--sombra);
+}
+
+.map-frame iframe {
+    display: block;
+    width: 100%;
+    height: clamp(190px, 25vw, 300px);
+    border: 0;
+}
+
+@media (max-width: 575.98px) {
+    main .section-space > .container > .row {
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    .footer-brand {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    .footer-brand img {
+        width: 100%;
+        max-width: 230px;
+    }
+
+    .admin-section {
+        padding-top: 1rem;
+    }
+
+    .admin-section .session-bar {
+        order: 2;
+        flex-basis: 100%;
+        margin-top: 0;
+    }
+
+    .session-bar {
+        flex-basis: 100%;
+        justify-content: flex-start;
+        margin-top: 0;
+    }
+
+    .page-hero .session-bar {
+        position: static;
+        justify-content: flex-start;
+        margin: .75rem 0 1rem;
+    }
 }
 
 .footer-bottom {

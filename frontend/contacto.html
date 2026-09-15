@@ -25,12 +25,19 @@
             <div class="container">
                 <div class="row g-5">
                     <div class="col-lg-5">
-                        <h2 class="h3">Información de atención</h2>
-                        <p class="text-secondary">Av. República 1240, Rancagua</p>
-                        <div class="card-soft">
+                        <div class="card-soft contact-info-card">
                             <p><strong>Teléfono</strong><br>+56 72 221 3456</p>
                             <p><strong>Horario</strong><br>Lunes a sábado, 09:00 a 19:00</p>
-                            <p class="mb-0"><strong>Correo</strong><br>contacto@veterinariasanmarcos.cl</p>
+                            <p class="mb-0"><strong>Correo</strong><br>contacto@gatyperry.cl</p>
+                            <div class="contact-map mt-4">
+                                <h2 class="h5">Dónde encontrarnos</h2>
+                                <div class="map-frame">
+                                    <iframe
+                                        src="https://www.google.com/maps?q=Av.+Rep%C3%BAblica+1240,+Rancagua,+Chile&output=embed"
+                                        title="Mapa de la veterinaria en Av. República 1240, Rancagua" loading="lazy"
+                                        referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                </div>
+                            </div>              
                         </div>
                     </div>
                     <div class="col-lg-7">
@@ -42,8 +49,8 @@
                                     <div class="invalid-feedback">Ingresa entre 3 y 100 caracteres.</div>
                                 </div>
                                 <div class="mb-3"><label for="emailContacto" class="form-label">Correo
-                                        (opcional)</label><input id="emailContacto" type="email" class="form-control">
-                                    <div class="invalid-feedback">Ingresa un correo válido.</div>
+                                    </label><input id="emailContacto" type="email" class="form-control" required>
+                                    <div class="invalid-feedback">Usa @duoc.cl, @profesor.duoc.cl o @gmail.com.</div>
                                 </div>
                                 <div class="mb-3"><label for="asuntoContacto" class="form-label">Asunto</label><input
                                         id="asuntoContacto" class="form-control" maxlength="100">
