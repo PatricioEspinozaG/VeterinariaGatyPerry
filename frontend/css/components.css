@@ -116,6 +116,32 @@
     color: var(--gris);
 }
 
+.tenor-card {
+    overflow: hidden;
+}
+
+.tenor-wrapper {
+    width: 100%;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: hidden;
+    border-radius: 1rem;
+}
+
+.tenor-wrapper .tenor-gif-embed {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto;
+}
+
+.tenor-wrapper img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+}
+
 .filter-panel {
     padding: 1.25rem;
     background: white;
@@ -416,6 +442,10 @@
         justify-content: flex-start;
         margin: .75rem 0 1rem;
     }
+ 
+    .tenor-wrapper {
+    max-width: 280px;
+    }   
 }
 
 .footer-bottom {
@@ -425,3 +455,5 @@
     color: #BFD0CA;
     font-size: .88rem;
 }
+
+
