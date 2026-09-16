@@ -22,7 +22,7 @@ function cargarNavbar() {
             <div class="container py-2">
                 <div class="navbar-brand-center">
                     <a class="navbar-brand navbar-brand-logo" href="index.html" aria-label="Ir al inicio">
-                        <img src="img/logo-nav.gif" alt="Logo de Gaty Perry">
+                        <img src="img/Gaty_Perry.gif" alt="Logo de Gaty Perry">
                         <span class="brand-copy"><span class="eyebrow brand-eyebrow">Rancagua · desde 2009</span></span>
                     </a>
                 </div>
@@ -84,7 +84,7 @@ function cargarFooter() {
         <footer class="site-footer">
             <div class="container">
                 <div class="row g-4">
-                    <div class="col-lg-5"><div class="footer-brand"><img src="img/logo-footer.gif" alt="Logo de la clínica veterinaria"><div><strong>Gaty Perry</strong><div>Atención cercana para tu mascota.</div></div></div></div>
+                    <div class="col-lg-5"><div class="footer-brand"><img src="img/Gaty_Perry.gif" alt="Logo de la clínica veterinaria"><div><strong>Gaty Perry</strong><div>Atención cercana para tu mascota.</div></div></div></div>
                     <div class="col-6 col-lg-3"><strong>Navegación</strong><div class="d-flex flex-column gap-2 mt-2"><a href="servicios.html">Servicios</a><a href="productos.html">Productos</a><a href="citas.html">Agendar hora</a></div></div>
                     <div class="col-6 col-lg-4"><strong>Contacto</strong><div class="d-flex flex-column gap-2 mt-2"><span>Av. República 1240, Rancagua</span><a href="contacto.html">Enviar mensaje</a></div></div>
                 </div>
