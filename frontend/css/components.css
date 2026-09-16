@@ -442,6 +442,10 @@
         justify-content: flex-start;
         margin: .75rem 0 1rem;
     }
+ 
+    .tenor-wrapper {
+    max-width: 280px;
+    }   
 }
 
 .footer-bottom {
