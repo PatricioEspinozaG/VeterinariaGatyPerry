@@ -22,7 +22,7 @@ function cargarNavbar() {
             <div class="container py-2">
                 <div class="navbar-brand-center">
                     <a class="navbar-brand navbar-brand-logo" href="index.html" aria-label="Ir al inicio">
-                        <img src="img/Gaty_Perry.gif" alt="Logo de Gaty Perry">
+                        <img src="img/logo-nav.gif" alt="Logo de Gaty Perry">
                         <span class="brand-copy"><span class="eyebrow brand-eyebrow">Rancagua · desde 2009</span></span>
                     </a>
                 </div>
