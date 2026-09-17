@@ -81,7 +81,6 @@ La aplicación funciona como un frontend estático y no requiere backend.
 - Blog con consejos para el cuidado de mascotas.
 - Formulario de contacto.
 - Mapa con la ubicación de la clínica.
-- Enlace para obtener indicaciones mediante Google Maps.
 - Diseño responsive para móvil, tablet y escritorio.
 
 ## Roles
