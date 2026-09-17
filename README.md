@@ -34,7 +34,7 @@ Gaty Perry es una demostración web para una clínica veterinaria de Rancagua. P
         ├── productos/
         ├── servicios/
         ├── logo-nav.gif
-        ├── logo-footer.gif
+        ├── Gaty_Perry.gif
         └── veterinaria-hero.png
 ```
 
