@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión - Gaty Perry</title>
+    <link rel="icon" href="img/logo-nav.gif" type="image/gif">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+
+<body>
+    <div id="navbar"></div>
+    <main class="bg-cream">
+        <section class="section-space">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-7 col-lg-5">
+                        <div class="form-card">
+                            <div class="text-center mb-4"><span class="eyebrow">Acceso</span>
+                                <h1 class="h2 mt-3">Iniciar sesión</h1>
+                                <p class="text-secondary">Simulación académica con datos guardados en localStorage.</p>
+                            </div>
+                            <div id="mensajeLogin"></div>
+                            <form id="formLogin" novalidate>
+                                <div class="mb-3"><label for="email" class="form-label">Correo</label><input id="email"
+                                        type="email" class="form-control">
+                                    <div class="invalid-feedback">Ingresa un correo permitido.</div>
+                                </div>
+                                <div class="mb-4"><label for="password" class="form-label">Contraseña</label><input
+                                        id="password" type="password" class="form-control">
+                                    <div class="invalid-feedback">Debe tener entre 4 y 10 caracteres.</div>
+                                </div><button class="btn btn-primary btn-lg w-100" type="submit">Ingresar</button>
+                            </form>
+                            <div class="alert alert-light border mt-4 small"><strong>Administrador:</strong>
+                                admin@duoc.cl / admin123<br><strong>Recepción:</strong> recepcion@duoc.cl /
+                                recep123<br><strong>Cliente:</strong> cliente@gmail.com / cliente1</div>
+                            <p class="text-center mb-0">¿No tienes cuenta? <a href="registro.html">Regístrate</a>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div id="footer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/datos.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/utilidades.js"></script>
+    <script src="js/componentes.js"></script>
+    <script src="js/login.js"></script>
+</body>
+
+</html>

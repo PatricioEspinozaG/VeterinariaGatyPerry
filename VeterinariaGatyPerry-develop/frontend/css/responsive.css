@@ -1,0 +1,63 @@
+@media (max-width: 991.98px) {
+    .section-space {
+        padding: 4rem 0;
+    }
+
+    .summary-card {
+        position: static;
+    }
+
+    .topbar .container {
+        justify-content: center;
+    }
+
+    .topbar span:last-child {
+        display: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .section-space {
+        padding: 3.25rem 0;
+    }
+
+    .hero {
+        padding-top: 2rem !important;
+    }
+
+    .hero h1 {
+        font-size: 2.75rem;
+    }
+
+    .brand-copy small {
+        display: none;
+    }
+
+    .stat {
+        padding: 1rem .4rem;
+    }
+
+    .stat strong {
+        font-size: 1.25rem;
+    }
+
+    .hero-note {
+        position: static;
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .page-hero {
+        padding: 3rem 0 2.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+    }
+}
