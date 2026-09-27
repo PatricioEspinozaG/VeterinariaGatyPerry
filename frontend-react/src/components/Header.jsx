@@ -1,3 +1,4 @@
+import { NavLink} from 'react-router'
 import logo from '../assets/logo-nav.gif'
 
 function Header() {
@@ -12,16 +13,22 @@ function Header() {
 
       <header className="site-header">
         <div className="container navbar">
-          <a className="brand" href="#inicio" aria-label="Ir al inicio">
+          <NavLink className="brand" to="/" aria-label="Ir al inicio">
             <img src={logo} alt="Logo de Veterinaria Gaty Perry" />
-          </a>
+          </NavLink>
 
-          <nav className="main-navigation" aria-label="Navegación principal">
-            <a href="#inicio">Inicio</a>
-            <a href="#servicios">Servicios</a>
-            <a href="#productos">Productos</a>
-            <a href="#contacto">Contacto</a>
-          </nav>
+        <nav className="main-navigation" aria-label="Navegación principal">
+          <NavLink to="/" end>
+            Inicio
+          </NavLink>
+
+          <NavLink to="/servicios">
+            Servicios
+          </NavLink>
+
+          <a href="/#productos">Productos</a>
+          <a href="/#contacto">Contacto</a>
+        </nav>
 
           <button
             className="button button-outline"
