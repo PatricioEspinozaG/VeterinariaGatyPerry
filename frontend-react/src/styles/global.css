@@ -1,0 +1,106 @@
+:root {
+  --petroleo: #103e3e;
+  --petroleo-claro: #294f4b;
+  --naranja: #ff7900;
+  --crema: #f7f4e9;
+  --durazno: #f2c3a8;
+  --lavanda: #b8a7c9;
+  --gris: #5f7472;
+  --blanco: #fffdf8;
+  --linea: #d7e0dd;
+  --sombra: 0 14px 34px rgba(16, 62, 62, 0.1);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #243c3b;
+  background: var(--blanco);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--lavanda);
+  outline-offset: 3px;
+}
+
+.container {
+  width: min(1120px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.button-primary {
+  color: white;
+  background: var(--naranja);
+}
+
+.button-primary:hover {
+  background: #d86400;
+}
+
+.button-secondary,
+.button-outline {
+  color: var(--petroleo);
+  border-color: var(--petroleo);
+  background: transparent;
+}
+
+.button-secondary:hover,
+.button-outline:hover {
+  color: white;
+  background: var(--petroleo);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button:disabled:hover {
+  color: var(--petroleo);
+  background: transparent;
+}
