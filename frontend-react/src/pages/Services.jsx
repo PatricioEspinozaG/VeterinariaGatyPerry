@@ -1,15 +1,12 @@
+import PageHero from '../components/PageHero.jsx'
+
 function Services() {
   return (
-    <section className="intro-section">
-      <div className="container intro-content">
-        <span className="eyebrow">Atención integral</span>
-        <h1>Nuestros servicios</h1>
-        <p>
-          Próximamente mostraremos aquí el catálogo completo de servicios
-          veterinarios.
-        </p>
-      </div>
-    </section>
+    <PageHero
+      eyebrow="Atención integral"
+      title="Nuestros servicios"
+      description="Conoce las prestaciones veterinarias disponibles para cuidar a tu mascota en cada etapa de su vida."
+    />
   )
 }
 

@@ -3,6 +3,9 @@ import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
 import Home from './pages/Home.jsx'
 import Services from './pages/Services.jsx'
+import Nosotros from './pages/Nosotros.jsx'
+import Contacto from './pages/Contacto.jsx'
+import Consejos from './pages/Consejos.jsx'
 import './styles/app.css'
 
 function App() {
@@ -14,6 +17,9 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/servicios" element={<Services />} />
+          <Route path="/nosotros" element={<Nosotros />} />
+          <Route path="/contacto" element={<Contacto />} />
+          <Route path="/consejos" element={<Consejos />} />
         </Routes>
       </main>
 

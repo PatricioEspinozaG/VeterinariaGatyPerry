@@ -21,13 +21,24 @@ function Header() {
           <NavLink to="/" end>
             Inicio
           </NavLink>
-
+          
           <NavLink to="/servicios">
             Servicios
           </NavLink>
 
+          <NavLink to="/nosotros">
+            Nosotros
+          </NavLink>
+
+          <NavLink to="/contacto">
+            Contacto
+          </NavLink>
+
+          <NavLink to="/consejos">
+            Consejos
+          </NavLink>
+
           <a href="/#productos">Productos</a>
-          <a href="/#contacto">Contacto</a>
         </nav>
 
           <button
