@@ -404,3 +404,130 @@
     flex-direction: column;
   }
 }
+
+
+.contact-section {
+  padding-block: 5rem;
+  background: var(--crema);
+}
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 3rem;
+}
+
+.contact-information h2 {
+  margin: 1rem 0;
+  color: var(--petroleo);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+}
+
+.contact-information > p {
+  margin: 0;
+  color: var(--gris);
+  line-height: 1.7;
+}
+
+.contact-details {
+  display: grid;
+  gap: 0.8rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-details li {
+  padding: 1rem;
+  border: 1px solid var(--linea);
+  border-radius: 0.8rem;
+  background: var(--blanco);
+}
+
+.contact-form {
+  display: grid;
+  gap: 1.25rem;
+  padding: 2rem;
+  border: 1px solid var(--linea);
+  border-radius: 1.25rem;
+  background: var(--blanco);
+  box-shadow: var(--sombra);
+}
+
+.form-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.form-field label {
+  color: var(--petroleo);
+  font-weight: 700;
+}
+
+.form-field label span {
+  color: var(--gris);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #b9c8c3;
+  border-radius: 0.7rem;
+  color: #243c3b;
+  background: white;
+}
+
+.form-field textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  border-color: var(--naranja);
+  outline: 3px solid rgba(255, 121, 0, 0.15);
+}
+
+.contact-form .button {
+  justify-self: start;
+}
+
+@media (max-width: 850px) {
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .contact-section {
+    padding-block: 3rem;
+  }
+
+  .contact-form {
+    padding: 1.25rem;
+  }
+
+  .contact-form .button {
+    width: 100%;
+  }
+}
+
+.form-help {
+  color: var(--gris);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.form-success {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid #9bc9ad;
+  border-radius: 0.7rem;
+  color: #236044;
+  background: #dcede4;
+  font-weight: 700;
+}
