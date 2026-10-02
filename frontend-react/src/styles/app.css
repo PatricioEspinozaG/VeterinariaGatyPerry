@@ -531,3 +531,34 @@
   background: #dcede4;
   font-weight: 700;
 }
+
+.product-search {
+  display: grid;
+  gap: 0.5rem;
+  width: min(480px, 100%);
+  margin: 0 auto 2rem;
+}
+
+.product-search label {
+  color: var(--petroleo);
+  font-weight: 700;
+}
+
+.product-search input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--linea);
+  border-radius: 0.75rem;
+  color: var(--petroleo);
+  background: var(--blanco);
+}
+
+.product-search input:focus {
+  border-color: var(--naranja);
+  outline: 3px solid rgba(255, 121, 0, 0.15);
+}
+
+.product-grid {
+  margin-top: 0;
+}

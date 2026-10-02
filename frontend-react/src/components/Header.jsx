@@ -38,7 +38,9 @@ function Header() {
             Consejos
           </NavLink>
 
-          <a href="/#productos">Productos</a>
+          <NavLink to="/productos">
+            Productos
+          </NavLink>
         </nav>
 
           <button

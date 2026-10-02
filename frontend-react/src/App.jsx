@@ -6,6 +6,8 @@ import Services from './pages/Services.jsx'
 import Nosotros from './pages/Nosotros.jsx'
 import Contacto from './pages/Contacto.jsx'
 import Consejos from './pages/Consejos.jsx'
+import NoEncontrado from './pages/NoEncontrado.jsx'
+import Productos from './pages/Productos.jsx'
 import './styles/app.css'
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/consejos" element={<Consejos />} />
+          <Route path="*" element={<NoEncontrado />} />
+          <Route path="/productos" element={<Productos />} />
         </Routes>
       </main>
 

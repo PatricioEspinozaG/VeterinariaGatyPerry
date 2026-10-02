@@ -1,6 +1,7 @@
 import heroImage from '../assets/veterinaria-hero.png'
 import ServiceCard from '../components/ServiceCard.jsx'
 import StatItem from '../components/StatItem.jsx'
+import { Link } from 'react-router'
 import { featuredServices, stats } from '../data/homeData.js'
 
 function Home() {
@@ -23,9 +24,9 @@ function Home() {
               <a className="button button-primary" href="#servicios">
                 Conocer servicios
               </a>
-              <a className="button button-secondary" href="#productos">
-                Ver productos
-              </a>
+              <Link className="button button-secondary" to="/productos">
+              Ver productos
+              </Link>
             </div>
           </div>
 
