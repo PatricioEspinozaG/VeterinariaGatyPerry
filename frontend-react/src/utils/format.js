@@ -32,4 +32,3 @@ export function productImage(category) {
 export function serviceImage(category) {
   return serviceImages[normalizeText(category)] ?? other
 }
-
