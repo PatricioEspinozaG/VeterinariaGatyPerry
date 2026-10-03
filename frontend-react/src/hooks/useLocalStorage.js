@@ -20,9 +20,9 @@ function useLocalStorage(key, fallback) {
   const [storageError, setStorageError] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStorageError(!writeStorage(key, value))
   }, [key, value])
-
   return [value, setValue, storageError]
 }
 

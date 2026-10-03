@@ -1,41 +1,32 @@
 import { useState } from 'react'
 import PageHero from '../components/PageHero.jsx'
 import ProductCard from '../components/ProductCard.jsx'
-import { products } from '../data/products.js'
 
-function Productos() {
+function Productos({ products, cart, onAddToCart }) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [cart, setCart] = useState([])
+  const [message, setMessage] = useState('')
 
   const filteredProducts = products.filter((product) => {
-    const productInfo =
-      `${product.name} ${product.category} ${product.activeIngredient}`.toLowerCase()
+    const productInfo = (
+      product.name + ' ' + product.category + ' ' + product.activeIngredient
+    ).toLowerCase()
 
     return productInfo.includes(searchTerm.trim().toLowerCase())
   })
-
-  function handleAddToCart(product) {
-    setCart((currentCart) => {
-      const existingItem = currentCart.find(
-        (item) => item.code === product.code,
-      )
-
-      if (existingItem) {
-        return currentCart.map((item) =>
-          item.code === product.code
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        )
-      }
-
-      return [...currentCart, { code: product.code, quantity: 1 }]
-    })
-  }
 
   const cartQuantity = cart.reduce(
     (total, item) => total + item.quantity,
     0,
   )
+
+  function add(product) {
+    const result = onAddToCart(product)
+    setMessage(
+      result.ok
+        ? product.name + ' agregado al carrito.'
+        : result.error,
+    )
+  }
 
   return (
     <>
@@ -59,6 +50,7 @@ function Productos() {
           </div>
 
           <p>Unidades en el carrito: {cartQuantity}</p>
+          {message && <p role="status">{message}</p>}
 
           <div className="services-grid product-grid">
             {filteredProducts.length > 0 ? (
@@ -66,7 +58,7 @@ function Productos() {
                 <ProductCard
                   key={product.code}
                   product={product}
-                  onAddToCart={handleAddToCart}
+                  onAddToCart={add}
                 />
               ))
             ) : (
