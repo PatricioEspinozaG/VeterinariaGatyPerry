@@ -1,17 +1,32 @@
 import { useState } from 'react'
 import PageHero from '../components/PageHero.jsx'
 import ProductCard from '../components/ProductCard.jsx'
+import { normalizeText } from '../utils/format.js'
 
 function Productos({ products, cart, onAddToCart }) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [message, setMessage] = useState('')
 
-  const filteredProducts = products.filter((product) => {
-    const productInfo = (
-      product.name + ' ' + product.category + ' ' + product.activeIngredient
-    ).toLowerCase()
+  const categories = [...new Set(products.map((product) => product.category))].sort()
 
-    return productInfo.includes(searchTerm.trim().toLowerCase())
+  const filteredProducts = products.filter((product) => {
+    const productInfo = [
+      product.code,
+      product.name,
+      product.category,
+      product.activeIngredient,
+      product.presentation,
+      product.species,
+    ].join(' ')
+
+    const matchesSearch = normalizeText(productInfo).includes(
+      normalizeText(searchTerm),
+    )
+    const matchesCategory =
+      !selectedCategory || product.category === selectedCategory
+
+    return matchesSearch && matchesCategory
   })
 
   const cartQuantity = cart.reduce(
@@ -47,6 +62,20 @@ function Productos({ products, cart, onAddToCart }) {
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Ejemplo: Nexgard"
             />
+
+            <label htmlFor="categoriaProducto">Categoría</label>
+            <select
+              id="categoriaProducto"
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           </div>
 
           <p>Unidades en el carrito: {cartQuantity}</p>
