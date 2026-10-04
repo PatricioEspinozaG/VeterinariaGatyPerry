@@ -50,6 +50,12 @@ function Productos({ products, cart, onAddToCart }) {
     )
   }
 
+  function clearFilters() {
+    setSearchTerm('')
+    setSelectedCategory('')
+    setSelectedAvailability('')
+  }
+
   return (
     <>
       <PageHero
@@ -98,6 +104,14 @@ function Productos({ products, cart, onAddToCart }) {
               <option value="disponible">Con stock</option>
               <option value="agotado">Sin stock</option>
             </select>
+
+            <button
+              className="button button-outline"
+              type="button"
+              onClick={clearFilters}
+            >
+              Limpiar filtros
+            </button>
           </div>
 
           <p>Unidades en el carrito: {cartQuantity}</p>
