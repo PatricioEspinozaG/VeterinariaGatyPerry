@@ -1,18 +1,22 @@
-function ProductCard({ product, onAddToCart }) {
-  const formattedPrice = new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-  }).format(product.price)
+import { money, productImage } from '../utils/format.js'
 
-  const stockMessage =
-    product.stock > 0
-      ? `Disponible: ${product.stock} unidades`
-      : 'Agotado'
+function ProductCard({ product, onAddToCart }) {
+  const isAvailable = product.stock > 0
 
   return (
     <article className="service-card product-card">
+      <div className="service-card-image">
+        <img
+          src={productImage(product.category)}
+          alt={`Imagen de la categoría ${product.category}`}
+          loading="lazy"
+        />
+      </div>
+
       <div className="service-card-body">
         <span className="service-category">{product.category}</span>
+
+        <p>Código: {product.code}</p>
 
         <h3>{product.name}</h3>
 
@@ -22,16 +26,21 @@ function ProductCard({ product, onAddToCart }) {
 
         <p>{product.species}</p>
 
-        <p>{stockMessage}</p>
+        <p role="status">
+          {isAvailable
+            ? `Disponible: ${product.stock} unidades`
+            : 'Agotado'}
+        </p>
 
-        <strong className="service-price">{formattedPrice}</strong>
+        <strong className="service-price">{money(product.price)}</strong>
 
         <button
           className="button button-primary"
           type="button"
+          disabled={!isAvailable}
           onClick={() => onAddToCart(product)}
         >
-          Agregar al carrito
+          {isAvailable ? 'Agregar al carrito' : 'Agotado'}
         </button>
       </div>
     </article>
