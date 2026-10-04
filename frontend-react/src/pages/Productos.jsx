@@ -6,9 +6,12 @@ import { normalizeText } from '../utils/format.js'
 function Productos({ products, cart, onAddToCart }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedAvailability, setSelectedAvailability] = useState('')
   const [message, setMessage] = useState('')
 
-  const categories = [...new Set(products.map((product) => product.category))].sort()
+  const categories = [
+    ...new Set(products.map((product) => product.category)),
+  ].sort()
 
   const filteredProducts = products.filter((product) => {
     const productInfo = [
@@ -25,8 +28,12 @@ function Productos({ products, cart, onAddToCart }) {
     )
     const matchesCategory =
       !selectedCategory || product.category === selectedCategory
+    const matchesAvailability =
+      !selectedAvailability ||
+      (selectedAvailability === 'disponible' && product.stock > 0) ||
+      (selectedAvailability === 'agotado' && product.stock === 0)
 
-    return matchesSearch && matchesCategory
+    return matchesSearch && matchesCategory && matchesAvailability
   })
 
   const cartQuantity = cart.reduce(
@@ -75,6 +82,21 @@ function Productos({ products, cart, onAddToCart }) {
                   {category}
                 </option>
               ))}
+            </select>
+
+            <label htmlFor="disponibilidadProducto">
+              Disponibilidad
+            </label>
+            <select
+              id="disponibilidadProducto"
+              value={selectedAvailability}
+              onChange={(event) =>
+                setSelectedAvailability(event.target.value)
+              }
+            >
+              <option value="">Todos</option>
+              <option value="disponible">Con stock</option>
+              <option value="agotado">Sin stock</option>
             </select>
           </div>
 
