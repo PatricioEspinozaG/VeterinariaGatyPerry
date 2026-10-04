@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { money, productImage } from '../utils/format.js'
 
 function ProductCard({ product, onAddToCart }) {
@@ -34,14 +35,24 @@ function ProductCard({ product, onAddToCart }) {
 
         <strong className="service-price">{money(product.price)}</strong>
 
-        <button
-          className="button button-primary"
-          type="button"
-          disabled={!isAvailable}
-          onClick={() => onAddToCart(product)}
-        >
-          {isAvailable ? 'Agregar al carrito' : 'Agotado'}
-        </button>
+        <div>
+          <button
+            className="button button-primary"
+            type="button"
+            disabled={!isAvailable}
+            onClick={() => onAddToCart(product)}
+          >
+            {isAvailable ? 'Agregar al carrito' : 'Agotado'}
+          </button>
+
+          {' '}
+          <Link
+            className="button button-outline"
+            to={`/productos/${encodeURIComponent(product.code)}`}
+          >
+            Ver detalle
+          </Link>
+        </div>
       </div>
     </article>
   )
