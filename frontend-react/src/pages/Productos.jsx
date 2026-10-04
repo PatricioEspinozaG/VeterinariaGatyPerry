@@ -114,6 +114,10 @@ function Productos({ products, cart, onAddToCart }) {
             </button>
           </div>
 
+          <p>
+            {filteredProducts.length}{' '}
+            {filteredProducts.length === 1 ? 'producto' : 'productos'}
+          </p>
           <p>Unidades en el carrito: {cartQuantity}</p>
           {message && <p role="status">{message}</p>}
 
@@ -127,7 +131,7 @@ function Productos({ products, cart, onAddToCart }) {
                 />
               ))
             ) : (
-              <p>No se encontraron productos.</p>
+              <p>No se encontraron productos con esos filtros.</p>
             )}
           </div>
         </div>
