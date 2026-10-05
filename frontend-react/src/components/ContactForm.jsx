@@ -16,6 +16,7 @@ function ContactForm() {
 
     const [isSubmitted, setIsSubmitted] = useState(false)
     const [emailError, setEmailError] = useState('')
+    const [formError, setFormError] = useState('')
 
     function handleChange(event) {
         const { name, value } = event.target
@@ -26,11 +27,23 @@ function ContactForm() {
         }))
 
         setIsSubmitted(false)
+        setFormError('')
         if (name === 'email') setEmailError('')
     }
 
     function handleSubmit(event) {
         event.preventDefault()
+
+        const name = formData.name.trim()
+        const subject = formData.subject.trim()
+        const message = formData.message.trim()
+
+        if (name.length < 3 || subject.length < 5 || message.length < 10) {
+            setFormError(
+                'Revisa nombre, asunto y mensaje: no pueden estar vacíos ni contener solo espacios.',
+            )
+            return
+        }
 
         if (!correoPermitido(formData.email)) {
             setEmailError('Usa un correo @duoc.cl, @profesor.duoc.cl o @gmail.com.')
@@ -57,23 +70,28 @@ function ContactForm() {
                     <span className="eyebrow">Hablemos</span>
                     <h2 id="contact-form-title">Envíanos un mensaje</h2>
                     <p>
-                        <p>
-                            Completa el formulario para revisar tu consulta. El envío estará disponible
-                            cuando conectemos el sistema.
-                        </p>
+                        Completa el formulario para revisar tu consulta. El envío estará
+                        disponible cuando conectemos el sistema.
                     </p>
 
                     <ul className="contact-details">
-                        <li>
-                            <strong>Teléfono:</strong> +56 72 221 3456
-                        </li>
-                        <li>
-                            <strong>Dirección:</strong> Av. República 1240, Rancagua
-                        </li>
-                        <li>
-                            <strong>Horario:</strong> lunes a sábado, 09:00 a 19:00
-                        </li>
+                        <li><strong>Teléfono:</strong> +56 72 221 3456</li>
+                        <li><strong>Dirección:</strong> Av. República 1240, Rancagua</li>
+                        <li><strong>Horario:</strong> lunes a sábado, 09:00 a 19:00</li>
+                        <li><strong>Correo:</strong> contacto@gatyperry.cl</li>
                     </ul>
+
+                    <div className="contact-map">
+                        <h3>Dónde encontrarnos</h3>
+                        <div className="map-frame">
+                            <iframe
+                                src="https://www.google.com/maps?q=Av.+Rep%C3%BAblica+1240,+Rancagua,+Chile&output=embed"
+                                title="Mapa de la veterinaria en Av. República 1240, Rancagua"
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <form className="contact-form" onSubmit={handleSubmit}>
@@ -143,7 +161,11 @@ function ContactForm() {
                             {formData.message.length}/500 caracteres
                         </small>
                     </div>
-
+                    {formError && (
+                        <p className="form-help" role="alert">
+                            {formError}
+                        </p>
+                    )}
                     <button className="button button-primary" type="submit">
                         Validar mensaje
                     </button>
