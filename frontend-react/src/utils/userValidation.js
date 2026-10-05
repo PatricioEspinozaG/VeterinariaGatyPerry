@@ -1,10 +1,10 @@
 // Validación de RUN Chileno con dígito verificador (Módulo 11)
 export const validateRun = (run) => {
-  if (!run) return "El RUN es obligatorio";
+  if (!run) return "El RUN es obligatorio.";
   
   const cleanRun = run.replace(/[^0-9kK]/g, "");
   if (cleanRun.length < 8 || cleanRun.length > 9) {
-    return "El RUN ingresado no es válido";
+    return "Ingresa un RUN chileno válido.";
   }
 
   const body = cleanRun.slice(0, -1);
@@ -22,27 +22,33 @@ export const validateRun = (run) => {
   const calculatedDv = expectedDv === 11 ? "0" : expectedDv === 10 ? "K" : expectedDv.toString();
 
   if (dv !== calculatedDv) {
-    return "El RUN no es válido (dígito verificador incorrecto)";
+    return "Ingresa un RUN chileno válido.";
   }
 
   return "";
 };
 
-// Validación de Formato de Correo Electrónico
+// Validación de Correo con Dominios Permitidos (@duoc.cl, @profesor.duoc.cl, @gmail.com)
 export const validateEmail = (email) => {
-  if (!email) return "El correo electrónico es obligatorio";
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return "Formato de correo electrónico inválido";
+  if (!email) return "El correo es obligatorio.";
+  
+  const allowedDomains = ["@duoc.cl", "@profesor.duoc.cl", "@gmail.com"];
+  const isValidDomain = allowedDomains.some((domain) =>
+    email.toLowerCase().endsWith(domain)
+  );
+
+  if (!isValidDomain) {
+    return "Usa @duoc.cl, @profesor.duoc.cl o @gmail.com.";
   }
+
   return "";
 };
 
-// Validación de Contraseña (mínimo 6 caracteres)
+// Validación de Contraseña (entre 4 y 10 caracteres)
 export const validatePassword = (password) => {
-  if (!password) return "La contraseña es obligatoria";
-  if (password.length < 6) {
-    return "La contraseña debe tener al menos 6 caracteres";
+  if (!password) return "La contraseña es obligatoria.";
+  if (password.length < 4 || password.length > 10) {
+    return "Debe tener entre 4 y 10 caracteres.";
   }
   return "";
 };

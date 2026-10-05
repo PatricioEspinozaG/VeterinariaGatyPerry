@@ -12,6 +12,7 @@ import Contacto from './pages/Contacto.jsx'
 import Consejos from './pages/Consejos.jsx'
 import NoEncontrado from './pages/NoEncontrado.jsx'
 import Productos from './pages/Productos.jsx'
+import { RegisterForm } from './components/RegisterForm.jsx'
 import './styles/app.css'
 
 function App() {
@@ -100,6 +101,7 @@ function App() {
               />
             }
           />
+           <Route path="/registro" element={<RegisterForm />} />
           <Route path="*" element={<NoEncontrado />} />
         </Routes>
       </main>

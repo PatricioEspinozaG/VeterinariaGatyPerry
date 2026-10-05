@@ -562,3 +562,34 @@
 .product-grid {
   margin-top: 0;
 }
+/*REGISTRO*/
+
+/* Fondo  Registro Doodle de Veterinaria */
+.bg-vet-doodle {
+  background-color: #f7faf9;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cg fill='%232a9d8f' fill-opacity='0.13'%3E%3C!-- 1. Patita arriba izquierda --%3E%3Cg transform='translate(35, 25) rotate(-35)'%3E%3Ccircle cx='0' cy='0' r='5'/%3E%3Ccircle cx='-6' cy='-7' r='2.2'/%3E%3Ccircle cx='-1' cy='-9' r='2.2'/%3E%3Ccircle cx='5' cy='-8' r='2.2'/%3E%3Ccircle cx='9' cy='-3' r='2.2'/%3E%3C/g%3E%3C!-- 2. Hueso inclinado arriba centro --%3E%3Cg transform='translate(125, 45) rotate(42)'%3E%3Cpath d='M -12 -3 C -15 -7 -20 -4 -18 0 C -20 4 -15 7 -12 3 L 12 3 C 15 7 20 4 18 0 C 20 -4 15 -7 12 -3 Z' /%3E%3C/g%3E%3C!-- 3. Cruz inclinada arriba derecha --%3E%3Cg transform='translate(175, 20) rotate(-15)'%3E%3Cpath d='M-3-10h6v7h7v6h-7v7h-6v-7h-7v-6h7z'/%3E%3C/g%3E%3C!-- 4. Cruz centro izquierda --%3E%3Cg transform='translate(20, 115) rotate(28)'%3E%3Cpath d='M-3-10h6v7h7v6h-7v7h-6v-7h-7v-6h7z'/%3E%3C/g%3E%3C!-- 5. Patita centro --%3E%3Cg transform='translate(90, 110) rotate(12)'%3E%3Ccircle cx='0' cy='0' r='5'/%3E%3Ccircle cx='-6' cy='-7' r='2.2'/%3E%3Ccircle cx='-1' cy='-9' r='2.2'/%3E%3Ccircle cx='5' cy='-8' r='2.2'/%3E%3Ccircle cx='9' cy='-3' r='2.2'/%3E%3C/g%3E%3C!-- 6. Hueso inclinado centro derecha --%3E%3Cg transform='translate(165, 130) rotate(-50)'%3E%3Cpath d='M -12 -3 C -15 -7 -20 -4 -18 0 C -20 4 -15 7 -12 3 L 12 3 C 15 7 20 4 18 0 C 20 -4 15 -7 12 -3 Z' /%3E%3C/g%3E%3C!-- 7. Hueso abajo izquierda --%3E%3Cg transform='translate(50, 175) rotate(15)'%3E%3Cpath d='M -12 -3 C -15 -7 -20 -4 -18 0 C -20 4 -15 7 -12 3 L 12 3 C 15 7 20 4 18 0 C 20 -4 15 -7 12 -3 Z' /%3E%3C/g%3E%3C!-- 8. Patita abajo derecha --%3E%3Cg transform='translate(130, 180) rotate(-22)'%3E%3Ccircle cx='0' cy='0' r='5'/%3E%3Ccircle cx='-6' cy='-7' r='2.2'/%3E%3Ccircle cx='-1' cy='-9' r='2.2'/%3E%3Ccircle cx='5' cy='-8' r='2.2'/%3E%3Ccircle cx='9' cy='-3' r='2.2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/*Boton de Registro*/
+.btn-registro-custom {
+  background-color: #2a9d8f;
+  border: 1px solid #2a9d8f;
+  color: #ffffff;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Estado cuando pasas el mouse por encima */
+.btn-registro-custom:hover {
+  background-color: #218276;
+  border-color: #218276;
+  color: #ffffff; /* Mantiene el texto blanco siempre */
+}
+
+.btn-registro-custom:active,
+.btn-registro-custom:focus {
+  background-color: #1b6a60 !important;
+  border-color: #1b6a60 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 0.25rem rgba(42, 157, 143, 0.3);
+}
