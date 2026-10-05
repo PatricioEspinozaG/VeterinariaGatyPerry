@@ -167,3 +167,11 @@ export function getCartTotal(cart, products) {
     0,
   )
 }
+
+export function removeFromCart(cart, code) {
+  if (!Array.isArray(cart) || typeof code !== 'string') {
+    return []
+  }
+
+  return cart.filter((item) => item?.code !== code)
+}
