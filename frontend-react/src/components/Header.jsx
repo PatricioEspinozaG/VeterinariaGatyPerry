@@ -1,4 +1,4 @@
-import { NavLink} from 'react-router'
+import { NavLink, Link } from "react-router";
 import logo from '../assets/logo-nav.gif'
 
 function Header() {
@@ -17,40 +17,38 @@ function Header() {
             <img src={logo} alt="Logo de Veterinaria Gaty Perry" />
           </NavLink>
 
-        <nav className="main-navigation" aria-label="Navegación principal">
-          <NavLink to="/" end>
-            Inicio
-          </NavLink>
-          
-          <NavLink to="/servicios">
-            Servicios
-          </NavLink>
+          <nav className="main-navigation" aria-label="Navegación principal">
+            <NavLink to="/" end>
+              Inicio
+            </NavLink>
+            
+            <NavLink to="/servicios">
+              Servicios
+            </NavLink>
 
-          <NavLink to="/nosotros">
-            Nosotros
-          </NavLink>
+            <NavLink to="/nosotros">
+              Nosotros
+            </NavLink>
 
-          <NavLink to="/contacto">
-            Contacto
-          </NavLink>
+            <NavLink to="/contacto">
+              Contacto
+            </NavLink>
 
-          <NavLink to="/consejos">
-            Consejos
-          </NavLink>
+            <NavLink to="/consejos">
+              Consejos
+            </NavLink>
 
-          <NavLink to="/productos">
-            Productos
-          </NavLink>
-        </nav>
+            <NavLink to="/productos">
+              Productos
+            </NavLink>
+          </nav>
 
-          <button
+          <Link
+            to="/login"
             className="button button-outline"
-            type="button"
-            disabled
-            title="Se habilitará en la práctica de sesión"
           >
             Ingresar
-          </button>
+          </Link>
         </div>
       </header>
     </>
