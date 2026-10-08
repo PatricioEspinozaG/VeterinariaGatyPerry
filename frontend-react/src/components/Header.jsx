@@ -1,7 +1,7 @@
 import { NavLink, Link } from "react-router";
 import logo from '../assets/logo-nav.gif'
 
-function Header() {
+function Header({ currentUser, onLogout }) {
   return (
     <>
       <div className="topbar">
@@ -41,14 +41,51 @@ function Header() {
             <NavLink to="/productos">
               Productos
             </NavLink>
+
+            {/* Accesos solo cuando hay sesión activa */}
+            {currentUser && (
+              <>
+                <NavLink to="/mascotas/nueva">
+                  + Mascota
+                </NavLink>
+                <NavLink to="/citas">
+                  Mis Citas
+                </NavLink>
+              </>
+            )}
           </nav>
 
-          <Link
-            to="/login"
-            className="button button-outline"
-          >
-            Ingresar
-          </Link>
+          <div className="d-flex align-items-center gap-2">
+            {currentUser ? (
+              <div className="d-flex align-items-center gap-2">
+                <span className="small text-secondary fw-semibold">
+                  👤 {currentUser.nombre || currentUser.email}
+                </span>
+                <button
+                  onClick={onLogout}
+                  className="button button-outline ms-2"
+                  style={{ cursor: 'pointer' }}
+                >
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <div className="d-flex gap-2">
+                <Link
+                  to="/login"
+                  className="button button-outline"
+                >
+                  Ingresar
+                </Link>
+                <Link
+                  to="/registro"
+                  className="button button-primary"
+                >
+                  Registrarse
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </header>
     </>

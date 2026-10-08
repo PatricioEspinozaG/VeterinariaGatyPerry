@@ -1,79 +1,123 @@
-import React, { useState } from "react";
-import { validateRun, validateEmail, validatePassword } from "../utils/userValidation";
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { validateUser } from '../utils/userValidation.js'
 
-export const RegisterForm = () => {
+export function RegisterForm({ users = [], onRegister }) {
+  const navigate = useNavigate()
+
   const [formData, setFormData] = useState({
-    nombre: "",
-    apellidos: "",
-    rut: "",
-    email: "",
-    password: "",
-    confirmarPassword: "",
-    region: "",
-    comuna: "",
-    direccion: ""
-  });
+    nombre: '',
+    apellidos: '',
+    run: '',
+    email: '',
+    telefono: '',
+    password: '',
+    confirmPassword: '',
+    region: 'Valparaíso',
+    comuna: 'Valparaíso',
+    direccion: ''
+  })
 
-  const [errors, setErrors] = useState({});
-  const [mensaje, setMensaje] = useState(null);
+  const [errors, setErrors] = useState({})
+  const [generalError, setGeneralError] = useState('')
+
+  // Función flexible para validar RUN (acepta con/sin puntos y con/sin guion)
+  const flexibleValidateRun = (runStr) => {
+    if (!runStr) return false
+    // Limpiar puntos y guion
+    const clean = runStr.replace(/[\.\-]/g, '').toUpperCase()
+    if (clean.length < 8 || clean.length > 9) return false
+    
+    // Si la función importada existe, probamos formateando a xx.xxx.xxx-x
+    const body = clean.slice(0, -1)
+    const dv = clean.slice(-1)
+    
+    // Si tienes validateRun de utils, se intenta con el valor limpio o formateado
+    if (typeof validateRun === 'function') {
+      return validateRun(runStr) || validateRun(`${body}-${dv}`)
+    }
+    
+    return true
+  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
-  };
+  }
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    const newErrors = {};
+    e.preventDefault()
+    setGeneralError('')
+    const newErrors = {}
 
-    if (!formData.nombre.trim() || formData.nombre.length > 50) {
-      newErrors.nombre = "Nombre obligatorio, máximo 50 caracteres.";
+    if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio.'
+    if (!formData.apellidos.trim()) newErrors.apellidos = 'Los apellidos son obligatorios.'
+
+    // Validación de RUN flexible
+    if (!formData.run.trim()) {
+      newErrors.run = 'El RUN es obligatorio.'
+    } else if (!flexibleValidateRun(formData.run)) {
+      newErrors.run = 'El RUN ingresado no es válido.'
     }
 
-    if (!formData.apellidos.trim() || formData.apellidos.length > 100) {
-      newErrors.apellidos = "Apellidos obligatorios, máximo 100 caracteres.";
+    // Validación de Correo
+    if (!formData.email.trim()) {
+      newErrors.email = 'El correo es obligatorio.'
+    } else if (typeof validateEmail === 'function' && !validateEmail(formData.email)) {
+      newErrors.email = 'El correo debe ser de un dominio permitido (@duoc.cl, @profesor.duoc.cl, @gmail.com).'
     }
 
-    const runError = validateRun(formData.rut);
-    if (runError) newErrors.rut = runError;
-
-    const emailError = validateEmail(formData.email);
-    if (emailError) newErrors.email = emailError;
-
-    const passError = validatePassword(formData.password);
-    if (passError) newErrors.password = passError;
-
-    if (!formData.confirmarPassword || formData.password !== formData.confirmarPassword) {
-      newErrors.confirmarPassword = "Las contraseñas deben coincidir.";
+    // Validación de Teléfono
+    if (!formData.telefono.trim()) {
+      newErrors.telefono = 'El teléfono es obligatorio.'
     }
 
-    if (!formData.region) newErrors.region = "Selecciona una región.";
-    if (!formData.comuna) newErrors.comuna = "Selecciona una comuna.";
+    // Validación de Contraseña
+    if (!formData.password) {
+      newErrors.password = 'La contraseña es obligatoria.'
+    } else if (typeof validatePassword === 'function' && !validatePassword(formData.password)) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres.'
+    }
 
-    if (!formData.direccion.trim() || formData.direccion.length > 300) {
-      newErrors.direccion = "Dirección obligatoria, máximo 300 caracteres.";
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Las contraseñas no coinciden.'
     }
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setMensaje({ tipo: "danger", texto: "Por favor corrige los errores del formulario." });
-    } else {
-      setErrors({});
-      setMensaje({ tipo: "success", texto: "¡Cuenta creada exitosamente!" });
-      console.log("Datos del registro:", formData);
+      setErrors(newErrors)
+      setGeneralError('Por favor corrige los errores del formulario.')
+      return
     }
-  };
+
+    // Verificar si el correo o RUN ya existen
+    const exists = users.some(
+      (u) =>
+        u.email?.toLowerCase() === formData.email.trim().toLowerCase() ||
+        u.run?.replace(/[\.\-]/g, '').toUpperCase() === formData.run.replace(/[\.\-]/g, '').toUpperCase()
+    )
+
+    if (exists) {
+      setGeneralError('Ya existe una cuenta registrada con este correo o RUN.')
+      return
+    }
+
+    // Guardar usuario
+    if (onRegister) {
+      onRegister(formData)
+    }
+
+    navigate('/')
+  }
 
   return (
     <div className="bg-vet-doodle min-vh-100 py-5 d-flex align-items-center">
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-12 col-md-8 col-lg-6">
-            <div className="card shadow border-0 rounded-4 p-3 p-md-4 bg-white">
+            <div className="card shadow border-0 rounded-4 p-4 bg-white">
               <div className="text-center mb-4">
                 <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7">
                   👤 CUENTA DE CLIENTE
@@ -82,173 +126,163 @@ export const RegisterForm = () => {
                 <p className="text-muted small">Crea una cuenta para solicitar y revisar tus citas.</p>
               </div>
 
-              {mensaje && (
-                <div className={`alert alert-${mensaje.tipo} rounded-3 text-center`} role="alert">
-                  {mensaje.texto}
+              {generalError && (
+                <div className="alert alert-danger rounded-3 text-center mb-4">
+                  {generalError}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} noValidate>
+              <form onSubmit={handleSubmit}>
                 <div className="row g-3">
-                  {/* Nombre */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="nombre" className="form-label fw-medium text-dark small">Nombre</label>
+                  {/* Nombre y Apellidos */}
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">Nombre</label>
                     <input
                       type="text"
-                      id="nombre"
                       name="nombre"
-                      className={`form-control rounded-3 ${errors.nombre ? "is-invalid" : ""}`}
-                      placeholder="Ej. Juan"
-                      maxLength={50}
+                      className={`form-control rounded-3 ${errors.nombre ? 'is-invalid' : ''}`}
                       value={formData.nombre}
                       onChange={handleChange}
                     />
-                    {errors.nombre && <div className="invalid-feedback d-block">{errors.nombre}</div>}
+                    {errors.nombre && <div className="invalid-feedback">{errors.nombre}</div>}
                   </div>
 
-                  {/* Apellidos */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="apellidos" className="form-label fw-medium text-dark small">Apellidos</label>
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">Apellidos</label>
                     <input
                       type="text"
-                      id="apellidos"
                       name="apellidos"
-                      className={`form-control rounded-3 ${errors.apellidos ? "is-invalid" : ""}`}
-                      placeholder="Ej. Pérez"
-                      maxLength={100}
+                      className={`form-control rounded-3 ${errors.apellidos ? 'is-invalid' : ''}`}
                       value={formData.apellidos}
                       onChange={handleChange}
                     />
-                    {errors.apellidos && <div className="invalid-feedback d-block">{errors.apellidos}</div>}
+                    {errors.apellidos && <div className="invalid-feedback">{errors.apellidos}</div>}
                   </div>
 
-                  {/* RUN */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="rut" className="form-label fw-medium text-dark small">RUN</label>
+                  {/* RUN y Correo */}
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">RUN</label>
                     <input
                       type="text"
-                      id="rut"
-                      name="rut"
-                      className={`form-control rounded-3 ${errors.rut ? "is-invalid" : ""}`}
-                      placeholder="19011022-K"
-                      value={formData.rut}
+                      name="run"
+                      placeholder="19.011.022-K o 19011022-K"
+                      className={`form-control rounded-3 ${errors.run ? 'is-invalid' : ''}`}
+                      value={formData.run}
                       onChange={handleChange}
                     />
-                    {errors.rut && <div className="invalid-feedback d-block">{errors.rut}</div>}
+                    {errors.run && <div className="invalid-feedback">{errors.run}</div>}
                   </div>
 
-                  {/* Email */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="email" className="form-label fw-medium text-dark small">Correo electrónico</label>
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">Correo electrónico</label>
                     <input
                       type="email"
-                      id="email"
                       name="email"
-                      className={`form-control rounded-3 ${errors.email ? "is-invalid" : ""}`}
-                      placeholder="ejemplo@duoc.cl"
+                      placeholder="camila.soto@duoc.cl"
+                      className={`form-control rounded-3 ${errors.email ? 'is-invalid' : ''}`}
                       value={formData.email}
                       onChange={handleChange}
                     />
-                    {errors.email && <div className="invalid-feedback d-block">{errors.email}</div>}
+                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                   </div>
 
-                  {/* Contraseña */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="password" className="form-label fw-medium text-dark small">Contraseña</label>
+                  {/* Teléfono */}
+                  <div className="col-12 text-start">
+                    <label className="form-label fw-medium text-dark small">Teléfono de contacto</label>
+                    <input
+                      type="tel"
+                      name="telefono"
+                      placeholder="+56 9 1234 5678"
+                      className={`form-control rounded-3 ${errors.telefono ? 'is-invalid' : ''}`}
+                      value={formData.telefono}
+                      onChange={handleChange}
+                    />
+                    {errors.telefono && <div className="invalid-feedback">{errors.telefono}</div>}
+                  </div>
+
+                  {/* Contraseñas */}
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">Contraseña</label>
                     <input
                       type="password"
-                      id="password"
                       name="password"
-                      className={`form-control rounded-3 ${errors.password ? "is-invalid" : ""}`}
-                      minLength={4}
-                      maxLength={10}
+                      className={`form-control rounded-3 ${errors.password ? 'is-invalid' : ''}`}
                       value={formData.password}
                       onChange={handleChange}
                     />
-                    {errors.password && <div className="invalid-feedback d-block">{errors.password}</div>}
+                    {errors.password && <div className="invalid-feedback">{errors.password}</div>}
                   </div>
 
-                  {/* Confirmar Contraseña */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="confirmarPassword" className="form-label fw-medium text-dark small">Confirmar contraseña</label>
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">Confirmar contraseña</label>
                     <input
                       type="password"
-                      id="confirmarPassword"
-                      name="confirmarPassword"
-                      className={`form-control rounded-3 ${errors.confirmarPassword ? "is-invalid" : ""}`}
-                      value={formData.confirmarPassword}
+                      name="confirmPassword"
+                      className={`form-control rounded-3 ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                      value={formData.confirmPassword}
                       onChange={handleChange}
                     />
-                    {errors.confirmarPassword && <div className="invalid-feedback d-block">{errors.confirmarPassword}</div>}
+                    {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
                   </div>
 
-                  {/* Región */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="region" className="form-label fw-medium text-dark small">Región</label>
+                  {/* Región y Comuna */}
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">Región</label>
                     <select
-                      id="region"
                       name="region"
-                      className={`form-select rounded-3 ${errors.region ? "is-invalid" : ""}`}
+                      className="form-select rounded-3"
                       value={formData.region}
                       onChange={handleChange}
                     >
-                      <option value="">Selecciona Región</option>
                       <option value="Valparaíso">Valparaíso</option>
-                      <option value="Metropolitana">Región Metropolitana</option>
+                      <option value="Metropolitana">Metropolitana</option>
+                      <option value="O'Higgins">O'Higgins</option>
                     </select>
-                    {errors.region && <div className="invalid-feedback d-block">{errors.region}</div>}
                   </div>
 
-                  {/* Comuna */}
-                  <div className="col-12 col-md-6">
-                    <label htmlFor="comuna" className="form-label fw-medium text-dark small">Comuna</label>
+                  <div className="col-md-6 text-start">
+                    <label className="form-label fw-medium text-dark small">Comuna</label>
                     <select
-                      id="comuna"
                       name="comuna"
-                      className={`form-select rounded-3 ${errors.comuna ? "is-invalid" : ""}`}
+                      className="form-select rounded-3"
                       value={formData.comuna}
                       onChange={handleChange}
                     >
-                      <option value="">Selecciona Comuna</option>
-                      <option value="Viña del Mar">Viña del Mar</option>
                       <option value="Valparaíso">Valparaíso</option>
+                      <option value="Viña del Mar">Viña del Mar</option>
                       <option value="Quilpué">Quilpué</option>
+                      <option value="Rancagua">Rancagua</option>
+                      <option value="Santiago">Santiago</option>
                     </select>
-                    {errors.comuna && <div className="invalid-feedback d-block">{errors.comuna}</div>}
                   </div>
 
                   {/* Dirección */}
-                  <div className="col-12">
-                    <label htmlFor="direccion" className="form-label fw-medium text-dark small">Dirección</label>
+                  <div className="col-12 text-start">
+                    <label className="form-label fw-medium text-dark small">Dirección</label>
                     <input
                       type="text"
-                      id="direccion"
                       name="direccion"
-                      className={`form-control rounded-3 ${errors.direccion ? "is-invalid" : ""}`}
-                      placeholder="Av. Libertad 123"
-                      maxLength={300}
+                      className="form-control rounded-3"
+                      placeholder="Av. España 1234"
                       value={formData.direccion}
                       onChange={handleChange}
                     />
-                    {errors.direccion && <div className="invalid-feedback d-block">{errors.direccion}</div>}
-                  </div>
-
-                  {/* Botón Registro !!!!! */}
-                  <div className="col-12 text-center mt-4">
-                   <button className="btn btn-registro-custom btn-lg px-5 py-2 rounded-pill fw-semibold shadow-sm fs-6" type="submit">
-                    Crear cuenta
-                  </button>
                   </div>
                 </div>
-              </form>
 
-              <p className="text-center mt-4 mb-0 text-muted small">
-                ¿Ya tienes cuenta? <a href="/login" className="text-decoration-none fw-semibold text-dark">Inicia sesión</a>.
-              </p>
+                <div className="mt-4">
+                  <button
+                    className="btn btn-registro-custom btn-lg w-100 rounded-pill fw-semibold shadow-sm fs-6"
+                    type="submit"
+                  >
+                    Crear cuenta
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

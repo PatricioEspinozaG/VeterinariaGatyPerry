@@ -12,14 +12,56 @@ import Contacto from './pages/Contacto.jsx'
 import Consejos from './pages/Consejos.jsx'
 import NoEncontrado from './pages/NoEncontrado.jsx'
 import Productos from './pages/Productos.jsx'
-import {RegisterForm}from './components/RegisterForm.jsx'
+import { RegisterForm } from './components/RegisterForm.jsx'
 import LoginForm from './components/LoginForm.jsx'
+import PetForm from './components/PetForm.jsx'
+import AppointmentForm from './components/AppointmentForm.jsx'
+import AppointmentsList from './components/AppointmentsList.jsx'
 import './styles/app.css'
 
 function App() {
+  // Manejo de usuarios persistentes
+  const [users, setUsers] = useLocalStorage(
+    STORAGE_KEYS?.USERS || 'users',
+    initialUsers
+  )
+
+  // Manejo de ID de usuario con sesión activa
+  const [currentUserId, setCurrentUserId] = useLocalStorage(
+    STORAGE_KEYS?.CURRENT_USER_ID || 'currentUserId',
+    null
+  )
+
+  // Usuario actual
+  const currentUser = users.find((u) => u.id === currentUserId) || null
+
+  // Función para iniciar sesión
+  const handleLogin = (userId) => {
+    setCurrentUserId(userId)
+    return { ok: true }
+  }
+
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    setCurrentUserId(null)
+  }
+
+  // Función para registrar usuario
+  const handleRegister = (newUser) => {
+    const userWithId = {
+      ...newUser,
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+      role: 'cliente',
+      active: true
+    }
+    setUsers([...users, userWithId])
+    handleLogin(userWithId.id)
+    return { ok: true }
+  }
+
   return (
     <div className="app-shell">
-      <Header />
+      <Header currentUser={currentUser} onLogout={handleLogout} />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -28,8 +70,26 @@ function App() {
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/consejos" element={<Consejos />} />
           <Route path="/productos" element={<Productos />} />
-          <Route path="/registro" element={<RegisterForm />} />
-          <Route path="/login" element={<LoginForm />} />
+          <Route
+            path="/registro"
+            element={<RegisterForm users={users} onRegister={handleRegister} />}
+          />
+          <Route
+            path="/login"
+            element={<LoginForm users={users} onLogin={handleLogin} />}
+          />
+          <Route
+            path="/mascotas/nueva"
+            element={<PetForm currentUserId={currentUserId} />}
+          />
+          <Route
+            path="/citas/nueva"
+            element={<AppointmentForm currentUserId={currentUserId} />}
+          />
+          <Route
+            path="/citas"
+            element={<AppointmentsList userRole={currentUser?.role || 'cliente'} currentUserId={currentUserId} />}
+          />
           <Route path="*" element={<NoEncontrado />} />
         </Routes>
       </main>

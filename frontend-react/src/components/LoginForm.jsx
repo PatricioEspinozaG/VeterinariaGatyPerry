@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from "react-router";
 
-export default function LoginForm() {
+export default function LoginForm({ users = [], onLogin }) {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -13,13 +13,12 @@ export default function LoginForm() {
   const [mensaje, setMensaje] = useState({ type: '', text: '' });
   const navigate = useNavigate();
 
-  // Expresión regular de correos permitidos de la entrega anterior
+  // Expresión regular de correos permitidos
   const emailRegex = /^[a-zA-Z0-9._%+-]+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/i;
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-    // Limpiar error del campo al escribir
     if (errors[id]) {
       setErrors((prev) => ({ ...prev, [id]: '' }));
     }
@@ -29,13 +28,11 @@ export default function LoginForm() {
     let valid = true;
     const newErrors = { email: '', password: '' };
 
-    // Validar correo
     if (!formData.email || !emailRegex.test(formData.email)) {
-      newErrors.email = 'Ingresa un correo permitido.';
+      newErrors.email = 'Ingresa un correo permitido (@duoc.cl, @profesor.duoc.cl, @gmail.com).';
       valid = false;
     }
 
-    // Validar contraseña (entre 4 y 10 caracteres)
     if (!formData.password || formData.password.length < 4 || formData.password.length > 10) {
       newErrors.password = 'Debe tener entre 4 y 10 caracteres.';
       valid = false;
@@ -53,33 +50,39 @@ export default function LoginForm() {
       return;
     }
 
-    // Lógica de simulación académica o consulta a usuarios guardados
-    const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios')) || [];
-    
-    // Usuarios por defecto si no existen en localStorage
-    const usuariosDefault = [
-      { email: 'admin@duoc.cl', password: 'admin123', rol: 'admin' },
-      { email: 'recepcion@duoc.cl', password: 'recep123', rol: 'recepcion' },
-      { email: 'cliente@gmail.com', password: 'cliente1', rol: 'cliente' }
-    ];
+    // Usuarios recibidos por props o fallback del localStorage
+    const listaUsuarios = users.length > 0 
+      ? users 
+      : JSON.parse(localStorage.getItem('users')) || [];
 
-    const todosLosUsuarios = [...usuariosDefault, ...usuariosGuardados];
-
-    const usuarioEncontrado = todosLosUsuarios.find(
-      (u) => u.email.toLowerCase() === formData.email.toLowerCase() && u.password === formData.password
+    // Buscar coincidencia por email y contraseña
+    const usuarioEncontrado = listaUsuarios.find(
+      (u) => u.email?.toLowerCase() === formData.email.toLowerCase() && u.password === formData.password
     );
 
-    if (usuarioEncontrado) {
-      // Guardar sesión activa en localStorage
-      localStorage.setItem('usuarioActivo', JSON.stringify(usuarioEncontrado));
-      setMensaje({ type: 'success', text: '¡Inicio de sesión exitoso! Redirigiendo...' });
-
-      setTimeout(() => {
-        navigate('/');
-      }, 1200);
-    } else {
+    if (!usuarioEncontrado) {
       setMensaje({ type: 'danger', text: 'Credenciales incorrectas. Inténtalo nuevamente.' });
+      return;
     }
+
+    // Verificación de cuenta activa (regla de negocio)
+    if (usuarioEncontrado.active === false) {
+      setMensaje({ type: 'danger', text: 'Tu cuenta se encuentra deshabilitada. Contacta al administrador.' });
+      return;
+    }
+
+    // Guardar sesión mediante la función del padre
+    if (onLogin) {
+      onLogin(usuarioEncontrado.id);
+    } else {
+      localStorage.setItem('currentUserId', usuarioEncontrado.id);
+    }
+
+    setMensaje({ type: 'success', text: '¡Inicio de sesión exitoso! Redirigiendo...' });
+
+    setTimeout(() => {
+      navigate('/');
+    }, 1200);
   };
 
   return (
@@ -99,7 +102,7 @@ export default function LoginForm() {
                   </p>
                 </div>
 
-                {/* Mensaje de estado (Exitoso / Error credenciales) */}
+                {/* Mensaje de estado */}
                 {mensaje.text && (
                   <div className={`alert alert-${mensaje.type} py-2 fs-6 text-center mb-3`} role="alert">
                     {mensaje.text}
