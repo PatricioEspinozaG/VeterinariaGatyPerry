@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from "react-router";
 
 export default function LoginForm({ users = [], onLogin }) {
@@ -33,8 +33,8 @@ export default function LoginForm({ users = [], onLogin }) {
       valid = false;
     }
 
-    if (!formData.password || formData.password.length < 4 || formData.password.length > 10) {
-      newErrors.password = 'Debe tener entre 4 y 10 caracteres.';
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres.';
       valid = false;
     }
 

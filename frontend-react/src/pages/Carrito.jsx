@@ -133,13 +133,9 @@ function Carrito({
                     El costo de retiro se calculará en el siguiente paso de
                     la compra.
                   </p>
-                  <button
-                    className="button button-primary"
-                    type="button"
-                    disabled
-                  >
+                  <Link className="button button-primary" to="/checkout">
                     Continuar a compra
-                  </button>
+                  </Link>
                 </div>
               </aside>
             </div>

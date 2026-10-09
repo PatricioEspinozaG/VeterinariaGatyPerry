@@ -1,4 +1,12 @@
-function ServiceCard({ name, category, species, duration, price, image }) {
+function ServiceCard({
+  name,
+  category,
+  species,
+  duration,
+  price,
+  image,
+  observation,
+}) {
   const formattedPrice = new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
@@ -16,6 +24,7 @@ function ServiceCard({ name, category, species, duration, price, image }) {
         <p>
           {species} · {duration}
         </p>
+        {observation && <p>{observation}</p>}
         <strong className="service-price">{formattedPrice}</strong>
       </div>
     </article>

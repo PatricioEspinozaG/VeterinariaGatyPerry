@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { readStorage } from '../services/storage.js';
 
 export default function AppointmentForm({ currentUserId, onAddAppointment }) {
   const navigate = useNavigate();
 
-  const [mascotas, setMascotas] = useState([]);
+  const [mascotas] = useState(() => {
+    const userId = currentUserId || localStorage.getItem('currentUserId');
+    return readStorage('pets', []).filter((pet) => pet.userId === userId);
+  });
   const [formData, setFormData] = useState({
     petId: '',
     servicio: 'Consulta General',
@@ -16,18 +20,7 @@ export default function AppointmentForm({ currentUserId, onAddAppointment }) {
   const [errors, setErrors] = useState({});
   const [mensaje, setMensaje] = useState(null);
 
-  useEffect(() => {
-    // Cargar mascotas del usuario conectado
-    const userId = currentUserId || localStorage.getItem('currentUserId');
-    const todasLasMascotas = JSON.parse(localStorage.getItem('pets')) || [];
-    const misMascotas = todasLasMascotas.filter((m) => m.userId === userId);
-    
-    setMascotas(misMascotas);
-
-    if (misMascotas.length > 0) {
-      setFormData((prev) => ({ ...prev, petId: misMascotas[0].id }));
-    }
-  }, [currentUserId]);
+  const selectedPetId = formData.petId || mascotas[0]?.id || '';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,7 +33,7 @@ export default function AppointmentForm({ currentUserId, onAddAppointment }) {
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.petId) {
+    if (!selectedPetId) {
       newErrors.petId = 'Debes seleccionar una mascota.';
     }
 
@@ -76,12 +69,12 @@ export default function AppointmentForm({ currentUserId, onAddAppointment }) {
     if (!validate()) return;
 
     const userId = currentUserId || localStorage.getItem('currentUserId');
-    const mascotaSeleccionada = mascotas.find((m) => m.id === formData.petId);
+    const mascotaSeleccionada = mascotas.find((m) => m.id === selectedPetId);
 
     const nuevaCita = {
       id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
       userId: userId || 'invitado',
-      petId: formData.petId,
+      petId: selectedPetId,
       petName: mascotaSeleccionada ? mascotaSeleccionada.nombre : 'Mascota',
       servicio: formData.servicio,
       fecha: formData.fecha,
@@ -149,7 +142,7 @@ export default function AppointmentForm({ currentUserId, onAddAppointment }) {
                         id="petId"
                         name="petId"
                         className={`form-select rounded-3 ${errors.petId ? 'is-invalid' : ''}`}
-                        value={formData.petId}
+                        value={selectedPetId}
                         onChange={handleChange}
                       >
                         {mascotas.map((m) => (

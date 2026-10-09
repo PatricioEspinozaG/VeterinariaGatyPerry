@@ -1,7 +1,7 @@
 import { NavLink, Link } from "react-router";
 import logo from '../assets/logo-nav.gif'
 
-function Header({ currentUser, onLogout }) {
+function Header({ currentUser, cartQuantity = 0, onLogout }) {
   return (
     <>
       <div className="topbar">
@@ -40,6 +40,9 @@ function Header({ currentUser, onLogout }) {
 
             <NavLink to="/productos">
               Productos
+            </NavLink>
+            <NavLink to="/carrito">
+              Carrito ({cartQuantity})
             </NavLink>
 
             {/* Accesos solo cuando hay sesión activa */}

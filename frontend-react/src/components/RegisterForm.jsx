@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { validateUser } from '../utils/userValidation.js'
 
@@ -21,25 +21,6 @@ export function RegisterForm({ users = [], onRegister }) {
   const [errors, setErrors] = useState({})
   const [generalError, setGeneralError] = useState('')
 
-  // Función flexible para validar RUN (acepta con/sin puntos y con/sin guion)
-  const flexibleValidateRun = (runStr) => {
-    if (!runStr) return false
-    // Limpiar puntos y guion
-    const clean = runStr.replace(/[\.\-]/g, '').toUpperCase()
-    if (clean.length < 8 || clean.length > 9) return false
-    
-    // Si la función importada existe, probamos formateando a xx.xxx.xxx-x
-    const body = clean.slice(0, -1)
-    const dv = clean.slice(-1)
-    
-    // Si tienes validateRun de utils, se intenta con el valor limpio o formateado
-    if (typeof validateRun === 'function') {
-      return validateRun(runStr) || validateRun(`${body}-${dv}`)
-    }
-    
-    return true
-  }
-
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -51,56 +32,10 @@ export function RegisterForm({ users = [], onRegister }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     setGeneralError('')
-    const newErrors = {}
-
-    if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio.'
-    if (!formData.apellidos.trim()) newErrors.apellidos = 'Los apellidos son obligatorios.'
-
-    // Validación de RUN flexible
-    if (!formData.run.trim()) {
-      newErrors.run = 'El RUN es obligatorio.'
-    } else if (!flexibleValidateRun(formData.run)) {
-      newErrors.run = 'El RUN ingresado no es válido.'
-    }
-
-    // Validación de Correo
-    if (!formData.email.trim()) {
-      newErrors.email = 'El correo es obligatorio.'
-    } else if (typeof validateEmail === 'function' && !validateEmail(formData.email)) {
-      newErrors.email = 'El correo debe ser de un dominio permitido (@duoc.cl, @profesor.duoc.cl, @gmail.com).'
-    }
-
-    // Validación de Teléfono
-    if (!formData.telefono.trim()) {
-      newErrors.telefono = 'El teléfono es obligatorio.'
-    }
-
-    // Validación de Contraseña
-    if (!formData.password) {
-      newErrors.password = 'La contraseña es obligatoria.'
-    } else if (typeof validatePassword === 'function' && !validatePassword(formData.password)) {
-      newErrors.password = 'La contraseña debe tener al menos 8 caracteres.'
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden.'
-    }
-
+    const newErrors = validateUser(formData, users)
+    setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      setGeneralError('Por favor corrige los errores del formulario.')
-      return
-    }
-
-    // Verificar si el correo o RUN ya existen
-    const exists = users.some(
-      (u) =>
-        u.email?.toLowerCase() === formData.email.trim().toLowerCase() ||
-        u.run?.replace(/[\.\-]/g, '').toUpperCase() === formData.run.replace(/[\.\-]/g, '').toUpperCase()
-    )
-
-    if (exists) {
-      setGeneralError('Ya existe una cuenta registrada con este correo o RUN.')
+      setGeneralError(newErrors.general || 'Por favor corrige los errores del formulario.')
       return
     }
 

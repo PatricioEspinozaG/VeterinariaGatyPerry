@@ -22,11 +22,7 @@ export function isValidRun(run) {
   }
 
   const expectedDvInt = 11 - (sum % 11)
-  let expectedDv = ""
-
-  if (expectedDvInt === 11) expectedDv = "0"
-  else if (expectedDvInt === 10) expectedDv = "K"
-  else expectedDv = expectedDvInt.toString()
+  const expectedDv = expectedDvInt === 11 ? "0" : expectedDvInt === 10 ? "K" : expectedDvInt.toString()
 
   return dv === expectedDv
 }

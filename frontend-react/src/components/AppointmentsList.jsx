@@ -1,37 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { readStorage, writeStorage } from '../services/storage.js';
 
 export default function AppointmentsList({ userRole = 'cliente', currentUserId }) {
   const navigate = useNavigate();
-  const [citas, setCitas] = useState([]);
+  const [citas, setCitas] = useState(() => readStorage('appointments', []));
   const [filtroEstado, setFiltroEstado] = useState('todas');
 
-  useEffect(() => {
-    cargarCitas();
-  }, [currentUserId, userRole]);
-
-  const cargarCitas = () => {
-    const todasLasCitas = JSON.parse(localStorage.getItem('appointments')) || [];
-    const userId = currentUserId || localStorage.getItem('currentUserId');
-
-    // Si es cliente solo ve sus citas; si es admin/recepcion ve todas
-    if (userRole === 'cliente') {
-      setCitas(todasLasCitas.filter((c) => c.userId === userId));
-    } else {
-      setCitas(todasLasCitas);
-    }
-  };
-
   const handleCambiarEstado = (id, nuevoEstado) => {
-    const todasLasCitas = JSON.parse(localStorage.getItem('appointments')) || [];
-    const actualizadas = todasLasCitas.map((c) =>
+    const actualizadas = citas.map((c) =>
       c.id === id ? { ...c, estado: nuevoEstado } : c
     );
-    localStorage.setItem('appointments', JSON.stringify(actualizadas));
-    cargarCitas();
+    writeStorage('appointments', actualizadas);
+    setCitas(actualizadas);
   };
 
+  const userId = currentUserId || localStorage.getItem('currentUserId');
   const citasFiltradas = citas.filter((c) => {
+    if (userRole === 'cliente' && c.userId !== userId) return false;
     if (filtroEstado === 'todas') return true;
     return c.estado.toLowerCase() === filtroEstado.toLowerCase();
   });

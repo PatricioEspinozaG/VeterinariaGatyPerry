@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { regions } from '../data/regions.js'
 import { getCartLines, getCartTotal } from '../utils/cartLogic.js'
 import { money } from '../utils/format.js'
@@ -7,14 +7,14 @@ import { money } from '../utils/format.js'
 const SHIPPING_COST = 3990
 
 function Checkout({ products, cart, currentUser, onCompletePurchase }) {
-  const [name, setName] = useState(currentUser?.name ?? '')
+  const navigate = useNavigate()
+  const [name, setName] = useState(currentUser?.nombre ?? currentUser?.name ?? '')
   const [email, setEmail] = useState(currentUser?.email ?? '')
   const [region, setRegion] = useState('')
   const [commune, setCommune] = useState('')
   const [address, setAddress] = useState('')
   const [method, setMethod] = useState('envio')
   const [error, setError] = useState('')
-  const [orderId, setOrderId] = useState('')
 
   const lines = getCartLines(cart, products)
   const subtotal = getCartTotal(cart, products)
@@ -25,7 +25,6 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   function handleSubmit(event) {
     event.preventDefault()
     setError('')
-    setOrderId('')
 
     const delivery = {
       name,
@@ -43,7 +42,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
       return
     }
 
-    setOrderId(result.orderId ?? '')
+    navigate(`/compra/${result.orderId}`)
   }
 
   return (
@@ -174,12 +173,6 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                 )}
 
                 {error && <p role="alert">{error}</p>}
-
-                {orderId && (
-                  <p role="status">
-                    Compra simulada registrada. Número de pedido: {orderId}
-                  </p>
-                )}
 
                 <button className="button button-primary" type="submit">
                   Confirmar compra simulada
