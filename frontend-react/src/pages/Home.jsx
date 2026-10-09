@@ -21,11 +21,11 @@ function Home() {
             </p>
 
             <div className="hero-actions">
-              <a className="button button-primary" href="#servicios">
-                Conocer servicios
-              </a>
-              <Link className="button button-secondary" to="/productos">
-                Ver productos
+              <Link className="button button-primary" to="/citas/nueva">
+                Agendar una hora
+              </Link>
+              <Link className="button button-secondary" to="/servicios">
+                Ver servicios
               </Link>
             </div>
           </div>
@@ -95,9 +95,9 @@ function Home() {
               <li>Información centralizada para la demostración.</li>
             </ul>
 
-            <button className="button button-primary" type="button" disabled>
+            <Link className="button button-primary" to="/registro">
               Crear cuenta
-            </button>
+            </Link>
           </div>
 
           <div className="feature-panel">
