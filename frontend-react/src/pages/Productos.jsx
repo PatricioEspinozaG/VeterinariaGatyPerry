@@ -3,7 +3,7 @@ import PageHero from '../components/PageHero.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import { normalizeText } from '../utils/format.js'
 
-function Productos({ products, cart, onAddToCart }) {
+function Productos({ products, onAddToCart }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedAvailability, setSelectedAvailability] = useState('')
@@ -35,11 +35,6 @@ function Productos({ products, cart, onAddToCart }) {
 
     return matchesSearch && matchesCategory && matchesAvailability
   })
-
-  const cartQuantity = cart.reduce(
-    (total, item) => total + item.quantity,
-    0,
-  )
 
   function add(product) {
     const result = onAddToCart(product)
@@ -121,7 +116,6 @@ function Productos({ products, cart, onAddToCart }) {
               {filteredProducts.length}{' '}
               {filteredProducts.length === 1 ? 'producto' : 'productos'}
             </p>
-            <p>Unidades en el carrito: {cartQuantity}</p>
           </div>
           {message && <p role="status">{message}</p>}
 
