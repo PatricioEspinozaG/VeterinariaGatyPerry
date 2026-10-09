@@ -1,1 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><rect width="320" height="180" rx="24" fill="#F7F4E9"/><path d="M126 55h54l20 20v52h-74z" fill="#F2C3A8" stroke="#103E3E" stroke-width="6"/><path d="M180 55v20h20M111 94h104M143 42v24" fill="none" stroke="#103E3E" stroke-width="6"/><circle cx="160" cy="112" r="9" fill="#FF7900"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img">
+  <title>Jeringa para vacunas</title>
+  <rect width="320" height="180" rx="24" fill="#F7F4E9"/>
+
+  <g transform="translate(160 90) rotate(-30)" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Émbolo -->
+    <path d="M-69 0h43" fill="none" stroke="#294F4B" stroke-width="7"/>
+    <path d="M-72-20v40m-9-40h18m-18 40h18"
+      fill="none" stroke="#103E3E" stroke-width="5"/>
+
+    <!-- Cuerpo de la jeringa -->
+    <rect x="-27" y="-17" width="78" height="34" rx="7"
+      fill="#FFFDF8" stroke="#103E3E" stroke-width="5"/>
+    <path d="M13-13h39v26H13z"
+      fill="#F2C3A8" stroke="none"/>
+
+    <!-- Marcas de medición -->
+    <path d="M-14-11v9m13-9v6m13-6v9"
+      fill="none" stroke="#294F4B" stroke-width="3"/>
+
+    <!-- Cono y aguja -->
+    <path d="M51-9 66-4v8L51 9"
+      fill="#B8A7C9" stroke="#103E3E" stroke-width="4"/>
+    <path d="M66 0h42"
+      fill="none" stroke="#103E3E" stroke-width="3"/>
+    <path d="M108 0h8"
+      fill="none" stroke="#294F4B" stroke-width="1.5"/>
+  </g>
+
+  <circle cx="72" cy="121" r="7" fill="#B8A7C9"/>
+  <circle cx="248" cy="55" r="9" fill="#F2C3A8"/>
+</svg>
