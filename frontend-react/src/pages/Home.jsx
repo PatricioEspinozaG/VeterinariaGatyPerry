@@ -21,11 +21,11 @@ function Home() {
             </p>
 
             <div className="hero-actions">
-              <a className="button button-primary" href="#servicios">
-                Conocer servicios
-              </a>
-              <Link className="button button-secondary" to="/productos">
-              Ver productos
+              <Link className="button button-primary" to="/citas/nueva">
+                Agendar una hora
+              </Link>
+              <Link className="button button-secondary" to="/servicios">
+                Ver servicios
               </Link>
             </div>
           </div>
@@ -59,10 +59,8 @@ function Home() {
         <div className="container">
           <div className="section-heading">
             <span className="eyebrow">Atención integral</span>
-            <h2>Servicios destacados</h2>
-            <p>
-              Esta selección reutiliza información real del catálogo anterior.
-            </p>
+            <h2>Lo que tu mascota necesita</h2>
+            <p>Consulta, prevención y productos veterinarios con información clara.</p>
           </div>
 
           <div className="services-grid">
@@ -81,14 +79,46 @@ function Home() {
         </div>
       </section>
 
-      <section id="productos" className="intro-section">
-        <div className="container intro-content">
-          <span className="eyebrow">Segunda práctica React</span>
-          <h2>Datos separados y componentes reutilizables</h2>
-          <p>
-            Las estadísticas y los servicios ahora se generan desde arreglos de
-            datos mediante map y reciben su contenido a través de props.
-          </p>
+      <section id="cuidado" className="intro-section">
+        <div className="container care-layout">
+          <div className="care-copy">
+            <span className="eyebrow">Una atención más simple</span>
+            <h2>Organiza el cuidado de tu mascota</h2>
+            <p>
+              Regístrate, solicita una hora y revisa el estado de tus citas sin
+              depender de una agenda de papel.
+            </p>
+
+            <ul className="benefit-list">
+              <li>Solicitudes de hora registradas en el navegador.</li>
+              <li>Catálogo de servicios y productos oficiales.</li>
+              <li>Información centralizada para la demostración.</li>
+            </ul>
+
+            <Link className="button button-primary" to="/registro">
+              Crear cuenta
+            </Link>
+          </div>
+
+          <div className="feature-panel">
+            <span className="feature-number">01</span>
+            <div>
+              <strong>Registra tu cuenta</strong>
+              <p>Completa tus datos con validaciones.</p>
+            </div>
+
+            <span className="feature-number">02</span>
+            <div>
+              <strong>Solicita una hora</strong>
+              <p>Selecciona servicio, fecha y mascota.</p>
+            </div>
+
+            <span className="feature-number">03</span>
+            <div>
+              <strong>Revisa el estado</strong>
+              <p>Consulta si está pendiente o confirmada.</p>
+            </div>
+          </div>
         </div>
       </section>
     </>
