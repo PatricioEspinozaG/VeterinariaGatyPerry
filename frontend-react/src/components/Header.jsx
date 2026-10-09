@@ -18,6 +18,7 @@ function Header({ currentUser, cartQuantity = 0, onLogout }) {
         <div className="container navbar">
           <NavLink className="brand" to="/" aria-label="Ir al inicio" onClick={closeMenu}>
             <img src={logo} alt="Logo de Gaty Perry" />
+            <span className="eyebrow brand-eyebrow">Rancagua · desde 2009</span>
           </NavLink>
           <button
             className="menu-toggle"

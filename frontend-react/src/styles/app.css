@@ -26,6 +26,11 @@
   padding-block: 0.55rem;
 }
 
+.topbar-content,
+.navbar {
+  width: min(1320px, calc(100% - 2rem));
+}
+
 .site-header {
   position: sticky;
   z-index: 10;
@@ -36,15 +41,33 @@
 }
 
 .navbar {
-  min-height: 88px;
+  min-height: 150px;
   flex-wrap: nowrap;
-  padding-block: 0.5rem;
+  padding-block: 0.75rem;
+}
+
+.brand {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
 }
 
 .brand img {
-  width: 235px;
-  max-height: 68px;
+  width: 290px;
+  height: auto;
+  max-height: 76px;
   object-fit: contain;
+}
+
+.brand-eyebrow {
+  padding: 0.48rem 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .navigation-panel,
@@ -55,6 +78,7 @@
 }
 
 .navigation-panel {
+  flex: 0 0 auto;
   min-width: 0;
   margin-left: auto;
 }
@@ -64,10 +88,10 @@
 }
 
 .main-navigation a {
-  padding: 0.6rem 0.5rem;
+  padding: 0.55rem 0.7rem;
   border-radius: 0.7rem;
   color: #314a49;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
@@ -503,8 +527,13 @@
 
 @media (max-width: 1100px) {
   .navbar {
+    min-height: 88px;
     flex-wrap: wrap;
     justify-content: space-between;
+  }
+
+  .brand {
+    flex: 0 1 auto;
   }
 
   .menu-toggle {
@@ -522,6 +551,7 @@
 
   .navigation-panel {
     display: none;
+    flex: 0 0 100%;
     flex-basis: 100%;
     flex-direction: column;
     align-items: stretch;
@@ -587,6 +617,10 @@
 
   .brand img {
     width: 205px;
+  }
+
+  .brand-eyebrow {
+    display: none;
   }
 
   .hero-section {
