@@ -67,43 +67,45 @@ function Productos({ products, cart, onAddToCart }) {
       <section className="services-section">
         <div className="container">
           <div className="product-search">
-            <label htmlFor="buscarProducto">Buscar productos</label>
-            <input
-              id="buscarProducto"
-              type="search"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Ejemplo: Nexgard"
-            />
+            <div className="product-filter-field">
+              <label htmlFor="buscarProducto">Buscar productos</label>
+              <input
+                id="buscarProducto"
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Ejemplo: Nexgard"
+              />
+            </div>
 
-            <label htmlFor="categoriaProducto">Categoría</label>
-            <select
-              id="categoriaProducto"
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-            >
-              <option value="">Todas las categorías</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+            <div className="product-filter-field">
+              <label htmlFor="categoriaProducto">Categoría</label>
+              <select
+                id="categoriaProducto"
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+              >
+                <option value="">Todas las categorías</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <label htmlFor="disponibilidadProducto">
-              Disponibilidad
-            </label>
-            <select
-              id="disponibilidadProducto"
-              value={selectedAvailability}
-              onChange={(event) =>
-                setSelectedAvailability(event.target.value)
-              }
-            >
-              <option value="">Todos</option>
-              <option value="disponible">Con stock</option>
-              <option value="agotado">Sin stock</option>
-            </select>
+            <div className="product-filter-field">
+              <label htmlFor="disponibilidadProducto">Disponibilidad</label>
+              <select
+                id="disponibilidadProducto"
+                value={selectedAvailability}
+                onChange={(event) => setSelectedAvailability(event.target.value)}
+              >
+                <option value="">Todos</option>
+                <option value="disponible">Con stock</option>
+                <option value="agotado">Sin stock</option>
+              </select>
+            </div>
 
             <button
               className="button button-outline"
@@ -114,11 +116,13 @@ function Productos({ products, cart, onAddToCart }) {
             </button>
           </div>
 
-          <p>
-            {filteredProducts.length}{' '}
-            {filteredProducts.length === 1 ? 'producto' : 'productos'}
-          </p>
-          <p>Unidades en el carrito: {cartQuantity}</p>
+          <div className="catalog-summary">
+            <p>
+              {filteredProducts.length}{' '}
+              {filteredProducts.length === 1 ? 'producto' : 'productos'}
+            </p>
+            <p>Unidades en el carrito: {cartQuantity}</p>
+          </div>
           {message && <p role="status">{message}</p>}
 
           <div className="services-grid product-grid">
