@@ -86,12 +86,12 @@ export default function LoginForm({ users = [], onLogin }) {
   };
 
   return (
-    <main className="bg-cream">
+    <main className="bg-vet-doodle login-page">
       <section className="section-space py-5">
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-md-7 col-lg-5">
-              <div className="form-card bg-white p-4 p-md-5 rounded-4 shadow-sm border">
+              <div className="form-card login-card bg-white p-4 p-md-5 rounded-4 shadow-sm border">
                 
                 {/* Encabezado */}
                 <div className="text-center mb-4">
@@ -143,7 +143,7 @@ export default function LoginForm({ users = [], onLogin }) {
                   </div>
 
                   {/* Botón Ingresar */}
-                  <button className="btn btn-primary btn-lg w-100" type="submit">
+                  <button className="button button-primary login-submit w-100" type="submit">
                     Ingresar
                   </button>
                 </form>

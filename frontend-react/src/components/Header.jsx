@@ -58,7 +58,12 @@ function Header({ currentUser, cartQuantity = 0, onLogout }) {
                   <Link to="/login" className="button button-outline" onClick={closeMenu}>Ingresar</Link>
                 )}
               </div>
-              <NavLink to="/carrito" className="cart-link" aria-label={`Carrito, ${cartQuantity} productos`}>
+              <NavLink
+                to="/carrito"
+                className="cart-link"
+                aria-label={`Carrito, ${cartQuantity} productos`}
+                onClick={closeMenu}
+              >
                 <svg className="cart-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M3 4h2l2.2 9.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.76L18.7 7H6.2" />
                   <circle cx="10" cy="17.5" r="1.2" />

@@ -185,6 +185,31 @@
   background: rgba(255, 121, 0, 0.08);
 }
 
+.cart-quantity-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cart-quantity-button {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
+.cart-quantity {
+  min-width: 2rem;
+  color: var(--petroleo);
+  font-weight: 700;
+  text-align: center;
+}
+
+.cart-continue {
+  margin-top: 1rem;
+}
+
 .nav-account {
   display: flex;
   align-items: center;
@@ -431,6 +456,38 @@
 .service-price {
   color: var(--petroleo-claro);
   font-size: 1.1rem;
+}
+
+.login-page {
+  display: flex;
+  align-items: center;
+}
+
+.login-page > section {
+  width: 100%;
+}
+
+.login-card {
+  border-color: var(--linea) !important;
+  box-shadow: var(--sombra) !important;
+}
+
+.login-card .form-control {
+  min-height: 46px;
+  border-color: var(--linea);
+  border-radius: 0.7rem;
+}
+
+.login-card .form-control:focus {
+  border-color: var(--petroleo-claro);
+  box-shadow: 0 0 0 0.2rem rgba(16, 62, 62, 0.12);
+}
+
+.login-submit {
+  min-height: 48px;
+  border: 0;
+  border-radius: 0.8rem;
+  font-size: 1rem;
 }
 
 .intro-section {
