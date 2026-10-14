@@ -1,12 +1,33 @@
 export const STORAGE_KEYS = {
   products: 'gaty-react-v2-products',
   cart: 'gaty-react-v2-cart',
+  carts: 'gaty-react-v2-carts',
   users: 'gaty-react-v2-users',
   session: 'gaty-react-v2-session',
   appointments: 'gaty-react-v2-appointments',
   pets: 'gaty-react-v2-pets',
   contacts: 'gaty-react-v2-contacts',
   orders: 'gaty-react-v2-orders',
+}
+
+export function readCartBuckets(initialOwnerId) {
+  const storedCarts = readStorage(STORAGE_KEYS.carts, null)
+  if (
+    storedCarts &&
+    typeof storedCarts === 'object' &&
+    !Array.isArray(storedCarts)
+  ) {
+    return storedCarts
+  }
+
+  const legacyCart = readStorage(STORAGE_KEYS.cart, [])
+  if (!Array.isArray(legacyCart) || legacyCart.length === 0) {
+    return {}
+  }
+
+  return {
+    [initialOwnerId || 'anonymous']: legacyCart,
+  }
 }
 
 export function readStorage(key, fallback) {

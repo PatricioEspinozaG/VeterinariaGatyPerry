@@ -1,6 +1,7 @@
-import { Navigate, Route, Routes } from 'react-router'
+import { useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 import useLocalStorage from './hooks/useLocalStorage.js'
-import { STORAGE_KEYS } from './services/storage.js'
+import { readCartBuckets, STORAGE_KEYS } from './services/storage.js'
 import { products as initialProducts } from './data/products.js'
 import { users as initialUsers } from './data/users.js'
 import { addToCart, changeQuantity, normalizeCart, removeFromCart } from './utils/cartLogic.js'
@@ -26,29 +27,51 @@ import AppointmentsList from './components/AppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
 import './styles/app.css'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
+
 function App() {
   const [products, setProducts, productsError] = useLocalStorage(STORAGE_KEYS.products, initialProducts)
-  const [cart, setCart, cartError] = useLocalStorage(STORAGE_KEYS.cart, [])
   const [orders, setOrders, ordersError] = useLocalStorage(STORAGE_KEYS.orders, [])
   const [users, setUsers, usersError] = useLocalStorage('users', initialUsers)
   const [currentUserId, setCurrentUserId, sessionError] = useLocalStorage('currentUserId', '')
 
   const currentUser = users.find((user) => user.id === currentUserId && user.active) || null
+  const cartOwnerId = currentUser?.id || 'anonymous'
+  const [cartBuckets, setCartBuckets, cartError] = useLocalStorage(
+    STORAGE_KEYS.carts,
+    readCartBuckets(cartOwnerId),
+  )
+  const cart = cartBuckets[cartOwnerId] || []
   const validCart = normalizeCart(cart, products)
   const cartQuantity = validCart.reduce((total, item) => total + item.quantity, 0)
   const storageError = productsError || cartError || ordersError || usersError || sessionError
+
+  function saveCart(nextCart) {
+    setCartBuckets((previous) => ({
+      ...previous,
+      [cartOwnerId]: nextCart,
+    }))
+  }
 
   function handleAddToCart(product) {
     const actual = products.find((item) => item.code === product.code)
     if (!actual) return { ok: false, error: 'Producto no disponible.' }
     const result = addToCart(validCart, actual)
-    if (result.ok) setCart(result.cart)
+    if (result.ok) saveCart(result.cart)
     return result
   }
 
   function handleChangeQuantity(product, quantity) {
     const result = changeQuantity(validCart, product, quantity)
-    if (result.ok) setCart(result.cart)
+    if (result.ok) saveCart(result.cart)
     return result
   }
 
@@ -59,7 +82,7 @@ function App() {
     const orderId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()
     setProducts(result.products)
     setOrders((previous) => [...previous, { id: orderId, ...result, delivery }])
-    setCart([])
+    saveCart([])
     return { ok: true, orderId }
   }
 
@@ -77,6 +100,7 @@ function App() {
 
   return (
     <div className="app-shell">
+      <ScrollToTop />
       <Header currentUser={currentUser} cartQuantity={cartQuantity} onLogout={() => setCurrentUserId('')} />
       {storageError && <p className="container" role="alert">No pudimos guardar los cambios en este navegador.</p>}
       <main>
@@ -89,7 +113,7 @@ function App() {
           <Route path="/consejos/:id" element={<DetalleConsejo />} />
           <Route path="/productos" element={<Productos products={products} cart={validCart} onAddToCart={handleAddToCart} />} />
           <Route path="/productos/:code" element={<DetalleProducto products={products} onAddToCart={handleAddToCart} />} />
-          <Route path="/carrito" element={<Carrito products={products} cart={validCart} onChangeQuantity={handleChangeQuantity} onRemove={(code) => setCart(removeFromCart(validCart, code))} onClear={() => setCart([])} />} />
+          <Route path="/carrito" element={<Carrito products={products} cart={validCart} onChangeQuantity={handleChangeQuantity} onRemove={(code) => saveCart(removeFromCart(validCart, code))} onClear={() => saveCart([])} />} />
           <Route path="/checkout" element={<Checkout products={products} cart={validCart} currentUser={currentUser} onCompletePurchase={handleCompletePurchase} />} />
           <Route path="/compra/:id" element={<ResultadoCompra orders={orders} />} />
           <Route
