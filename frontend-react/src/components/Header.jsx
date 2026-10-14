@@ -35,13 +35,13 @@ function Header({ currentUser, cartQuantity = 0, onLogout }) {
               <NavLink to="/" end>Inicio</NavLink>
               <NavLink to="/servicios">Servicios</NavLink>
               <NavLink to="/productos">Productos</NavLink>
-              <NavLink to="/consejos">Consejos</NavLink>
-              <NavLink to="/nosotros">Nosotros</NavLink>
-              <NavLink to="/contacto">Contacto</NavLink>
+              <NavLink to="/consejos" className="nav-link-tertiary">Consejos</NavLink>
+              <NavLink to="/nosotros" className="nav-link-tertiary">Nosotros</NavLink>
+              <NavLink to="/contacto" className="nav-link-tertiary">Contacto</NavLink>
               {currentUser && (
                 <>
-                  <NavLink to="/mascotas/nueva">+ Mascota</NavLink>
-                  <NavLink to="/citas">Mis citas</NavLink>
+                  <NavLink to="/mascotas/nueva" className="nav-link-compact">+ Mascota</NavLink>
+                  <NavLink to="/citas" className="nav-link-compact">Mis citas</NavLink>
                 </>
               )}
             </nav>
