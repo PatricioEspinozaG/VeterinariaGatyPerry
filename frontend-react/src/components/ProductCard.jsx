@@ -8,8 +8,8 @@ function ProductCard({ product, onAddToCart }) {
     <article className="service-card product-card">
       <div className="service-card-image">
         <img
-          src={productImage(product.category)}
-          alt={`Imagen de la categoría ${product.category}`}
+          src={productImage(product.code, product.category)}
+          alt={`Imagen de ${product.name}`}
           loading="lazy"
         />
       </div>
