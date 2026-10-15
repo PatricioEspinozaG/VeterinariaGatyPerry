@@ -898,6 +898,129 @@
 }
 
 .form-field input:focus,
+
+  /* Admin panel styles */
+  /* Admin panel styles */
+  .admin-panel .admin-hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0 1.6rem;
+    width: 100%;
+  }
+  .admin-badges {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+  .stat-card {
+    background: #fff;
+    padding: 1.05rem 1.1rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(16,62,62,0.06);
+    text-align: center;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+  .stat-value { color: var(--naranja); font-size: 1.75rem; font-weight: 900 }
+  .stat-card strong { color: var(--petroleo); font-size: 0.98rem }
+  .admin-header { text-align: center; margin-top: 0.6rem; margin-bottom: 0.6rem }
+  .admin-title h1 { margin: 0; color: var(--petroleo); font-size: clamp(1.9rem, 3.5vw, 2.8rem) }
+  .admin-main { display: flex; gap: 1.5rem; align-items: flex-start }
+  .admin-left { flex: 1 }
+  .admin-right { width: 320px; background: #fff; padding: 1rem; border-radius: 10px; box-shadow: var(--sombra) }
+
+  /* When there is no aside, center the products block and constrain width */
+  .admin-left.full {
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .admin-left.full h2 { margin-left: 0; }
+  .admin-left.full .admin-table { margin: 0 auto }
+  .admin-table table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden }
+  .admin-table th { background: #143b39; color: #fff; padding: 1rem; text-align: left }
+  .admin-table td { padding: 1rem; border-bottom: 1px solid var(--linea); vertical-align: middle }
+  .admin-table tbody tr:nth-child(odd) { background: #fff }
+  .admin-table tbody tr:nth-child(even) { background: #fafafa }
+  .btn { padding: 0.5rem 0.75rem; border-radius: 12px; border: none; cursor: pointer }
+  .btn-edit { background: #ffcf2f; margin-right: 0.6rem }
+  .btn-delete { background: #e24b4b; color: #fff }
+  .action-buttons { display: flex; gap: 0.6rem; align-items: center }
+  .action-cell { width: 220px }
+  .admin-form label { display: block; margin-bottom: 0.6rem; color: var(--petroleo) }
+  .admin-form input, .admin-form select { width: 100%; padding: 0.45rem; margin-top: 0.25rem; border-radius: 6px; border: 1px solid var(--linea) }
+  .form-actions { margin-top: 0.8rem; display: flex; gap: 0.5rem }
+
+@media (max-width: 720px) {
+  .stat-card { min-width: 140px; padding: 0.9rem }
+  .stat-value { font-size: 1.4rem }
+  .admin-main { flex-direction: column }
+  .admin-right { width: 100% }
+  .action-cell { width: auto }
+}
+
+@media (min-width: 721px) and (max-width: 1100px) {
+  .stat-card { min-width: 150px }
+}
+
+/* Floating action button + overlay */
+.fab-pill {
+  position: fixed;
+  right: 2.25rem;
+  bottom: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--naranja);
+  color: #fff;
+  font-weight: 800;
+  border: none;
+  box-shadow: 0 12px 30px rgba(16,62,62,0.18);
+  cursor: pointer;
+  z-index: 1200;
+}
+.fab-pill .fab-plus { font-size: 1.4rem; line-height: 1 }
+.fab-pill .fab-label { font-size: 0.95rem }
+.fab-pill:active { transform: scale(0.98) }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: grid;
+  place-items: center;
+  z-index: 1300;
+}
+.overlay-panel {
+  width: min(720px, calc(100% - 3rem));
+  background: white;
+  padding: 1.1rem;
+  border-radius: 12px;
+  box-shadow: 0 30px 60px rgba(16,62,62,0.18);
+  position: relative;
+}
+.overlay-close {
+  position: absolute;
+  right: 0.6rem;
+  top: 0.4rem;
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .fab { right: 1rem; bottom: 1rem; width: 56px; height: 56px }
+}
+
 .form-field textarea:focus {
   border-color: var(--naranja);
   outline: 3px solid rgba(255, 121, 0, 0.15);

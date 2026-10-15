@@ -25,6 +25,7 @@ import PetForm from './components/PetForm.jsx'
 import AppointmentForm from './components/AppointmentForm.jsx'
 import AppointmentsList from './components/AppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
+import AdminPanel from './pages/AdminPanel.jsx'
 import './styles/app.css'
 
 function ScrollToTop() {
@@ -137,6 +138,7 @@ function App() {
             element={currentUser ? <AppointmentsList userRole={currentUser.role} currentUserId={currentUserId} /> : <Navigate to="/login" replace />}
           />
           <Route path="*" element={<NoEncontrado />} />
+          <Route path="/admin" element={<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
         </Routes>
       </main>
       <Footer />

@@ -49,7 +49,11 @@ function Header({ currentUser, cartQuantity = 0, onLogout }) {
               <div className="nav-account">
                 {currentUser ? (
                   <>
-                    <span className="account-name">{currentUser.name || currentUser.nombre || currentUser.email}</span>
+                    {currentUser.role === 'admin' ? (
+                      <NavLink to="/admin" className="account-name button button-outline" onClick={closeMenu} role="button">{currentUser.name || currentUser.nombre || currentUser.email}</NavLink>
+                    ) : (
+                      <span className="account-name">{currentUser.name || currentUser.nombre || currentUser.email}</span>
+                    )}
                     <button className="button button-outline" type="button" onClick={() => { onLogout(); closeMenu() }}>
                       Salir
                     </button>
