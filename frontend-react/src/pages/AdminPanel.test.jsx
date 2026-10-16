@@ -6,8 +6,8 @@ import { MemoryRouter } from 'react-router'
 import AdminPanel from './AdminPanel.jsx'
 
 const initialUsers = [
-  { id: 'admin-1', name: 'Administradora', lastName: 'Demo', email: 'admin@example.com', password: 'admin12345', role: 'admin', active: true },
-  { id: 'client-1', name: 'Cliente', lastName: 'Demo', email: 'cliente@example.com', password: 'cliente12345', role: 'cliente', active: true },
+  { id: 'admin-1', name: 'Administradora', lastName: 'Demo', email: 'admin@duoc.cl', password: 'admin12345', role: 'admin', active: true },
+  { id: 'client-1', name: 'Cliente', lastName: 'Demo', email: 'cliente@gmail.com', password: 'cliente12345', role: 'cliente', active: true },
 ]
 
 function StatefulAdminPanel() {

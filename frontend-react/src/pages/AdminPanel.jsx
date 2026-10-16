@@ -5,6 +5,7 @@ import { ensureDemoAppointment } from '../utils/appointments.js'
 import AdminProductsList from '../components/AdminProductsList.jsx'
 import AdminProductForm from '../components/AdminProductForm.jsx'
 import AppointmentsList from '../components/AppointmentsList.jsx'
+import { validateEmail } from '../utils/userValidation.js'
 import { NavLink } from 'react-router'
 import '../styles/app.css'
 
@@ -73,6 +74,11 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
     setUserFormSuccess('')
 
     const email = userForm.email.trim().toLowerCase()
+    const emailError = validateEmail(email)
+    if (emailError) {
+      setUserFormError(emailError)
+      return
+    }
     if (users.some((user) => user.id !== editingUser?.id && user.email?.toLowerCase() === email)) {
       setUserFormError('Ya existe un usuario con ese correo.')
       return
