@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router'
-import logo from '../assets/logo-nav.gif'
+import GatyPerryLogo from './GatyPerryLogo'
 
 function Header({ currentUser, cartQuantity = 0, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -36,7 +36,7 @@ function Header({ currentUser, cartQuantity = 0, onLogout }) {
       <header className="site-header">
         <div className="container navbar">
           <NavLink className="brand" to="/" aria-label="Ir al inicio" onClick={closeMenu}>
-            <img src={logo} alt="Logo de Gaty Perry" />
+          <GatyPerryLogo size="sm" showTagline={false} />
             <span className="eyebrow brand-eyebrow">Rancagua · desde 2009</span>
           </NavLink>
           <button
@@ -57,19 +57,13 @@ function Header({ currentUser, cartQuantity = 0, onLogout }) {
               <NavLink to="/consejos" className="nav-link-tertiary">Consejos</NavLink>
               <NavLink to="/nosotros" className="nav-link-tertiary">Nosotros</NavLink>
               <NavLink to="/contacto" className="nav-link-tertiary">Contacto</NavLink>
-              {currentUser && (
-                <>
-                  <NavLink to="/mascotas/nueva" className="nav-link-compact">+ Mascota</NavLink>
-                  {currentUser.role !== 'admin' && <NavLink to="/citas" className="nav-link-compact">Mis citas</NavLink>}
-                </>
-              )}
             </nav>
             <div className="nav-utilities">
               <div className="nav-account">
                 {currentUser ? (
                   <>
-                    {currentUser.role === 'admin' ? (
-                      <NavLink to="/admin" className="account-name button button-outline" onClick={closeMenu} role="button">{currentUser.name || currentUser.nombre || currentUser.email}</NavLink>
+                    {['admin', 'cliente', 'recepcion'].includes(currentUser.role) ? (
+                      <NavLink to={currentUser.role === 'admin' ? '/admin' : currentUser.role === 'recepcion' ? '/recepcion' : '/mi-cuenta'} className="account-name button button-outline" onClick={closeMenu} role="button">{currentUser.name || currentUser.nombre || currentUser.email}</NavLink>
                     ) : (
                       <span className="account-name">{currentUser.name || currentUser.nombre || currentUser.email}</span>
                     )}

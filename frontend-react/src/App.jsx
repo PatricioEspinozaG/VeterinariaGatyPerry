@@ -26,6 +26,8 @@ import AppointmentForm from './components/AppointmentForm.jsx'
 import AppointmentsList from './components/AppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
+import UserPanel from './pages/UserPanel.jsx'
+import ReceptionPanel from './pages/ReceptionPanel.jsx'
 import './styles/app.css'
 
 function ScrollToTop() {
@@ -39,6 +41,7 @@ function ScrollToTop() {
 }
 
 function App() {
+  const location = useLocation()
   const [products, setProducts, productsError] = useLocalStorage(STORAGE_KEYS.products, initialProducts)
   const [orders, setOrders, ordersError] = useLocalStorage(STORAGE_KEYS.orders, [])
   const [users, setUsers, usersError] = useLocalStorage('users', initialUsers)
@@ -54,6 +57,8 @@ function App() {
   const validCart = normalizeCart(cart, products)
   const cartQuantity = validCart.reduce((total, item) => total + item.quantity, 0)
   const storageError = productsError || cartError || ordersError || usersError || sessionError
+  const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
+  const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta') ? requestedReturnTo : '/'
 
   function saveCart(nextCart) {
     setCartBuckets((previous) => ({
@@ -82,7 +87,13 @@ function App() {
 
     const orderId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()
     setProducts(result.products)
-    setOrders((previous) => [...previous, { id: orderId, ...result, delivery }])
+    setOrders((previous) => [...previous, {
+      id: orderId,
+      ...result,
+      delivery,
+      userId: currentUser?.id || null,
+      createdAt: new Date().toISOString(),
+    }])
     saveCart([])
     return { ok: true, orderId }
   }
@@ -127,16 +138,21 @@ function App() {
           />
           <Route
             path="/mascotas/nueva"
-            element={currentUser ? <PetForm currentUserId={currentUserId} /> : <Navigate to="/login" replace />}
+            element={currentUser ? <PetForm currentUserId={currentUserId} returnTo={accountReturnTo} /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/citas/nueva"
-            element={currentUser ? <AppointmentForm currentUserId={currentUserId} /> : <Navigate to="/login" replace />}
+            element={currentUser ? <AppointmentForm currentUserId={currentUserId} returnTo={accountReturnTo} /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/citas"
             element={currentUser ? <AppointmentsList userRole={currentUser.role} currentUserId={currentUserId} /> : <Navigate to="/login" replace />}
           />
+          <Route path="/mi-cuenta" element={<UserPanel currentUser={currentUser} orders={orders} />} />
+          <Route path="/mi-cuenta/compras" element={<UserPanel section="compras" currentUser={currentUser} orders={orders} />} />
+          <Route path="/mi-cuenta/mascotas" element={<UserPanel section="mascotas" currentUser={currentUser} orders={orders} />} />
+          <Route path="/mi-cuenta/citas" element={<UserPanel section="citas" currentUser={currentUser} orders={orders} />} />
+          <Route path="/recepcion" element={<ReceptionPanel currentUser={currentUser} users={users} />} />
           <Route path="*" element={<NoEncontrado />} />
           <Route path="/admin" element={<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
           <Route path="/admin/usuarios" element={<AdminPanel section="usuarios" products={products} setProducts={setProducts} users={users} setUsers={setUsers} currentUser={currentUser} />} />

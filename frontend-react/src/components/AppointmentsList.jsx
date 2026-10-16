@@ -7,7 +7,7 @@ function getCustomerName(user) {
   return [user.name || user.nombre, user.lastName || user.apellidos].filter(Boolean).join(' ') || user.email;
 }
 
-export default function AppointmentsList({ userRole = 'cliente', currentUserId, readOnly = false, adminMode = false, users = [] }) {
+export default function AppointmentsList({ userRole = 'cliente', currentUserId, readOnly = false, adminMode = false, receptionMode = false, embedded = false, users = [], returnTo = '' }) {
   const navigate = useNavigate();
   const [citas, setCitas] = useState(() => readStorage('appointments', []));
   const [filtroEstado, setFiltroEstado] = useState('todas');
@@ -24,7 +24,8 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     motivo: '',
   });
 
-  const canManageAppointments = adminMode && userRole === 'admin';
+  const canManageAppointments = (adminMode && userRole === 'admin') || (receptionMode && userRole === 'recepcion');
+  const managementMode = adminMode || receptionMode;
   const clientes = users.filter((user) => user.role === 'cliente' && user.active !== false);
   const today = new Date().toISOString().split('T')[0];
 
@@ -141,10 +142,10 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
   };
 
   return (
-    <div className={adminMode ? 'admin-appointments-content' : 'bg-vet-doodle min-vh-100 py-5'}>
+    <div className={managementMode ? 'admin-appointments-content' : embedded ? 'appointments-list-embedded' : 'bg-vet-doodle min-vh-100 py-5'}>
       <div className="container">
         <div className="row justify-content-center">
-          <div className={adminMode ? 'col-12' : 'col-12 col-lg-10'}>
+          <div className={managementMode || embedded ? 'col-12' : 'col-12 col-lg-10'}>
             <div className="card shadow border-0 rounded-4 p-4 bg-white">
               
               {/* Encabezado */}
@@ -165,7 +166,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                 ) : !readOnly && (
                   <button
                     className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm"
-                    onClick={() => navigate('/citas/nueva')}
+                    onClick={() => navigate(returnTo ? `/citas/nueva?returnTo=${encodeURIComponent(returnTo)}` : '/citas/nueva')}
                   >
                     + Agendar Nueva Cita
                   </button>
@@ -289,14 +290,14 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                   <table className="table table-hover align-middle">
                     <thead className="table-light">
                       <tr>
-                        {(adminMode || readOnly) && <th>Cliente</th>}
+                        {(managementMode || readOnly) && <th>Cliente</th>}
                         <th>Mascota</th>
                         <th>Servicio</th>
                         <th>Fecha</th>
                         <th>Hora</th>
                         <th>Estado</th>
-                        {(adminMode || readOnly) && <th>Motivo</th>}
-                        {(canManageAppointments || (!readOnly && !adminMode)) && <th>Acciones</th>}
+                        {(managementMode || readOnly) && <th>Motivo</th>}
+                        {(canManageAppointments || (!readOnly && !managementMode)) && <th>Acciones</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -304,7 +305,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                         const customer = users.find((user) => String(user.id) === String(cita.userId));
                         return (
                         <tr key={cita.id}>
-                          {(adminMode || readOnly) && (
+                          {(managementMode || readOnly) && (
                             <td>
                               {customer
                                 ? getCustomerName(customer)
@@ -320,7 +321,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                               {cita.estado}
                             </span>
                           </td>
-                          {(adminMode || readOnly) && <td>{cita.motivo || '-'}</td>}
+                          {(managementMode || readOnly) && <td>{cita.motivo || '-'}</td>}
                           {canManageAppointments && (
                             <td>
                               <div className="action-buttons">
@@ -329,7 +330,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                               </div>
                             </td>
                           )}
-                          {!readOnly && !adminMode && <td>
+                          {!readOnly && !managementMode && <td>
                             {userRole !== 'cliente' ? (
                               <select
                                 className="form-select form-select-sm rounded-3"
