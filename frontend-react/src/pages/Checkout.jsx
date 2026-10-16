@@ -47,7 +47,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
 
   return (
     <>
-      <section className="intro-section">
+      <section className="intro-section bg-vet-doodle">
         <div className="container intro-content">
           <span className="eyebrow">Compra simulada</span>
           <h1>Finalizar compra</h1>

@@ -112,16 +112,24 @@ export function changeQuantity(cart, product, quantity) {
   }
 
   const quantitiesByCode = new Map()
+  let productFound = false
 
   if (Array.isArray(cart)) {
     for (const item of cart) {
       if (
         !item ||
         typeof item.code !== 'string' ||
-        item.code === product.code ||
         !Number.isInteger(item.quantity) ||
         item.quantity <= 0
       ) {
+        continue
+      }
+
+      if (item.code === product.code) {
+        if (!productFound && quantity > 0) {
+          quantitiesByCode.set(item.code, quantity)
+        }
+        productFound = true
         continue
       }
 
@@ -132,7 +140,7 @@ export function changeQuantity(cart, product, quantity) {
     }
   }
 
-  if (quantity > 0) {
+  if (!productFound && quantity > 0) {
     quantitiesByCode.set(product.code, quantity)
   }
 

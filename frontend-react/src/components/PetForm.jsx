@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-export default function PetForm({ currentUserId, onAddPet }) {
+export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -77,7 +77,7 @@ export default function PetForm({ currentUserId, onAddPet }) {
 
     setTimeout(() => {
       // Si tienes ruta para ver las mascotas o agendar cita
-      navigate('/');
+      navigate(returnTo);
     }, 1200);
   };
 

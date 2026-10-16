@@ -1,5 +1,5 @@
 import PageHero from '../components/PageHero.jsx'
-import heroImage from '../assets/veterinaria-hero.png'
+import heroImage from '../assets/imageninicio.jpg'
 
 function Nosotros() {
   return (

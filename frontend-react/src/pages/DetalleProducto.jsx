@@ -40,8 +40,8 @@ function DetalleProducto({ products, onAddToCart }) {
         <div className="contact-layout">
           <div className="service-card-image">
             <img
-              src={productImage(product.category)}
-              alt={`Ilustración de la categoría ${product.category}`}
+              src={productImage(product.code, product.category)}
+              alt={`Imagen de ${product.name}`}
             />
           </div>
 
