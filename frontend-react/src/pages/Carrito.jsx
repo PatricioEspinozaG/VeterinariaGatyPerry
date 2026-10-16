@@ -51,8 +51,8 @@ function Carrito({
                     <div className="service-card-body">
                       <div className="service-card-image">
                         <img
-                          src={productImage(line.category)}
-                          alt={`Ilustración de la categoría ${line.category}`}
+                          src={productImage(line.code, line.category)}
+                          alt={`Imagen de ${line.name}`}
                         />
                       </div>
 

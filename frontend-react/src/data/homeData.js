@@ -1,6 +1,4 @@
-import consultasIcon from '../assets/services/consultas.svg'
-import vacunacionIcon from '../assets/services/vacunacion.svg'
-import examenesIcon from '../assets/services/examenes.svg'
+import { serviceImage } from '../utils/format.js'
 
 export const stats = [
   { id: 1, value: '17', label: 'años de experiencia' },
@@ -17,7 +15,7 @@ export const featuredServices = [
     species: 'Perro / Gato',
     duration: '30 min',
     price: 15000,
-    image: consultasIcon,
+    image: serviceImage('Consultas'),
   },
   {
     code: 'VA001',
@@ -26,7 +24,7 @@ export const featuredServices = [
     species: 'Perro',
     duration: '10 min',
     price: 12000,
-    image: vacunacionIcon,
+    image: serviceImage('Vacunación'),
   },
   {
     code: 'EX001',
@@ -35,6 +33,6 @@ export const featuredServices = [
     species: 'Perro / Gato',
     duration: '30 min',
     price: 22000,
-    image: examenesIcon,
+    image: serviceImage('Exámenes'),
   },
 ]

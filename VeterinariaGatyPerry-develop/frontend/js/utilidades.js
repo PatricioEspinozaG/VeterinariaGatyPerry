@@ -44,7 +44,31 @@ const VeterinariaUtils = (() => {
         return fechaLocal >= hoyLocal;
     }
 
-    function imagenProducto(categoria) {
+    function imagenProducto(codigo, categoria) {
+        const fotos = {
+            ME001: "img/productos/ME001.jpg",
+            ME002: "img/productos/ME002.jpg",
+            ME003: "img/productos/ME003.jpg",
+            ME004: "img/productos/ME004.jpg",
+            ME005: "img/productos/ME005.jpg",
+            ME006: "img/productos/ME006.jpg",
+            ME007: "img/productos/ME007.jpg",
+            ME008: "img/productos/ME008.jpg",
+            ME009: "img/productos/ME009.jpg",
+            ME010: "img/productos/ME010.jpg",
+            ME011: "img/productos/ME011.jpg",
+            ME012: "img/productos/ME012.jpg",
+            ME013: "img/productos/ME013.jpg",
+            ME014: "img/productos/ME014.jpg",
+            ME015: "img/productos/ME015.jpg",
+            ME016: "img/productos/ME016.jpg",
+            ME017: "img/productos/ME017.jpg",
+            ME018: "img/productos/ME018.jpg",
+            ME019: "img/productos/ME019.jpg",
+            ME020: "img/productos/ME020.jpg",
+            ME021: "img/productos/ME021.jpg",
+            ME022: "img/productos/ME022.jpg"
+        };
         const rutas = {
             antibioticos: "img/productos/antibioticos.svg",
             antiparasitarios: "img/productos/antiparasitarios.svg",
@@ -56,10 +80,19 @@ const VeterinariaUtils = (() => {
             vacunas: "img/productos/vacunas.svg",
             suplementos: "img/productos/suplementos.svg"
         };
+        if (Object.hasOwn(fotos, codigo)) return fotos[codigo];
         return rutas[normalizarTexto(categoria)] || "img/productos/antibioticos.svg";
     }
 
     function imagenServicio(categoria) {
+        const fotos = {
+            consultas: "img/servicios/consultas.jpg",
+            vacunacion: "img/servicios/vacunacion.jpg",
+            cirugia: "img/servicios/cirugia.jpg",
+            desparasitacion: "img/servicios/desparasitacion.jpg",
+            examenes: "img/servicios/examenes.jpg",
+            otros: "img/servicios/otros.jpg"
+        };
         const rutas = {
             consultas: "img/servicios/consultas.svg",
             vacunacion: "img/servicios/vacunacion.svg",
@@ -68,7 +101,8 @@ const VeterinariaUtils = (() => {
             examenes: "img/servicios/examenes.svg",
             otros: "img/servicios/otros.svg"
         };
-        return rutas[normalizarTexto(categoria)] || "img/servicios/otros.svg";
+        const categoriaNormalizada = normalizarTexto(categoria);
+        return fotos[categoriaNormalizada] || rutas[categoriaNormalizada] || "img/servicios/otros.svg";
     }
 
     return { formatearPrecio, normalizarTexto, escaparHTML, mostrarMensaje, estadoStock, parametro, correoPermitido, fechaNoAnterior, imagenProducto, imagenServicio };

@@ -15,7 +15,7 @@ function ServiceCard({
   return (
     <article className="service-card">
       <div className="service-card-image">
-        <img src={image} alt="" aria-hidden="true" />
+        <img src={image} alt={name} />
       </div>
 
       <div className="service-card-body">
