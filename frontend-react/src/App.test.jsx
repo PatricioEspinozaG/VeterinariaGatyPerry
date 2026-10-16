@@ -155,3 +155,4 @@ it('muestra un aviso cuando el consejo no existe', () => {
     screen.getByRole('link', { name: 'Volver a consejos' }),
   ).toHaveAttribute('href', '/consejos')
 })
+
