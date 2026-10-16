@@ -148,15 +148,15 @@ function App() {
             path="/citas"
             element={currentUser ? <AppointmentsList userRole={currentUser.role} currentUserId={currentUserId} /> : <Navigate to="/login" replace />}
           />
-          <Route path="/mi-cuenta" element={<UserPanel currentUser={currentUser} orders={orders} />} />
-          <Route path="/mi-cuenta/compras" element={<UserPanel section="compras" currentUser={currentUser} orders={orders} />} />
-          <Route path="/mi-cuenta/mascotas" element={<UserPanel section="mascotas" currentUser={currentUser} orders={orders} />} />
-          <Route path="/mi-cuenta/citas" element={<UserPanel section="citas" currentUser={currentUser} orders={orders} />} />
+          <Route path="/mi-cuenta" element={<UserPanel currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
+          <Route path="/mi-cuenta/compras" element={<UserPanel section="compras" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
+          <Route path="/mi-cuenta/mascotas" element={<UserPanel section="mascotas" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
+          <Route path="/mi-cuenta/citas" element={<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
           <Route path="/recepcion" element={<ReceptionPanel currentUser={currentUser} users={users} />} />
           <Route path="*" element={<NoEncontrado />} />
           <Route path="/admin" element={<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
           <Route path="/admin/usuarios" element={<AdminPanel section="usuarios" products={products} setProducts={setProducts} users={users} setUsers={setUsers} currentUser={currentUser} />} />
-          <Route path="/admin/citas" element={<AdminPanel section="citas" products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
+          <Route path="/admin/citas" element={<AdminPanel key={location.key} section="citas" products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
         </Routes>
       </main>
       <Footer />

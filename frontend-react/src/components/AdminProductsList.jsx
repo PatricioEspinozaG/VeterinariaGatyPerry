@@ -2,7 +2,7 @@ export default function AdminProductsList({ products = [], onEdit, onDelete }) {
   return (
     <div className="admin-table">
       <div className="table-responsive">
-      <table className="table table-hover align-middle mb-0">
+      <table className="table table-hover align-middle mb-0 admin-products-table">
         <thead className="table-light">
           <tr>
             <th>Código</th>
@@ -17,16 +17,16 @@ export default function AdminProductsList({ products = [], onEdit, onDelete }) {
         <tbody>
           {products.map((p) => (
             <tr key={p.code}>
-              <td><strong>{p.code}</strong></td>
-              <td>{p.name || p.title || p.product || '-'}</td>
-              <td>{p.category || '-'}</td>
-              <td>{p.price ? `$${p.price}` : '-'}</td>
-              <td>{p.stock ?? '-'}</td>
-              <td>{p.status || (p.stock > 0 ? 'Disponible' : 'Agotado')}</td>
-              <td className="action-cell">
+              <td data-label="Código"><strong>{p.code}</strong></td>
+              <td data-label="Producto">{p.name || p.title || p.product || '-'}</td>
+              <td data-label="Categoría">{p.category || '-'}</td>
+              <td data-label="Precio">{p.price ? `$${p.price}` : '-'}</td>
+              <td data-label="Stock">{p.stock ?? '-'}</td>
+              <td data-label="Estado">{p.status || (p.stock > 0 ? 'Disponible' : 'Agotado')}</td>
+              <td className="action-cell" data-label="Acciones">
                 <div className="action-buttons">
-                  <button className="btn btn-edit" onClick={() => onEdit && onEdit(p)}>Editar</button>
-                  <button className="btn btn-delete" onClick={() => onDelete && onDelete(p.code)}>Eliminar</button>
+                  <button className="btn btn-edit" type="button" onClick={() => onEdit && onEdit(p)}>Editar</button>
+                  <button className="btn btn-delete" type="button" onClick={() => onDelete && onDelete(p.code)}>Eliminar</button>
                 </div>
               </td>
             </tr>

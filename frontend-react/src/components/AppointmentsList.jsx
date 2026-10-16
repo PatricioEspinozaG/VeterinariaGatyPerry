@@ -7,18 +7,39 @@ function getCustomerName(user) {
   return [user.name || user.nombre, user.lastName || user.apellidos].filter(Boolean).join(' ') || user.email;
 }
 
+function getAppointmentStatus(appointment) {
+  const status = (appointment.estado || appointment.status || 'Pendiente').toString().toLowerCase()
+  const statusLabels = {
+    pendiente: 'Pendiente',
+    pending: 'Pendiente',
+    confirmada: 'Confirmada',
+    confirmed: 'Confirmada',
+    completada: 'Completada',
+    completed: 'Completada',
+    cancelada: 'Cancelada',
+    cancelled: 'Cancelada',
+    canceled: 'Cancelada',
+  }
+  return Object.hasOwn(statusLabels, status)
+    ? statusLabels[status]
+    : appointment.estado || appointment.status || 'Pendiente'
+}
+
 function generateAppointmentId() {
   return globalThis.crypto?.randomUUID
     ? globalThis.crypto.randomUUID()
     : Date.now().toString()
 }
 
-export default function AppointmentsList({ userRole = 'cliente', currentUserId, readOnly = false, adminMode = false, receptionMode = false, embedded = false, users = [], returnTo = '' }) {
+export default function AppointmentsList({ userRole = 'cliente', currentUserId, readOnly = false, adminMode = false, receptionMode = false, embedded = false, users = [], returnTo = '', initialAppointments }) {
   const navigate = useNavigate();
-  const [citas, setCitas] = useState(() => readStorage('appointments', []));
+  const [citas, setCitas] = useState(() => initialAppointments ?? readStorage('appointments', []));
   const [filtroEstado, setFiltroEstado] = useState('todas');
   const [showForm, setShowForm] = useState(false);
   const [editingAppointmentId, setEditingAppointmentId] = useState(null);
+  const [appointmentPendingDeletion, setAppointmentPendingDeletion] = useState(null);
+  const [appointmentPendingCancellation, setAppointmentPendingCancellation] = useState(null);
+  const [cancellationError, setCancellationError] = useState('');
   const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState({
     userId: '',
@@ -39,9 +60,20 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     const actualizadas = citas.map((c) =>
       c.id === id ? { ...c, estado: nuevoEstado } : c
     );
-    writeStorage('appointments', actualizadas);
+    if (!writeStorage('appointments', actualizadas)) return false;
     setCitas(actualizadas);
+    return true;
   };
+
+  const confirmCancellation = () => {
+    if (!appointmentPendingCancellation) return
+    if (!handleCambiarEstado(appointmentPendingCancellation.id, 'Cancelada')) {
+      setCancellationError('No se pudo cancelar la cita en este navegador.')
+      return
+    }
+    setAppointmentPendingCancellation(null)
+    setCancellationError('')
+  }
 
   const openCreateForm = () => {
     setEditingAppointmentId(null);
@@ -73,14 +105,15 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     setShowForm(true);
   };
 
-  const handleDelete = (appointment) => {
-    if (!canManageAppointments || !window.confirm(`¿Eliminar la cita de ${appointment.petName || 'esta mascota'}?`)) return;
-    const updated = citas.filter((item) => String(item.id) !== String(appointment.id));
+  const handleDelete = () => {
+    if (!canManageAppointments || !appointmentPendingDeletion) return;
+    const updated = citas.filter((item) => String(item.id) !== String(appointmentPendingDeletion.id));
     if (!writeStorage('appointments', updated)) {
       window.alert('No se pudo eliminar la cita en este navegador.');
       return;
     }
     setCitas(updated);
+    setAppointmentPendingDeletion(null);
   };
 
   const handleSaveAppointment = (event) => {
@@ -127,9 +160,9 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
 
   const userId = currentUserId || localStorage.getItem('currentUserId');
   const citasFiltradas = citas.filter((c) => {
-    if (userRole === 'cliente' && c.userId !== userId) return false;
+    if (userRole === 'cliente' && String(c.userId) !== String(userId)) return false;
     if (filtroEstado === 'todas') return true;
-    return (c.estado || c.status || '').toLowerCase() === filtroEstado.toLowerCase();
+    return getAppointmentStatus(c).toLowerCase() === filtroEstado.toLowerCase();
   });
 
   const getBadgeClass = (estado) => {
@@ -147,7 +180,97 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     }
   };
 
+  const appointmentFormContent = (
+    <form className="admin-form admin-user-form mb-4" onSubmit={handleSaveAppointment}>
+      <div className="admin-section-heading">
+        {editingAppointmentId === null && <h2>Nueva cita</h2>}
+        {editingAppointmentId !== null && !managementMode && <h2>Editar cita</h2>}
+        <button className="btn" type="button" onClick={() => setShowForm(false)}>Cancelar</button>
+      </div>
+      <label>Cliente
+        <select
+          value={formData.userId}
+          onChange={(event) => setFormData({ ...formData, userId: event.target.value })}
+          required
+        >
+          <option value="">Selecciona un cliente</option>
+          {clientes.map((client) => (
+            <option key={client.id} value={client.id}>
+              {getCustomerName(client)} · {client.email}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>Mascota
+        <input
+          value={formData.petName}
+          onChange={(event) => setFormData({ ...formData, petName: event.target.value })}
+          maxLength="50"
+          required
+        />
+      </label>
+      <label>Servicio
+        <select
+          value={formData.servicio}
+          onChange={(event) => setFormData({ ...formData, servicio: event.target.value })}
+          required
+        >
+          {!services.some((service) => service.name === formData.servicio) && formData.servicio && (
+            <option value={formData.servicio}>{formData.servicio}</option>
+          )}
+          {services.map((service) => (
+            <option key={service.code} value={service.name}>{service.name}</option>
+          ))}
+        </select>
+      </label>
+      <label>Fecha
+        <input
+          type="date"
+          min={today}
+          value={formData.fecha}
+          onChange={(event) => setFormData({ ...formData, fecha: event.target.value })}
+          required
+        />
+      </label>
+      <label>Hora
+        <select
+          value={formData.hora}
+          onChange={(event) => setFormData({ ...formData, hora: event.target.value })}
+          required
+        >
+          <option value="">Selecciona una hora</option>
+          {['09:00', '10:00', '11:00', '12:00', '15:00', '16:00', '17:00'].map((time) => (
+            <option key={time} value={time}>{time}</option>
+          ))}
+        </select>
+      </label>
+      <label>Estado
+        <select
+          value={formData.estado}
+          onChange={(event) => setFormData({ ...formData, estado: event.target.value })}
+        >
+          {['Pendiente', 'Confirmada', 'Completada', 'Cancelada'].map((status) => (
+            <option key={status} value={status}>{status}</option>
+          ))}
+        </select>
+      </label>
+      <label>Motivo
+        <textarea
+          value={formData.motivo}
+          onChange={(event) => setFormData({ ...formData, motivo: event.target.value })}
+          maxLength="200"
+          required
+        />
+      </label>
+      {formError && <p className="admin-form-message error" role="alert">{formError}</p>}
+      <div className="form-actions">
+        <button className="btn btn-primary" type="submit">{editingAppointmentId === null ? 'Crear cita' : 'Guardar cambios'}</button>
+      </div>
+    </form>
+  );
+
   return (
+    <>
     <div className={managementMode ? 'admin-appointments-content' : embedded ? 'appointments-list-embedded' : 'bg-vet-doodle min-vh-100 py-5'}>
       <div className="container">
         <div className="row justify-content-center">
@@ -164,10 +287,14 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                 </div>
                 {canManageAppointments ? (
                   <button
-                    className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm"
+                    className={adminMode ? 'fab-pill' : 'btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm'}
                     onClick={openCreateForm}
+                    aria-label="Agregar cita"
                   >
-                    + Agregar cita
+                    {adminMode && <span className="fab-plus" aria-hidden="true">+</span>}
+                    {adminMode
+                      ? <span className="fab-label">Agregar cita</span>
+                      : '+ Agregar cita'}
                   </button>
                 ) : !readOnly && (
                   <button
@@ -198,93 +325,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                 </div>
               </div>
 
-              {canManageAppointments && showForm && (
-                <form className="admin-form admin-user-form mb-4" onSubmit={handleSaveAppointment}>
-                  <div className="admin-section-heading">
-                    <h2>{editingAppointmentId === null ? 'Nueva cita' : 'Editar cita'}</h2>
-                    <button className="btn" type="button" onClick={() => setShowForm(false)}>Cancelar</button>
-                  </div>
-                  <label>Cliente
-                    <select
-                      value={formData.userId}
-                      onChange={(event) => setFormData({ ...formData, userId: event.target.value })}
-                      required
-                    >
-                      <option value="">Selecciona un cliente</option>
-                      {clientes.map((client) => (
-                        <option key={client.id} value={client.id}>
-                          {getCustomerName(client)} · {client.email}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>Mascota
-                    <input
-                      value={formData.petName}
-                      onChange={(event) => setFormData({ ...formData, petName: event.target.value })}
-                      maxLength="50"
-                      required
-                    />
-                  </label>
-                  <label>Servicio
-                    <select
-                      value={formData.servicio}
-                      onChange={(event) => setFormData({ ...formData, servicio: event.target.value })}
-                      required
-                    >
-                      {!services.some((service) => service.name === formData.servicio) && formData.servicio && (
-                        <option value={formData.servicio}>{formData.servicio}</option>
-                      )}
-                      {services.map((service) => (
-                        <option key={service.code} value={service.name}>{service.name}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>Fecha
-                    <input
-                      type="date"
-                      min={today}
-                      value={formData.fecha}
-                      onChange={(event) => setFormData({ ...formData, fecha: event.target.value })}
-                      required
-                    />
-                  </label>
-                  <label>Hora
-                    <select
-                      value={formData.hora}
-                      onChange={(event) => setFormData({ ...formData, hora: event.target.value })}
-                      required
-                    >
-                      <option value="">Selecciona una hora</option>
-                      {['09:00', '10:00', '11:00', '12:00', '15:00', '16:00', '17:00'].map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>Estado
-                    <select
-                      value={formData.estado}
-                      onChange={(event) => setFormData({ ...formData, estado: event.target.value })}
-                    >
-                      {['Pendiente', 'Confirmada', 'Completada', 'Cancelada'].map((status) => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>Motivo
-                    <textarea
-                      value={formData.motivo}
-                      onChange={(event) => setFormData({ ...formData, motivo: event.target.value })}
-                      maxLength="200"
-                      required
-                    />
-                  </label>
-                  {formError && <p className="admin-form-message error" role="alert">{formError}</p>}
-                  <div className="form-actions">
-                    <button className="btn btn-primary" type="submit">{editingAppointmentId === null ? 'Crear cita' : 'Guardar cambios'}</button>
-                  </div>
-                </form>
-              )}
+              {canManageAppointments && showForm && editingAppointmentId === null && appointmentFormContent}
 
               {/* Tabla de Citas */}
               {citasFiltradas.length === 0 ? (
@@ -293,7 +334,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                 </div>
               ) : (
                 <div className="table-responsive">
-                  <table className="table table-hover align-middle">
+                  <table className={`table table-hover align-middle${managementMode ? ' admin-appointments-table' : embedded ? ' user-appointments-table' : ''}`}>
                     <thead className="table-light">
                       <tr>
                         {(managementMode || readOnly) && <th>Cliente</th>}
@@ -309,34 +350,37 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                     <tbody>
                       {citasFiltradas.map((cita) => {
                         const customer = users.find((user) => String(user.id) === String(cita.userId));
+                        const estadoCita = getAppointmentStatus(cita)
+                        const estadoNormalizado = estadoCita.toLowerCase()
+                        const puedeCancelar = ['pendiente', 'confirmada'].includes(estadoNormalizado)
                         return (
                         <tr key={cita.id}>
                           {(managementMode || readOnly) && (
-                            <td>
+                            <td data-label="Cliente">
                               {customer
                                 ? getCustomerName(customer)
                                 : cita.usuarioNombre || '-'}
                             </td>
                           )}
-                          <td className="fw-semibold text-dark">{cita.petName}</td>
-                          <td>{cita.servicio}</td>
-                          <td>{cita.fecha}</td>
-                          <td>{cita.hora} hrs</td>
-                          <td>
-                            <span className={`badge rounded-pill px-3 py-2 ${getBadgeClass(cita.estado)}`}>
-                              {cita.estado}
+                          <td className="fw-semibold text-dark" data-label="Mascota">{cita.petName}</td>
+                          <td data-label="Servicio">{cita.servicio}</td>
+                          <td data-label="Fecha">{cita.fecha}</td>
+                          <td data-label="Hora">{cita.hora} hrs</td>
+                          <td data-label="Estado">
+                            <span className={`badge rounded-pill px-3 py-2 ${getBadgeClass(estadoCita)}`}>
+                              {estadoCita}
                             </span>
                           </td>
-                          {(managementMode || readOnly) && <td>{cita.motivo || '-'}</td>}
+                          {(managementMode || readOnly) && <td data-label="Motivo">{cita.motivo || '-'}</td>}
                           {canManageAppointments && (
-                            <td>
+                            <td className="action-cell" data-label="Acciones">
                               <div className="action-buttons">
                                 <button className="btn btn-edit" type="button" onClick={() => openEditForm(cita)}>Editar</button>
-                                <button className="btn btn-delete" type="button" onClick={() => handleDelete(cita)}>Eliminar</button>
+                                <button className="btn btn-delete" type="button" onClick={() => setAppointmentPendingDeletion(cita)}>Eliminar</button>
                               </div>
                             </td>
                           )}
-                          {!readOnly && !managementMode && <td>
+                          {!readOnly && !managementMode && <td className={embedded ? 'user-appointment-actions' : ''} data-label={embedded ? 'Acciones' : undefined}>
                             {userRole !== 'cliente' ? (
                               <select
                                 className="form-select form-select-sm rounded-3"
@@ -349,12 +393,16 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                                 <option value="Cancelada">Cancelar</option>
                               </select>
                             ) : (
-                              cita.estado === 'Pendiente' && (
+                              puedeCancelar && (
                                 <button
-                                  className="btn btn-outline-danger btn-sm rounded-pill px-3"
-                                  onClick={() => handleCambiarEstado(cita.id, 'Cancelada')}
+                                  className="btn btn-outline-danger btn-sm rounded-pill px-3 user-cancel-appointment"
+                                  type="button"
+                                  onClick={() => {
+                                    setAppointmentPendingCancellation(cita)
+                                    setCancellationError('')
+                                  }}
                                 >
-                                  Cancelar
+                                  Cancelar cita
                                 </button>
                               )
                             )}
@@ -371,5 +419,45 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
         </div>
       </div>
     </div>
+    {canManageAppointments && showForm && editingAppointmentId !== null && (
+      <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="appointment-edit-title">
+        <div className="overlay-panel admin-edit-panel">
+          <button className="overlay-close" type="button" onClick={() => setShowForm(false)} aria-label="Cerrar edición de cita">×</button>
+          <h2 id="appointment-edit-title" className="h4 fw-bold mb-3">Editar cita</h2>
+          {appointmentFormContent}
+        </div>
+      </div>
+    )}
+    {canManageAppointments && appointmentPendingDeletion && (
+      <div className="overlay" role="presentation">
+        <section className="overlay-panel admin-confirm-panel" role="alertdialog" aria-modal="true" aria-labelledby="appointment-delete-title" aria-describedby="appointment-delete-description">
+          <h2 id="appointment-delete-title" className="h4 fw-bold">Confirmar eliminación</h2>
+          <p id="appointment-delete-description">
+            ¿Eliminar la cita de “{appointmentPendingDeletion.petName || 'esta mascota'}”?
+            {' '}Esta acción no se puede deshacer.
+          </p>
+          <div className="form-actions">
+            <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" onClick={() => setAppointmentPendingDeletion(null)}>Cancelar</button>
+            <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" onClick={handleDelete}>Eliminar</button>
+          </div>
+        </section>
+      </div>
+    )}
+    {appointmentPendingCancellation && userRole === 'cliente' && (
+      <div className="overlay" role="presentation">
+        <section className="overlay-panel admin-confirm-panel" role="alertdialog" aria-modal="true" aria-labelledby="appointment-cancel-title" aria-describedby="appointment-cancel-description">
+          <h2 id="appointment-cancel-title" className="h4 fw-bold">Cancelar cita</h2>
+          <p id="appointment-cancel-description">
+            ¿Quieres cancelar la cita de “{appointmentPendingCancellation.petName}”?
+          </p>
+          {cancellationError && <p className="admin-form-message error" role="alert">{cancellationError}</p>}
+          <div className="form-actions">
+            <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" onClick={() => setAppointmentPendingCancellation(null)}>Volver</button>
+            <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" onClick={confirmCancellation}>Sí, cancelar cita</button>
+          </div>
+        </section>
+      </div>
+    )}
+    </>
   );
 }

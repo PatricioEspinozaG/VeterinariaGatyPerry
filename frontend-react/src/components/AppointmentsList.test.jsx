@@ -8,7 +8,7 @@ it('permite al dueño cancelar su cita y guarda el nuevo estado', async () => {
   localStorage.setItem('appointments', JSON.stringify([
     {
       id: 'cita-1',
-      userId: 'usuario-1',
+      userId: 1,
       petName: 'Michi',
       servicio: 'Consulta General',
       fecha: '2026-10-20',
@@ -29,18 +29,120 @@ it('permite al dueño cancelar su cita y guarda el nuevo estado', async () => {
   const user = userEvent.setup()
   render(
     <MemoryRouter>
-      <AppointmentsList userRole="cliente" currentUserId="usuario-1" />
+      <AppointmentsList userRole="cliente" currentUserId="1" />
     </MemoryRouter>,
   )
 
   expect(screen.getByText('Michi')).toBeInTheDocument()
   expect(screen.queryByText('Luna')).not.toBeInTheDocument()
 
-  await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+  await user.click(screen.getByRole('button', { name: 'Cancelar cita' }))
+  expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Quieres cancelar la cita de “Michi”?')
+  await user.click(screen.getByRole('alertdialog').querySelector('button.btn-outline-secondary'))
+  expect(JSON.parse(localStorage.getItem('appointments'))[0].estado).toBe('Pendiente')
+
+  await user.click(screen.getByRole('button', { name: 'Cancelar cita' }))
+  await user.click(screen.getByRole('button', { name: 'Sí, cancelar cita' }))
 
   const citasGuardadas = JSON.parse(localStorage.getItem('appointments'))
   expect(citasGuardadas[0].estado).toBe('Cancelada')
   expect(citasGuardadas[1].estado).toBe('Pendiente')
+})
+
+it('abre la edición administrativa de una cita en un overlay', async () => {
+  localStorage.setItem('appointments', JSON.stringify([
+    {
+      id: 'cita-editar',
+      userId: 'cliente-1',
+      petName: 'Luna',
+      servicio: 'Consulta general',
+      fecha: '2026-10-20',
+      hora: '10:00',
+      estado: 'Pendiente',
+      motivo: 'Control anual',
+    },
+  ]))
+
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AppointmentsList
+        userRole="admin"
+        adminMode
+        users={[{ id: 'cliente-1', name: 'Cliente', lastName: 'Demo', role: 'cliente', active: true }]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Editar' }))
+
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Editar cita' })).toBeInTheDocument()
+  expect(screen.getByDisplayValue('Luna')).toBeInTheDocument()
+})
+
+it('conserva la cita cuando se cancela la confirmación de eliminación', async () => {
+  localStorage.setItem('appointments', JSON.stringify([
+    {
+      id: 'cita-no-eliminar',
+      userId: 'cliente-1',
+      petName: 'Luna',
+      servicio: 'Consulta general',
+      fecha: '2026-10-20',
+      hora: '10:00',
+      estado: 'Pendiente',
+    },
+  ]))
+
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AppointmentsList
+        userRole="admin"
+        adminMode
+        users={[{ id: 'cliente-1', name: 'Cliente', lastName: 'Demo', role: 'cliente', active: true }]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Eliminar' }))
+  expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Eliminar la cita de “Luna”?')
+  await user.click(screen.getByRole('alertdialog').querySelector('button.btn-outline-secondary'))
+
+  expect(screen.getByText('Luna')).toBeInTheDocument()
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  expect(JSON.parse(localStorage.getItem('appointments'))).toHaveLength(1)
+})
+
+it('elimina una cita al confirmar desde el diálogo de la página', async () => {
+  localStorage.setItem('appointments', JSON.stringify([
+    {
+      id: 'cita-eliminar',
+      userId: 'cliente-1',
+      petName: 'Luna',
+      servicio: 'Consulta general',
+      fecha: '2026-10-20',
+      hora: '10:00',
+      estado: 'Pendiente',
+    },
+  ]))
+
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AppointmentsList
+        userRole="admin"
+        adminMode
+        users={[{ id: 'cliente-1', name: 'Cliente', lastName: 'Demo', role: 'cliente', active: true }]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Eliminar' }))
+  await user.click(screen.getByRole('alertdialog').querySelector('button.btn-delete'))
+
+  expect(screen.queryByText('Luna')).not.toBeInTheDocument()
+  expect(JSON.parse(localStorage.getItem('appointments'))).toEqual([])
 })
 
 it('permite a administración confirmar una cita y guarda el cambio', async () => {
