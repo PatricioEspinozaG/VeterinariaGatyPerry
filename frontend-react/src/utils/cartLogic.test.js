@@ -118,3 +118,23 @@ it('trata como vacío un carrito guardado con formato incorrecto', () => {
   expect(normalizeCart('dato corrupto', productos)).toEqual([])
   expect(removeFromCart(null, 'ME001')).toEqual([])
 })
+
+it('mantiene el orden de los productos al cambiar una cantidad', () => {
+  const carrito = [
+    { code: 'ME001', quantity: 1 },
+    { code: 'ME002', quantity: 1 },
+  ]
+
+  const resultado = changeQuantity(
+    carrito,
+    { code: 'ME001', stock: 5 },
+    2,
+  )
+
+  expect(resultado.ok).toBe(true)
+  expect(resultado.cart).toEqual([
+    { code: 'ME001', quantity: 2 },
+    { code: 'ME002', quantity: 1 },
+  ])
+  expect(carrito[0].quantity).toBe(1)
+})
