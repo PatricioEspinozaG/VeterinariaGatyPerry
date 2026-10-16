@@ -31,7 +31,11 @@ export default function AdminProductForm({ product, onCreate, onUpdate, onCancel
 
   function handleSubmit(e) {
     e.preventDefault()
-    const payload = { ...form }
+    const payload = {
+      ...form,
+      price: Number(form.price),
+      stock: Number(form.stock),
+    }
     if (product) {
       onUpdate && onUpdate(product.code, payload)
     } else {
@@ -55,11 +59,11 @@ export default function AdminProductForm({ product, onCreate, onUpdate, onCancel
       </label>
 
       <label>Precio
-        <input name="price" value={form.price} onChange={handleChange} />
+        <input type="number" name="price" min="0" step="1" required value={form.price} onChange={handleChange} />
       </label>
 
       <label>Stock
-        <input type="number" name="stock" value={form.stock} onChange={handleChange} />
+        <input type="number" name="stock" min="0" step="1" required value={form.stock} onChange={handleChange} />
       </label>
 
       <label>Estado
