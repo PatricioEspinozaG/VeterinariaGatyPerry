@@ -61,3 +61,48 @@ it('completa una compra y deja el carrito vacío', async () => {
     screen.getByRole('link', { name: 'Carrito, 0 productos' }),
   ).toBeInTheDocument()
 })
+
+it('envía al inicio de sesión si se intenta abrir citas sin cuenta', async () => {
+  render(
+    <MemoryRouter initialEntries={['/citas']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  expect(
+    await screen.findByRole('heading', { name: 'Iniciar sesión' }),
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByRole('heading', { name: 'Citas Veterinarias' }),
+  ).not.toBeInTheDocument()
+})
+
+it('activa la sesión al registrarse y permite abrir mascotas', async () => {
+  const user = userEvent.setup()
+  const { container } = render(
+    <MemoryRouter initialEntries={['/registro']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  const escribir = async (campo, valor) => {
+    await user.type(container.querySelector(`[name="${campo}"]`), valor)
+  }
+
+  await escribir('nombre', 'Camila')
+  await escribir('apellidos', 'Soto')
+  await escribir('run', '12.345.678-5')
+  await escribir('email', 'camila@gmail.com')
+  await escribir('telefono', '+56 9 1234 5678')
+  await escribir('password', 'clave1234')
+  await escribir('confirmPassword', 'clave1234')
+
+  await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+
+  const enlaceMascota = await screen.findByRole('link', { name: '+ Mascota' })
+  await user.click(enlaceMascota)
+
+  expect(
+    screen.getByRole('heading', { name: 'Registrar Mascota' }),
+  ).toBeInTheDocument()
+})
