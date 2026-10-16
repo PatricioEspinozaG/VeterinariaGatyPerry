@@ -102,8 +102,9 @@
                     </section>
                     <section id="panelCitas" class="tab-pane fade">
                         <div class="card shadow-sm">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <h2 class="h5 mb-0">Solicitudes de citas</h2>
+                                <button id="btnNuevaCita" class="btn btn-primary btn-sm solo-admin" type="button">Nueva cita</button>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -115,7 +116,8 @@
                                                 <th>Servicio</th>
                                                 <th>Fecha</th>
                                                 <th>Estado</th>
-                                                <th>Actualizar</th>
+                                                <th>Motivo</th>
+                                                <th class="solo-admin">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tablaCitas"></tbody>
@@ -206,6 +208,68 @@
                         </div>
                     </div>
                     <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Guardar usuario</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCita" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="tituloModalCita" class="modal-title h5">Nueva cita</h2>
+                    <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="formCitaAdmin" novalidate>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="clienteCita" class="form-label">Cliente</label>
+                                <select id="clienteCita" class="form-select" required></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="mascotaCita" class="form-label">Mascota</label>
+                                <input id="mascotaCita" class="form-control" maxlength="50" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="servicioCitaAdmin" class="form-label">Servicio</label>
+                                <select id="servicioCitaAdmin" class="form-select" required></select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fechaCitaAdmin" class="form-label">Fecha</label>
+                                <input id="fechaCitaAdmin" type="date" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="horaCitaAdmin" class="form-label">Hora</label>
+                                <select id="horaCitaAdmin" class="form-select" required>
+                                    <option value="">Selecciona</option>
+                                    <option>09:00</option>
+                                    <option>10:30</option>
+                                    <option>12:00</option>
+                                    <option>15:00</option>
+                                    <option>16:30</option>
+                                    <option>18:00</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="estadoCitaAdmin" class="form-label">Estado</label>
+                                <select id="estadoCitaAdmin" class="form-select" required>
+                                    <option>Pendiente</option>
+                                    <option>Confirmada</option>
+                                    <option>Reagendada</option>
+                                    <option>Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="motivoCitaAdmin" class="form-label">Motivo</label>
+                                <textarea id="motivoCitaAdmin" class="form-control" maxlength="300" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar cita</button>
+                    </div>
                 </form>
             </div>
         </div>

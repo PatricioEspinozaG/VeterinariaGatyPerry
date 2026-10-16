@@ -3,8 +3,9 @@ import React from 'react'
 export default function AdminProductsList({ products = [], onEdit, onDelete }) {
   return (
     <div className="admin-table">
-      <table>
-        <thead>
+      <div className="table-responsive">
+      <table className="table table-hover align-middle mb-0">
+        <thead className="table-light">
           <tr>
             <th>Código</th>
             <th>Producto</th>
@@ -34,6 +35,7 @@ export default function AdminProductsList({ products = [], onEdit, onDelete }) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

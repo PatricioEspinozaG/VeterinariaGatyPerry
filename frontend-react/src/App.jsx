@@ -139,6 +139,8 @@ function App() {
           />
           <Route path="*" element={<NoEncontrado />} />
           <Route path="/admin" element={<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
+          <Route path="/admin/usuarios" element={<AdminPanel section="usuarios" products={products} setProducts={setProducts} users={users} setUsers={setUsers} currentUser={currentUser} />} />
+          <Route path="/admin/citas" element={<AdminPanel section="citas" products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
         </Routes>
       </main>
       <Footer />

@@ -11,7 +11,7 @@
 .topbar {
   color: white;
   background: var(--petroleo);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .topbar-content,
@@ -23,8 +23,24 @@
 }
 
 .topbar-content {
-  padding-block: 0.55rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.15rem;
+  padding-block: 0.45rem;
 }
+
+.topbar-socials { display: flex; align-items: center; gap: 0.55rem; }
+.topbar-social-link { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border-radius: 50%; color: #fff; transition: color 0.18s ease, background-color 0.18s ease, transform 0.18s ease; }
+.topbar-social-link svg { width: 1.15rem; height: 1.15rem; fill: currentColor; }
+.topbar-social-link.instagram svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.topbar-social-link.instagram .instagram-dot { fill: currentColor; stroke: none; }
+.topbar-social-link:hover { color: var(--petroleo); background: #fff; transform: translateY(-2px) scale(1.08); }
+.topbar-booking { color: #fff; font-size: 0.9rem; font-weight: 700; white-space: nowrap; }
+.topbar-detail { display: inline-flex; min-width: 0; align-items: center; gap: 0.5rem; color: white; text-decoration: none; }
+.topbar-detail svg { width: 1rem; height: 1rem; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.topbar-hours { margin-left: auto; }
+.topbar-phone { white-space: nowrap; }
+.topbar-phone:hover { color: #d9e9e6; }
 
 .topbar-content,
 .navbar {
@@ -762,10 +778,14 @@
 
 @media (max-width: 600px) {
   .topbar-content {
-    flex-direction: column;
-    gap: 0.2rem;
-    text-align: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.5rem 0.8rem;
+    text-align: left;
   }
+
+  .topbar-hours { flex-basis: 100%; }
+  .topbar-hours, .topbar-phone { margin-left: auto; }
 
   .brand img {
     width: 164px;
@@ -931,9 +951,36 @@
   .stat-card strong { color: var(--petroleo); font-size: 0.98rem }
   .admin-header { text-align: center; margin-top: 0.6rem; margin-bottom: 0.6rem }
   .admin-title h1 { margin: 0; color: var(--petroleo); font-size: clamp(1.9rem, 3.5vw, 2.8rem) }
+  .admin-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 1.5rem auto;
+    padding: 0.5rem;
+    width: fit-content;
+    max-width: 100%;
+    background: #f6f3e9;
+    border-radius: 8px;
+  }
+  .admin-nav-link {
+    padding: 0.75rem 1.25rem;
+    border-radius: 7px;
+    color: var(--petroleo);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .admin-nav-link:hover,
+  .admin-nav-link.active { color: #fff; background: #143b39 }
   .admin-main { display: flex; gap: 1.5rem; align-items: flex-start }
   .admin-left { flex: 1 }
   .admin-right { width: 320px; background: #fff; padding: 1rem; border-radius: 10px; box-shadow: var(--sombra) }
+  .admin-main.admin-main-background { display: block; width: 100vw; margin-left: calc(50% - 50vw); padding: 2.5rem 1rem; }
+  .admin-main-content { display: flex; align-items: flex-start; gap: 1.5rem; width: min(100%, 960px); margin: 0 auto; }
+  .admin-main-content.wide { width: min(100%, 1280px); }
+  .admin-main-content > .admin-appointments-content { width: 100%; }
+  .admin-appointments-content > .container { width: 100%; max-width: none; padding: 0; }
+  .admin-view-card { width: 100%; max-width: 960px; flex: 1 1 auto; }
 
   /* When there is no aside, center the products block and constrain width */
   .admin-left.full {
@@ -943,26 +990,40 @@
   }
   .admin-left.full h2 { margin-left: 0; }
   .admin-left.full .admin-table { margin: 0 auto }
-  .admin-table table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden }
-  .admin-table th { background: #143b39; color: #fff; padding: 1rem; text-align: left }
+  .admin-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem }
+  .admin-section-heading h2 { margin: 0 }
+  .admin-user-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: var(--sombra) }
+  .admin-user-form > .admin-section-heading { grid-column: 1 / -1 }
+  .admin-user-form label { margin: 0 }
+  .admin-user-form .form-actions, .admin-form-message { grid-column: 1 / -1 }
+  .admin-form-message { margin: 0; font-weight: 600 }
+  .admin-form-message.error { color: #b42318 }
+  .admin-form-message.success { color: #18794e }
+  .admin-table table { width: 100%; border-collapse: collapse; background: #fff }
+  .admin-view-card .admin-table th { background: #f8f9fa; color: #212529; padding: 1rem; text-align: left }
   .admin-table td { padding: 1rem; border-bottom: 1px solid var(--linea); vertical-align: middle }
-  .admin-table tbody tr:nth-child(odd) { background: #fff }
-  .admin-table tbody tr:nth-child(even) { background: #fafafa }
   .btn { padding: 0.5rem 0.75rem; border-radius: 12px; border: none; cursor: pointer }
   .btn-edit { background: #ffcf2f; margin-right: 0.6rem }
   .btn-delete { background: #e24b4b; color: #fff }
   .action-buttons { display: flex; gap: 0.6rem; align-items: center }
   .action-cell { width: 220px }
   .admin-form label { display: block; margin-bottom: 0.6rem; color: var(--petroleo) }
-  .admin-form input, .admin-form select { width: 100%; padding: 0.45rem; margin-top: 0.25rem; border-radius: 6px; border: 1px solid var(--linea) }
+  .admin-form input, .admin-form select, .admin-form textarea { width: 100%; padding: 0.45rem; margin-top: 0.25rem; border-radius: 6px; border: 1px solid var(--linea) }
   .form-actions { margin-top: 0.8rem; display: flex; gap: 0.5rem }
 
 @media (max-width: 720px) {
+  .admin-nav { width: 100%; gap: 0.25rem }
+  .admin-nav-link { flex: 1; padding: 0.7rem 0.4rem; text-align: center; font-size: 1rem }
   .stat-card { min-width: 140px; padding: 0.9rem }
   .stat-value { font-size: 1.4rem }
   .admin-main { flex-direction: column }
+  .admin-main.admin-main-background { padding: 1.5rem 0.75rem; }
+  .admin-main-content, .admin-main-content.wide { flex-direction: column; width: 100%; }
+  .admin-view-card { max-width: none; }
   .admin-right { width: 100% }
   .action-cell { width: auto }
+  .admin-section-heading { align-items: flex-start; flex-direction: column }
+  .admin-user-form { grid-template-columns: 1fr }
 }
 
 @media (min-width: 721px) and (max-width: 1100px) {

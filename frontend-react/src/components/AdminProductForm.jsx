@@ -59,7 +59,7 @@ export default function AdminProductForm({ product, onCreate, onUpdate, onCancel
       </label>
 
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary">{product ? 'Guardar' : 'Crear'}</button>
+        <button type="submit" className="btn btn-registro-custom">{product ? 'Guardar' : 'Crear'}</button>
         {product ? <button type="button" className="btn" onClick={onCancel}>Cancelar</button> : null}
       </div>
     </form>
