@@ -110,3 +110,11 @@ it('rechaza productos inválidos o agotados', () => {
     error: 'Producto agotado.',
   })
 })
+
+it('trata como vacío un carrito guardado con formato incorrecto', () => {
+  const productos = [{ code: 'ME001', stock: 3 }]
+
+  expect(normalizeCart(null, productos)).toEqual([])
+  expect(normalizeCart('dato corrupto', productos)).toEqual([])
+  expect(removeFromCart(null, 'ME001')).toEqual([])
+})
