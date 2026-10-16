@@ -1,8 +1,8 @@
 import { expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import AppointmentsList from './AppointmentsList.jsx'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 it('permite al dueño cancelar su cita y guarda el nuevo estado', async () => {
   localStorage.setItem('appointments', JSON.stringify([
@@ -179,3 +179,126 @@ it('permite a administración confirmar una cita y guarda el cambio', async () =
     .toBeInTheDocument()
   expect(screen.queryByText('Luna')).not.toBeInTheDocument()
 })
+
+it('permite a administración crear una cita nueva', async () => {
+  localStorage.setItem('appointments', JSON.stringify([]))
+
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AppointmentsList
+        userRole="admin"
+        adminMode
+        users={[{
+          id: 'cliente-1',
+          name: 'Cliente',
+          lastName: 'Demo',
+          email: 'cliente@gmail.com',
+          role: 'cliente',
+          active: true,
+        }]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Agregar cita' }))
+  await user.selectOptions(screen.getByLabelText('Cliente'), 'cliente-1')
+  await user.type(screen.getByLabelText('Mascota'), 'Nina')
+  await user.type(screen.getByLabelText('Fecha'), '2099-05-20')
+  await user.selectOptions(screen.getByLabelText('Hora'), '10:00')
+  await user.type(screen.getByLabelText('Motivo'), 'Vacunación anual')
+  await user.click(screen.getByRole('button', { name: 'Crear cita' }))
+
+  expect(screen.getByText('Nina')).toBeInTheDocument()
+  expect(JSON.parse(localStorage.getItem('appointments'))[0]).toEqual(
+    expect.objectContaining({
+      userId: 'cliente-1',
+      petName: 'Nina',
+      estado: 'Pendiente',
+      motivo: 'Vacunación anual',
+    }),
+  )
+})
+
+it('permite crear una cita y la guarda en localStorage', async () => {
+  localStorage.setItem('appointments', JSON.stringify([]))
+
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AppointmentsList
+        userRole="admin"
+        adminMode
+        users={[
+          {
+            id: 'cliente-1',
+            name: 'Cliente',
+            lastName: 'Demo',
+            email: 'cliente@example.com',
+            role: 'cliente',
+            active: true,
+          },
+        ]}
+        initialAppointments={[]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Agregar cita' }))
+  await user.selectOptions(screen.getByLabelText('Cliente'), 'cliente-1')
+  await user.type(screen.getByLabelText('Mascota'), 'Michi')
+  fireEvent.change(screen.getByLabelText('Fecha'), {
+    target: { value: new Date().toISOString().slice(0, 10) },
+  })
+  await user.selectOptions(screen.getByLabelText('Hora'), '10:00')
+  await user.type(screen.getByLabelText('Motivo'), 'Control anual')
+  await user.click(screen.getByRole('button', { name: 'Crear cita' }))
+
+  expect(await screen.findByText('Michi')).toBeInTheDocument()
+  expect(JSON.parse(localStorage.getItem('appointments'))[0]).toMatchObject({
+    userId: 'cliente-1',
+    petName: 'Michi',
+    hora: '10:00',
+    motivo: 'Control anual',
+    estado: 'Pendiente',
+  })
+})
+
+it('rechaza crear una cita con fecha anterior a hoy', async () => {
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AppointmentsList
+        userRole="admin"
+        adminMode
+        users={[
+          {
+            id: 'cliente-1',
+            name: 'Cliente',
+            lastName: 'Demo',
+            email: 'cliente@example.com',
+            role: 'cliente',
+            active: true,
+          },
+        ]}
+        initialAppointments={[]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Agregar cita' }))
+  await user.selectOptions(screen.getByLabelText('Cliente'), 'cliente-1')
+
+  const ayer = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+
+  fireEvent.change(screen.getByLabelText('Fecha'), {
+    target: { value: ayer },
+  })
+  fireEvent.submit(screen.getByText('Nueva cita').closest('form'))
+
+  expect(screen.getByRole('alert'))
+    .toHaveTextContent('La fecha de la cita no puede ser anterior a hoy.')
+})
+

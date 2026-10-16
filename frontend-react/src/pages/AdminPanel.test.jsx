@@ -204,3 +204,70 @@ it('mantiene el signo más en el botón circular al abrir el formulario de usuar
   expect(addButton.querySelector('.fab-plus')).toHaveTextContent('+')
   expect(screen.getByRole('button', { name: 'Cancelar creación de usuario' })).toBeInTheDocument()
 })
+
+it('crea un usuario de recepción', async () => {
+  const user = userEvent.setup()
+  render(<StatefulAdminPanel />)
+
+  await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
+  await user.type(screen.getByLabelText('Nombre'), 'Camila')
+  await user.type(screen.getByLabelText('Apellidos'), 'Soto')
+  await user.type(screen.getByLabelText('Correo electrónico'), 'camila@gmail.com')
+  await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
+  await user.selectOptions(screen.getByLabelText('Rol'), 'recepcion')
+  await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
+
+  expect(screen.getByText('Camila Soto')).toBeInTheDocument()
+  expect(screen.getAllByText('Recepción')).toHaveLength(2)
+  expect(screen.getByRole('status'))
+    .toHaveTextContent('Usuario agregado correctamente.')
+})
+
+it('rechaza crear un usuario con un correo ya registrado', async () => {
+  const user = userEvent.setup()
+  render(<StatefulAdminPanel />)
+
+  await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
+  await user.type(screen.getByLabelText('Nombre'), 'Otro')
+  await user.type(screen.getByLabelText('Apellidos'), 'Cliente')
+  await user.type(screen.getByLabelText('Correo electrónico'), 'cliente@gmail.com')
+  await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
+  await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
+
+  expect(screen.getAllByText('Ya existe un usuario con ese correo.'))
+    .toHaveLength(2)
+  expect(screen.queryByText('Otro Cliente')).not.toBeInTheDocument()
+})
+
+it('crea un producto desde el panel de administración', async () => {
+  const user = userEvent.setup()
+  const setProducts = vi.fn()
+
+  render(
+    <MemoryRouter>
+      <AdminPanel
+        products={[]}
+        setProducts={setProducts}
+        users={initialUsers}
+        currentUser={initialUsers[0]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Nuevo Producto' }))
+  await user.type(screen.getByLabelText('Nombre'), 'Vacuna demo')
+  await user.type(screen.getByLabelText('Categoria'), 'Vacunas')
+  await user.type(screen.getByLabelText('Precio'), '6500')
+  await user.clear(screen.getByLabelText('Stock'))
+  await user.type(screen.getByLabelText('Stock'), '5')
+  await user.click(screen.getByRole('button', { name: 'Crear' }))
+
+  expect(setProducts).toHaveBeenCalledTimes(1)
+  const actualizarProductos = setProducts.mock.calls[0][0]
+  expect(actualizarProductos([])[0]).toMatchObject({
+    name: 'Vacuna demo',
+    category: 'Vacunas',
+    price: 6500,
+    stock: 5,
+  })
+})
