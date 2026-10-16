@@ -19,7 +19,7 @@ function Carrito({
 
   return (
     <>
-      <section className="intro-section">
+      <section className="intro-section bg-vet-doodle">
         <div className="container intro-content">
           <span className="eyebrow">Compra simulada</span>
           <h1>Carrito de productos</h1>
@@ -62,9 +62,9 @@ function Carrito({
                       <h2>{line.name}</h2>
                       <p>{money(line.price)} por unidad</p>
 
-                      <div>
+                      <div className="cart-quantity-controls">
                         <button
-                          className="button button-outline"
+                          className="button button-outline cart-quantity-button"
                           type="button"
                           aria-label={`Restar una unidad de ${line.name}`}
                           onClick={() =>
@@ -75,14 +75,14 @@ function Carrito({
                         </button>
 
                         <span
+                          className="cart-quantity"
                           aria-label={`Cantidad: ${line.quantity}`}
-                          style={{ padding: '0 1rem' }}
                         >
                           {line.quantity}
                         </span>
 
                         <button
-                          className="button button-outline"
+                          className="button button-outline cart-quantity-button"
                           type="button"
                           aria-label={`Agregar una unidad de ${line.name}`}
                           disabled={line.quantity >= line.stock}
@@ -96,7 +96,6 @@ function Carrito({
                         <button
                           className="button button-outline"
                           type="button"
-                          style={{ marginLeft: '1rem' }}
                           onClick={() => onRemove(line.code)}
                         >
                           Quitar
@@ -141,9 +140,11 @@ function Carrito({
             </div>
           )}
 
-          <p style={{ marginTop: '1rem' }}>
-            <Link to="/productos">Continuar comprando</Link>
-          </p>
+          <div className="cart-continue">
+            <Link className="button button-outline" to="/productos">
+              Seguir comprando
+            </Link>
+          </div>
         </div>
       </section>
     </>

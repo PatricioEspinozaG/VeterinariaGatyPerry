@@ -7,8 +7,10 @@ const esAdministrador = sesionAdmin?.rol === "admin";
 const mensajeAdmin = document.querySelector("#mensajeAdmin");
 const modalProducto = new bootstrap.Modal(document.querySelector("#modalProducto"));
 const modalUsuario = new bootstrap.Modal(document.querySelector("#modalUsuario"));
+const modalCita = new bootstrap.Modal(document.querySelector("#modalCita"));
 let codigoEditando = null;
 let usuarioEditando = null;
+let citaEditando = null;
 
 function rutValido(valor) {
     const limpio = valor.replace(/[.\-]/g, "").toUpperCase();
@@ -102,8 +104,48 @@ function abrirUsuario(id = null) {
 function renderCitasAdmin() {
     const citas = VeterinariaStorage.obtenerCitas();
     const tabla = document.querySelector("#tablaCitas");
-    if (!citas.length) { tabla.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-4">No hay solicitudes registradas.</td></tr>'; return; }
-    tabla.innerHTML = citas.map(cita => { const servicio = VeterinariaDatos.servicios.find(item => item.codigo === cita.servicio); return `<tr><td>${VeterinariaUtils.escaparHTML(cita.usuarioNombre)}</td><td>${VeterinariaUtils.escaparHTML(cita.mascota)}</td><td>${VeterinariaUtils.escaparHTML(servicio?.nombre || cita.servicio)}</td><td><input class="form-control form-control-sm fecha-cita" data-id="${cita.id}" type="date" value="${cita.fecha}" min="${new Date().toISOString().split("T")[0]}"><select class="form-select form-select-sm mt-1 hora-cita" data-id="${cita.id}">${["09:00", "10:30", "12:00", "15:00", "16:30", "18:00"].map(hora => `<option ${cita.hora === hora ? "selected" : ""}>${hora}</option>`).join("")}</select></td><td>${cita.estado}</td><td><select class="form-select form-select-sm cambiar-cita" data-id="${cita.id}"><option ${cita.estado === "Pendiente" ? "selected" : ""}>Pendiente</option><option ${cita.estado === "Confirmada" ? "selected" : ""}>Confirmada</option><option ${cita.estado === "Reagendada" ? "selected" : ""}>Reagendada</option><option ${cita.estado === "Cancelada" ? "selected" : ""}>Cancelada</option></select><button class="btn btn-sm btn-outline-primary mt-2 guardar-cita" data-id="${cita.id}">Guardar</button></td></tr>`; }).join("");
+    const colspan = esAdministrador ? 7 : 6;
+    if (!citas.length) {
+        tabla.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-secondary py-4">No hay solicitudes registradas.</td></tr>`;
+        return;
+    }
+
+    tabla.innerHTML = citas.map(cita => {
+        const servicio = VeterinariaDatos.servicios.find(item => item.codigo === cita.servicio);
+        const acciones = esAdministrador
+            ? `<td><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary btn-editar-cita" data-id="${cita.id}">Editar</button><button class="btn btn-sm btn-outline-danger btn-eliminar-cita" data-id="${cita.id}">Eliminar</button></div></td>`
+            : "";
+        return `<tr><td>${VeterinariaUtils.escaparHTML(cita.usuarioNombre || cita.usuarioEmail)}</td><td>${VeterinariaUtils.escaparHTML(cita.mascota)}</td><td>${VeterinariaUtils.escaparHTML(servicio?.nombre || cita.servicio)}</td><td>${VeterinariaUtils.escaparHTML(cita.fecha)} · ${VeterinariaUtils.escaparHTML(cita.hora)}</td><td>${VeterinariaUtils.escaparHTML(cita.estado)}</td><td>${VeterinariaUtils.escaparHTML(cita.motivo || "-")}</td>${acciones}</tr>`;
+    }).join("");
+}
+
+function cargarOpcionesCita() {
+    const clientes = VeterinariaStorage.obtenerUsuarios().filter(usuario => usuario.rol === "cliente" && usuario.activo);
+    document.querySelector("#clienteCita").innerHTML = '<option value="">Selecciona un cliente</option>' + clientes.map(usuario => `<option value="${usuario.id}">${VeterinariaUtils.escaparHTML(`${usuario.nombre} ${usuario.apellidos}`)} · ${VeterinariaUtils.escaparHTML(usuario.email)}</option>`).join("");
+    document.querySelector("#servicioCitaAdmin").innerHTML = '<option value="">Selecciona un servicio</option>' + VeterinariaDatos.servicios.map(servicio => `<option value="${servicio.codigo}">${VeterinariaUtils.escaparHTML(servicio.nombre)}</option>`).join("");
+}
+
+function abrirCita(id = null) {
+    if (!esAdministrador) return;
+    citaEditando = id;
+    document.querySelector("#formCitaAdmin").reset();
+    cargarOpcionesCita();
+    document.querySelector("#tituloModalCita").textContent = id ? "Editar cita" : "Nueva cita";
+    document.querySelector("#fechaCitaAdmin").min = new Date().toISOString().split("T")[0];
+
+    if (id !== null) {
+        const cita = VeterinariaStorage.obtenerCitas().find(item => String(item.id) === String(id));
+        if (!cita) return;
+        const cliente = VeterinariaStorage.obtenerUsuarios().find(usuario => usuario.email === cita.usuarioEmail);
+        document.querySelector("#clienteCita").value = cliente?.id || "";
+        document.querySelector("#mascotaCita").value = cita.mascota || "";
+        document.querySelector("#servicioCitaAdmin").value = cita.servicio || "";
+        document.querySelector("#fechaCitaAdmin").value = cita.fecha || "";
+        document.querySelector("#horaCitaAdmin").value = cita.hora || "";
+        document.querySelector("#estadoCitaAdmin").value = cita.estado || "Pendiente";
+        document.querySelector("#motivoCitaAdmin").value = cita.motivo || "";
+    }
+    modalCita.show();
 }
 
 function limpiarProducto() {
@@ -284,21 +326,56 @@ document.querySelector("#formUsuario").addEventListener("submit", event => {
     renderTodo();
 });
 
+document.querySelector("#btnNuevaCita").addEventListener("click", () => abrirCita());
 document.querySelector("#tablaCitas").addEventListener("click", event => {
-    const boton = event.target.closest(".guardar-cita");
-    if (!boton) return;
+    if (!esAdministrador) return;
+    const botonEditar = event.target.closest(".btn-editar-cita");
+    if (botonEditar) return abrirCita(botonEditar.dataset.id);
+
+    const botonEliminar = event.target.closest(".btn-eliminar-cita");
+    if (!botonEliminar) return;
     const citas = VeterinariaStorage.obtenerCitas();
-    const cita = citas.find(item => item.id === Number(boton.dataset.id));
-    const fila = boton.closest("tr");
-    const estado = fila.querySelector(".cambiar-cita").value;
-    const fecha = fila.querySelector(".fecha-cita").value;
-    const hora = fila.querySelector(".hora-cita").value;
+    const cita = citas.find(item => String(item.id) === String(botonEliminar.dataset.id));
+    if (!cita || !confirm(`¿Eliminar la cita de ${cita.mascota}?`)) return;
+    VeterinariaStorage.guardarCitas(citas.filter(item => String(item.id) !== String(cita.id)));
+    VeterinariaUtils.mostrarMensaje(mensajeAdmin, "Cita eliminada correctamente.", "info");
+    renderTodo();
+});
+
+document.querySelector("#formCitaAdmin").addEventListener("submit", event => {
+    event.preventDefault();
+    if (!esAdministrador) return;
+
+    const formulario = document.querySelector("#formCitaAdmin");
+    if (!formulario.reportValidity()) return;
+    const clienteId = document.querySelector("#clienteCita").value;
+    const cliente = VeterinariaStorage.obtenerUsuarios().find(usuario => String(usuario.id) === clienteId);
+    const fecha = document.querySelector("#fechaCitaAdmin").value;
+    if (!cliente) return VeterinariaUtils.mostrarMensaje(mensajeAdmin, "Selecciona un cliente válido.", "danger");
     if (!VeterinariaUtils.fechaNoAnterior(fecha)) return VeterinariaUtils.mostrarMensaje(mensajeAdmin, "La cita debe tener una fecha igual o posterior a hoy.", "danger");
-    cita.estado = estado;
-    cita.fecha = fecha;
-    cita.hora = hora;
+
+    const citas = VeterinariaStorage.obtenerCitas();
+    const datos = {
+        id: citaEditando ?? Date.now(),
+        usuarioEmail: cliente.email,
+        usuarioNombre: `${cliente.nombre} ${cliente.apellidos}`.trim(),
+        mascota: document.querySelector("#mascotaCita").value.trim(),
+        servicio: document.querySelector("#servicioCitaAdmin").value,
+        fecha,
+        hora: document.querySelector("#horaCitaAdmin").value,
+        motivo: document.querySelector("#motivoCitaAdmin").value.trim(),
+        estado: document.querySelector("#estadoCitaAdmin").value
+    };
+    if (citaEditando !== null) {
+        const indice = citas.findIndex(item => String(item.id) === String(citaEditando));
+        if (indice < 0) return;
+        citas[indice] = { ...citas[indice], ...datos };
+    } else citas.push(datos);
+
     VeterinariaStorage.guardarCitas(citas);
-    VeterinariaUtils.mostrarMensaje(mensajeAdmin, "Cita actualizada correctamente.");
+    modalCita.hide();
+    VeterinariaUtils.mostrarMensaje(mensajeAdmin, citaEditando !== null ? "Cita actualizada correctamente." : "Cita creada correctamente.");
+    citaEditando = null;
     renderTodo();
 });
 

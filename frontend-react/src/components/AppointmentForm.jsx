@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { readStorage } from '../services/storage.js';
 
-export default function AppointmentForm({ currentUserId, onAddAppointment }) {
+export default function AppointmentForm({ currentUserId, onAddAppointment, returnTo = '/' }) {
   const navigate = useNavigate();
 
   const [mascotas] = useState(() => {
@@ -93,7 +93,7 @@ export default function AppointmentForm({ currentUserId, onAddAppointment }) {
     setMensaje({ tipo: 'success', texto: '¡Cita agendada exitosamente!' });
 
     setTimeout(() => {
-      navigate('/');
+      navigate(returnTo);
     }, 1200);
   };
 
