@@ -106,3 +106,52 @@ it('activa la sesión al registrarse y permite abrir mascotas', async () => {
     screen.getByRole('heading', { name: 'Registrar Mascota' }),
   ).toBeInTheDocument()
 })
+
+it('permite abrir un consejo y volver a la lista', async () => {
+  const user = userEvent.setup()
+
+  render(
+    <MemoryRouter initialEntries={['/']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  const navegacion = screen.getByRole('navigation', {
+    name: 'Navegación principal',
+  })
+  await user.click(within(navegacion).getByRole('link', { name: 'Consejos' }))
+
+  expect(
+    screen.getByRole('heading', { name: 'Consejos para cuidarlos mejor' }),
+  ).toBeInTheDocument()
+
+  await user.click(screen.getAllByRole('link', { name: 'Leer consejo' })[0])
+
+  expect(
+    screen.getByRole('heading', { name: 'Calendario de vacunas para perros' }),
+  ).toBeInTheDocument()
+
+  await user.click(screen.getByRole('link', { name: 'Volver a consejos' }))
+
+  expect(
+    screen.getByRole('heading', { name: 'Consejos para cuidarlos mejor' }),
+  ).toBeInTheDocument()
+})
+
+it('muestra un aviso cuando el consejo no existe', () => {
+  render(
+    <MemoryRouter initialEntries={['/consejos/no-existe']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  expect(
+    screen.getByRole('heading', { name: 'Consejo no encontrado' }),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText('No encontramos el consejo que buscabas.'),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByRole('link', { name: 'Volver a consejos' }),
+  ).toHaveAttribute('href', '/consejos')
+})
