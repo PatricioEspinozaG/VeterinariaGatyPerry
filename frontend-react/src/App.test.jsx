@@ -99,7 +99,9 @@ it('activa la sesión al registrarse y permite abrir mascotas', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
 
-  const enlaceMascota = await screen.findByRole('link', { name: '+ Mascota' })
+  await user.click(await screen.findByRole('button', { name: 'Camila' }))
+  await user.click(screen.getByRole('link', { name: 'Administrar mascotas' }))
+  const enlaceMascota = await screen.findByRole('link', { name: '+ Agregar mascota' })
   await user.click(enlaceMascota)
 
   expect(
@@ -155,4 +157,3 @@ it('muestra un aviso cuando el consejo no existe', () => {
     screen.getByRole('link', { name: 'Volver a consejos' }),
   ).toHaveAttribute('href', '/consejos')
 })
-

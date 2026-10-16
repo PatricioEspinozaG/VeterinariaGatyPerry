@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function AdminProductsList({ products = [], onEdit, onDelete }) {
   return (
     <div className="admin-table">

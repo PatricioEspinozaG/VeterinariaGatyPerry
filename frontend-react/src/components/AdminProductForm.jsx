@@ -1,16 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 function generateCode() {
   return `ME${Math.floor(100 + Math.random() * 900)}`
 }
 
 export default function AdminProductForm({ product, onCreate, onUpdate, onCancel }) {
-  const [form, setForm] = useState({ code: '', name: '', category: '', price: '', stock: 0, status: 'Disponible' })
-
-  useEffect(() => {
-    if (product) setForm({ code: product.code, name: product.name || product.title || '', category: product.category || '', price: product.price || '', stock: product.stock ?? 0, status: product.status || 'Disponible' })
-    else setForm({ code: generateCode(), name: '', category: '', price: '', stock: 0, status: 'Disponible' })
-  }, [product])
+  const [form, setForm] = useState(() => product
+    ? {
+      code: product.code,
+      name: product.name || product.title || '',
+      category: product.category || '',
+      price: product.price || '',
+      stock: product.stock ?? 0,
+      status: product.status || 'Disponible',
+    }
+    : {
+      code: generateCode(),
+      name: '',
+      category: '',
+      price: '',
+      stock: 0,
+      status: 'Disponible',
+    }
+  )
 
   function handleChange(e) {
     const { name, value } = e.target

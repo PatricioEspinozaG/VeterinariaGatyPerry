@@ -7,30 +7,27 @@ import AppointmentsList from '../components/AppointmentsList.jsx'
 import { NavLink } from 'react-router'
 import '../styles/app.css'
 
-export default function AdminPanel({ products, setProducts, users, currentUser, section = 'productos' }) {
-  if (!currentUser || currentUser.role !== 'admin') return <Navigate to="/login" replace />
-
+export default function AdminPanel({ products, setProducts, users, setUsers, currentUser, section = 'productos' }) {
   const [editing, setEditing] = useState(null)
-  const [showFab, setShowFab] = useState(false)
   const [overlayOpen, setOverlayOpen] = useState(false)
   const [showUserForm, setShowUserForm] = useState(false)
   const [userForm, setUserForm] = useState({ name: '', lastName: '', email: '', password: '', role: 'cliente' })
   const [userFormError, setUserFormError] = useState('')
   const [userFormSuccess, setUserFormSuccess] = useState('')
 
+  if (!currentUser || currentUser.role !== 'admin') return <Navigate to="/login" replace />
+
   const unidades = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0)
   const appointments = readStorage('appointments', []) || []
   const pendientes = Array.isArray(appointments)
     ? appointments.filter((a) => {
-        const s = (a.status || a.estado || '').toString().toLowerCase()
-        return s === 'pendiente' || s === 'pending' || s === 'pending' || s === ''
-      }).length
+      const s = (a.status || a.estado || '').toString().toLowerCase()
+      return s === 'pendiente' || s === 'pending' || s === 'pending' || s === ''
+    }).length
     : 0
 
   function handleCreate(product) {
     setProducts((prev) => [product, ...prev])
-    // mostrar el FAB al crear un producto por primera vez (y conservarlo)
-    setShowFab(true)
   }
 
   function handleUpdate(code, updated) {
@@ -106,92 +103,92 @@ export default function AdminPanel({ products, setProducts, users, currentUser, 
 
       <div className="admin-main admin-main-background bg-vet-doodle">
         <div className={`admin-main-content${section === 'productos' && editing ? ' wide' : ''}`}>
-        {section === 'productos' && (
-          <>
-            <div className={`admin-left admin-view-card card shadow border-0 rounded-4 p-4 bg-white ${!editing ? 'full' : ''}`}>
+          {section === 'productos' && (
+            <>
+              <div className={`admin-left admin-view-card card shadow border-0 rounded-4 p-4 bg-white ${!editing ? 'full' : ''}`}>
+                <div className="admin-section-heading">
+                  <div>
+                    <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">INFORMACIÓN DE PRODUCTOS</span>
+                    <h2 className="h3 fw-bold text-dark">Productos registrados</h2>
+                  </div>
+                </div>
+                <AdminProductsList products={products} onEdit={(p) => setEditing(p)} onDelete={handleDelete} />
+              </div>
+              {editing && (
+                <aside className="admin-right card shadow border-0 rounded-4 bg-white">
+                  <h3>Editar producto</h3>
+                  <AdminProductForm
+                    key={editing.code}
+                    product={editing}
+                    onCreate={handleCreate}
+                    onUpdate={handleUpdate}
+                    onCancel={() => setEditing(null)}
+                  />
+                </aside>
+              )}
+            </>
+          )}
+          {section === 'usuarios' && (
+            <section className="admin-left admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
               <div className="admin-section-heading">
                 <div>
-                  <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">INFORMACIÓN DE PRODUCTOS</span>
-                  <h2 className="h3 fw-bold text-dark">Productos registrados</h2>
+                  <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">INFORMACIÓN DE USUARIOS</span>
+                  <h2 className="h3 fw-bold text-dark">Usuarios registrados</h2>
+                </div>
+                <button className={showUserForm ? 'btn btn-outline-secondary' : 'btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm'} type="button" onClick={() => { setShowUserForm((shown) => !shown); setUserFormError(''); setUserFormSuccess('') }}>
+                  {showUserForm ? 'Cancelar' : 'Agregar usuario'}
+                </button>
+              </div>
+              {showUserForm && (
+                <form className="admin-form admin-user-form" onSubmit={handleCreateUser}>
+                  <label>Nombre
+                    <input name="name" value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} required />
+                  </label>
+                  <label>Apellidos
+                    <input name="lastName" value={userForm.lastName} onChange={(event) => setUserForm({ ...userForm, lastName: event.target.value })} required />
+                  </label>
+                  <label>Correo electrónico
+                    <input type="email" name="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} required />
+                  </label>
+                  <label>Contraseña
+                    <input type="password" name="password" minLength="8" value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} required />
+                  </label>
+                  <label>Rol
+                    <select name="role" value={userForm.role} onChange={(event) => setUserForm({ ...userForm, role: event.target.value })}>
+                      <option value="cliente">Cliente</option>
+                      <option value="recepcion">Recepción</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </label>
+                  {userFormError && <p className="admin-form-message error" role="alert">{userFormError}</p>}
+                  {userFormSuccess && <p className="admin-form-message success" role="status">{userFormSuccess}</p>}
+                  <div className="form-actions">
+                    <button className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" type="submit">Guardar usuario</button>
+                  </div>
+                </form>
+              )}
+              <div className="admin-table">
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle mb-0">
+                    <thead className="table-light">
+                      <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id}>
+                          <td>{[user.name, user.lastName].filter(Boolean).join(' ') || '-'}</td>
+                          <td>{user.email || '-'}</td>
+                          <td>{user.role || 'cliente'}</td>
+                          <td>{user.active ? 'Activo' : 'Inactivo'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <AdminProductsList products={products} onEdit={(p) => setEditing(p)} onDelete={handleDelete} />
-            </div>
-            {editing && (
-              <aside className="admin-right card shadow border-0 rounded-4 bg-white">
-                <h3>Editar producto</h3>
-                <AdminProductForm
-                  key={editing.code}
-                  product={editing}
-                  onCreate={handleCreate}
-                  onUpdate={handleUpdate}
-                  onCancel={() => setEditing(null)}
-                />
-              </aside>
-            )}
-          </>
-        )}
-        {section === 'usuarios' && (
-          <section className="admin-left admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
-            <div className="admin-section-heading">
-              <div>
-                <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">INFORMACIÓN DE USUARIOS</span>
-                <h2 className="h3 fw-bold text-dark">Usuarios registrados</h2>
-              </div>
-              <button className={showUserForm ? 'btn btn-outline-secondary' : 'btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm'} type="button" onClick={() => { setShowUserForm((shown) => !shown); setUserFormError(''); setUserFormSuccess('') }}>
-                {showUserForm ? 'Cancelar' : 'Agregar usuario'}
-              </button>
-            </div>
-            {showUserForm && (
-              <form className="admin-form admin-user-form" onSubmit={handleCreateUser}>
-                <label>Nombre
-                  <input name="name" value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} required />
-                </label>
-                <label>Apellidos
-                  <input name="lastName" value={userForm.lastName} onChange={(event) => setUserForm({ ...userForm, lastName: event.target.value })} required />
-                </label>
-                <label>Correo electrónico
-                  <input type="email" name="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} required />
-                </label>
-                <label>Contraseña
-                  <input type="password" name="password" minLength="8" value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} required />
-                </label>
-                <label>Rol
-                  <select name="role" value={userForm.role} onChange={(event) => setUserForm({ ...userForm, role: event.target.value })}>
-                    <option value="cliente">Cliente</option>
-                    <option value="recepcion">Recepción</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </label>
-                {userFormError && <p className="admin-form-message error" role="alert">{userFormError}</p>}
-                {userFormSuccess && <p className="admin-form-message success" role="status">{userFormSuccess}</p>}
-                <div className="form-actions">
-                  <button className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" type="submit">Guardar usuario</button>
-                </div>
-              </form>
-            )}
-            <div className="admin-table">
-              <div className="table-responsive">
-                <table className="table table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th></tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      <td>{[user.name, user.lastName].filter(Boolean).join(' ') || '-'}</td>
-                      <td>{user.email || '-'}</td>
-                      <td>{user.role || 'cliente'}</td>
-                      <td>{user.active ? 'Activo' : 'Inactivo'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
-        {section === 'citas' && <AppointmentsList userRole="admin" adminMode users={users} />}
+            </section>
+          )}
+          {section === 'citas' && <AppointmentsList userRole="admin" adminMode users={users} />}
         </div>
       </div>
 
@@ -200,7 +197,7 @@ export default function AdminPanel({ products, setProducts, users, currentUser, 
         <button
           className="fab-pill"
           aria-label="Nuevo Producto"
-          onClick={() => { setOverlayOpen(true); setEditing(null); setShowFab(true) }}
+          onClick={() => { setOverlayOpen(true); setEditing(null) }}
         >
           <span className="fab-plus">+</span>
           <span className="fab-label">Nuevo Producto</span>

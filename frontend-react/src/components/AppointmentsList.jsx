@@ -7,6 +7,12 @@ function getCustomerName(user) {
   return [user.name || user.nombre, user.lastName || user.apellidos].filter(Boolean).join(' ') || user.email;
 }
 
+function generateAppointmentId() {
+  return globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID()
+    : Date.now().toString()
+}
+
 export default function AppointmentsList({ userRole = 'cliente', currentUserId, readOnly = false, adminMode = false, receptionMode = false, embedded = false, users = [], returnTo = '' }) {
   const navigate = useNavigate();
   const [citas, setCitas] = useState(() => readStorage('appointments', []));
@@ -92,7 +98,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     }
 
     const appointment = {
-      id: editingAppointmentId ?? (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : Date.now().toString()),
+      id: editingAppointmentId ?? generateAppointmentId(),
       userId: customer.id,
       petName: formData.petName.trim(),
       servicio: formData.servicio,
