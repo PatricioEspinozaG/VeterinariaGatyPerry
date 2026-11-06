@@ -1,0 +1,14 @@
+services:
+  pacientes:
+    build: ./pacientes-service
+    ports:
+      - "8082:8082"
+    environment:
+      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
+      DB_USER: "GP_PACIENTES"
+      DB_PASSWORD: "${DB_PASSWORD:?Falta DB_PASSWORD}"
+    volumes:
+      - type: bind
+        source: "${WALLET_DIR:?Falta WALLET_DIR}"
+        target: /wallet
+        read_only: true
