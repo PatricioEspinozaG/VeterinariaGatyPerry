@@ -1,10 +1,15 @@
-package cl.gatyperry.pacientes.mascotas;
+package cl.gatyperry.pacientes.mascotas.service;
 
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import cl.gatyperry.pacientes.mascotas.dto.MascotaRequest;
+import cl.gatyperry.pacientes.mascotas.dto.MascotaResponse;
+import cl.gatyperry.pacientes.mascotas.model.Mascota;
+import cl.gatyperry.pacientes.mascotas.repository.MascotaRepository;
 
 @Service
 public class MascotaService {

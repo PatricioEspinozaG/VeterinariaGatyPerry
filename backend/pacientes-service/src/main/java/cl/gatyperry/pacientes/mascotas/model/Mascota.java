@@ -1,4 +1,4 @@
-package cl.gatyperry.pacientes.mascotas;
+package cl.gatyperry.pacientes.mascotas.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
