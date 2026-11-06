@@ -16,6 +16,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import cl.gatyperry.pacientes.mascotas.dto.MascotaRequest;
+import cl.gatyperry.pacientes.mascotas.dto.MascotaResponse;
+import cl.gatyperry.pacientes.mascotas.model.Mascota;
+import cl.gatyperry.pacientes.mascotas.repository.MascotaRepository;
+import cl.gatyperry.pacientes.mascotas.service.MascotaService;
+
 @ExtendWith(MockitoExtension.class)
 class MascotaServiceTests {
 

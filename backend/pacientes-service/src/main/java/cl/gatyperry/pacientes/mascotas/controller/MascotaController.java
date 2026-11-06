@@ -1,4 +1,4 @@
-package cl.gatyperry.pacientes.mascotas;
+package cl.gatyperry.pacientes.mascotas.controller;
 
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import cl.gatyperry.pacientes.mascotas.dto.MascotaRequest;
+import cl.gatyperry.pacientes.mascotas.dto.MascotaResponse;
+import cl.gatyperry.pacientes.mascotas.service.MascotaService;
 
 @RestController
 @RequestMapping("/api/v1/mascotas")

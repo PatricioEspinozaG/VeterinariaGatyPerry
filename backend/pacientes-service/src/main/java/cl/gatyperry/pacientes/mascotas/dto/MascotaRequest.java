@@ -1,4 +1,4 @@
-package cl.gatyperry.pacientes.mascotas;
+package cl.gatyperry.pacientes.mascotas.dto;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

@@ -1,4 +1,6 @@
-package cl.gatyperry.pacientes.mascotas;
+package cl.gatyperry.pacientes.mascotas.dto;
+
+import cl.gatyperry.pacientes.mascotas.model.Mascota;
 
 public record MascotaResponse(
     Long id,
