@@ -12,3 +12,22 @@ services:
         source: "${WALLET_DIR:?Falta WALLET_DIR}"
         target: /wallet
         read_only: true
+  auth:
+    build: ./auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
+      DB_USER: "GP_AUTH"
+      DB_PASSWORD: "${AUTH_DB_PASSWORD:?Falta AUTH_DB_PASSWORD}"
+      JWT_PRIVATE_KEY: "file:/keys/auth-private.pem"
+      JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+    volumes:
+      - type: bind
+        source: "${WALLET_DIR:?Falta WALLET_DIR}"
+        target: /wallet
+        read_only: true
+      - type: bind
+        source: "${KEYS_DIR:?Falta KEYS_DIR}"
+        target: /keys
+        read_only: true
