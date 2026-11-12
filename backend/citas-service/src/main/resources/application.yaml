@@ -19,3 +19,5 @@ app:
     public-key: ${JWT_PUBLIC_KEY}
   pacientes:
     base-url: ${PACIENTES_BASE_URL:http://localhost:8082}
+  auth:
+    base-url: ${AUTH_BASE_URL:http://localhost:8081}
