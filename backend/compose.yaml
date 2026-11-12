@@ -56,3 +56,42 @@ services:
         source: "${KEYS_DIR:?Falta KEYS_DIR}"
         target: /keys
         read_only: true
+  productos:
+    build: ./productos-service
+    ports:
+      - "8084:8084"
+    environment:
+      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
+      DB_USER: "GP_PRODUCTOS"
+      DB_PASSWORD: "${PRODUCTOS_DB_PASSWORD:?Falta PRODUCTOS_DB_PASSWORD}"
+      JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+      INTERNAL_API_TOKEN: "${INTERNAL_API_TOKEN:?Falta INTERNAL_API_TOKEN}"
+    volumes:
+      - type: bind
+        source: "${WALLET_DIR:?Falta WALLET_DIR}"
+        target: /wallet
+        read_only: true
+      - type: bind
+        source: "${KEYS_DIR:?Falta KEYS_DIR}"
+        target: /keys
+        read_only: true
+  pedidos:
+    build: ./pedidos-service
+    ports:
+      - "8085:8085"
+    environment:
+      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
+      DB_USER: "GP_PEDIDOS"
+      DB_PASSWORD: "${PEDIDOS_DB_PASSWORD:?Falta PEDIDOS_DB_PASSWORD}"
+      JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+      INTERNAL_API_TOKEN: "${INTERNAL_API_TOKEN:?Falta INTERNAL_API_TOKEN}"
+      PRODUCTOS_BASE_URL: "http://productos:8084"
+    volumes:
+      - type: bind
+        source: "${WALLET_DIR:?Falta WALLET_DIR}"
+        target: /wallet
+        read_only: true
+      - type: bind
+        source: "${KEYS_DIR:?Falta KEYS_DIR}"
+        target: /keys
+        read_only: true
