@@ -26,6 +26,10 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(
+                    "/api/v1/citas/gestion",
+                    "/api/v1/citas/gestion/**"
+                ).hasAnyRole("RECEPCION", "ADMIN")
+                .requestMatchers(
                     "/api/v1/citas",
                     "/api/v1/citas/**"
                 ).hasRole("CLIENTE")
