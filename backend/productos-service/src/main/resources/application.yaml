@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: productos-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+
+server:
+  port: 8084
+
+app:
+  jwt:
+    issuer: gaty-perry-auth
+    public-key: ${JWT_PUBLIC_KEY}
+  internal-token: ${INTERNAL_API_TOKEN}
