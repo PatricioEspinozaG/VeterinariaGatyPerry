@@ -46,7 +46,7 @@ class CitaGestionServiceTests {
     void creaCitaSoloDespuesDeVerificarClienteYMascota() {
         CitaRequest request = citaFutura();
 
-        when(repository.save(any(Cita.class)))
+        when(repository.saveAndFlush(any(Cita.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         var creada = service.crear(1L, request, "token-recepcion");
@@ -115,7 +115,7 @@ class CitaGestionServiceTests {
         return new CitaRequest(
             21L,
             "Consulta General",
-            LocalDate.now(ZONA_CLINICA).plusDays(1),
+            FechasDePrueba.diaHabilDesdeHoy(1),
             LocalTime.of(10, 0),
             "Control anual"
         );
