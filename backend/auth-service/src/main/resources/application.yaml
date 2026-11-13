@@ -14,6 +14,8 @@ server:
   port: 8081
 
 app:
+  auth:
+    refresh-cookie-secure: ${AUTH_REFRESH_COOKIE_SECURE:true}
   jwt:
     issuer: gaty-perry-auth
     private-key: ${JWT_PRIVATE_KEY}
