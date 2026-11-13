@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>cl.gatyperry</groupId>
+    <artifactId>gatyperry-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <modules>
+        <module>common</module>
+        <module>auth-service</module>
+        <module>pacientes-service</module>
+        <module>citas-service</module>
+        <module>productos-service</module>
+        <module>pedidos-service</module>
+        <module>clinica-service</module>
+    </modules>
+</project>

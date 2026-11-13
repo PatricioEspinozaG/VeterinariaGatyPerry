@@ -60,3 +60,23 @@ las contraseñas existentes. Los datos de Oracle no se copian automáticamente.
 
 Este Compose es para desarrollo local. Antes de desplegar en AWS habrá que
 definir copias de seguridad y almacenamiento persistente.
+
+## Compilación compartida
+
+`backend/common` es una biblioteca Maven con la validación JWT reutilizada
+por los seis servicios. No corre como contenedor ni tiene base de datos. Para
+compilar sin Docker desde la raíz del repositorio, usa el reactor Maven:
+
+```powershell
+.\backend\auth-service\mvnw.cmd -f backend/pom.xml -DskipTests package
+```
+
+Para compilar un solo servicio y su dependencia compartida:
+
+```powershell
+.\backend\auth-service\mvnw.cmd -f backend/pom.xml -pl citas-service -am -DskipTests package
+```
+
+El Compose construye cada servicio con `backend/Dockerfile` y el contexto
+`backend/`; por eso también incluye el módulo `common` al ejecutar
+`docker compose --env-file backend/.env -f backend/compose.yaml up -d --build`.

@@ -1,0 +1,7 @@
+.env
+**/.env
+**/target/
+**/.git/
+**/*.pem
+**/*.key
+**/node_modules/
