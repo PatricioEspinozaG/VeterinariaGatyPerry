@@ -23,19 +23,18 @@ class GuardadoCitaTests {
     CitaRepository repository;
 
     @Test
-    void convierteHorarioDuplicadoDeOracleEn409() {
+    void convierteHorarioDuplicadoDePostgresEn409() {
         Cita cita = new Cita();
 
-        SQLException oracle = new SQLException(
-            "ORA-00001: unique constraint "
-                + "(GP_CITAS.UQ_CITAS_HORARIO_ACTIVO) violated",
-            "23000",
-            1
+        SQLException postgres = new SQLException(
+            "ERROR: duplicate key value violates unique constraint "
+                + "\"uq_citas_horario_activo\"",
+            "23505"
         );
         DataIntegrityViolationException errorBase =
             new DataIntegrityViolationException(
                 "No se pudo guardar la cita",
-                oracle
+                postgres
             );
 
         when(repository.saveAndFlush(cita)).thenThrow(errorBase);
@@ -53,15 +52,15 @@ class GuardadoCitaTests {
     void noOcultaOtrosErroresDeBaseDeDatos() {
         Cita cita = new Cita();
 
-        SQLException oracle = new SQLException(
-            "ORA-00001: unique constraint (GP_CITAS.PK_CITAS) violated",
-            "23000",
-            1
+        SQLException postgres = new SQLException(
+            "ERROR: duplicate key value violates unique constraint "
+                + "\"pk_citas\"",
+            "23505"
         );
         DataIntegrityViolationException errorBase =
             new DataIntegrityViolationException(
                 "Falló otra restricción",
-                oracle
+                postgres
             );
 
         when(repository.saveAndFlush(cita)).thenThrow(errorBase);

@@ -37,7 +37,7 @@ class MascotaServiceTests {
             "Luna", "Gato", "Mestiza", 3, "Hembra", "Control anual"
         );
 
-        // Simula el ID que Oracle asigna al guardar.
+        // Simula el ID que la base de datos asigna al guardar.
         when(repository.save(any(Mascota.class))).thenAnswer(invocation -> {
             Mascota mascota = invocation.getArgument(0);
             mascota.setId(1L);

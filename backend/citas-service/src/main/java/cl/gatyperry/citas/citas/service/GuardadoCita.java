@@ -46,7 +46,7 @@ final class GuardadoCita {
             }
 
             if (causa instanceof SQLException sql
-                && sql.getErrorCode() == 1) {
+                && "23505".equals(sql.getSQLState())) {
                 errorUnicidad = true;
             }
         }
