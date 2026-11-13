@@ -53,7 +53,13 @@ public class PedidosController {
     }
 
     @GetMapping("/{id}")
-    public PedidoResponse obtener(@PathVariable String id) {
-        return service.obtener(id);
+    public PedidoResponse obtener(
+        @PathVariable String id,
+        @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long userId = Long.valueOf(jwt.getSubject());
+        String role = jwt.getClaimAsString("rol");
+        boolean staff = "ADMIN".equals(role) || "RECEPCION".equals(role);
+        return service.obtener(id, userId, staff);
     }
 }

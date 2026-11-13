@@ -7,7 +7,6 @@ import cl.gatyperry.citas.citas.model.Cita;
 import cl.gatyperry.citas.citas.model.EstadoCita;
 import cl.gatyperry.citas.citas.repository.CitaRepository;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
@@ -18,8 +17,10 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class CitaGestionService {
 
-    private static final ZoneId ZONA_CLINICA =
-        ZoneId.of("America/Santiago");
+    private static final List<EstadoCita> ESTADOS_ACTIVOS = List.of(
+        EstadoCita.PENDIENTE,
+        EstadoCita.CONFIRMADA
+    );
 
     private final CitaRepository repository;
     private final ClienteClient clienteClient;
@@ -63,12 +64,19 @@ public class CitaGestionService {
             tokenPersonal
         );
 
+        HorarioCitas.exigirLibre(
+            repository.existsByFechaHoraAndEstadoIn(
+                fechaHora,
+                ESTADOS_ACTIVOS
+            )
+        );
+
         Cita cita = new Cita();
         cita.setUserId(userId);
         aplicarDatos(cita, request, fechaHora);
         cita.setEstado(EstadoCita.PENDIENTE);
 
-        return CitaResponse.from(repository.save(cita));
+        return CitaResponse.from(GuardadoCita.guardar(repository, cita));
     }
 
     @Transactional
@@ -107,8 +115,16 @@ public class CitaGestionService {
             tokenPersonal
         );
 
+        HorarioCitas.exigirLibre(
+            repository.existsByFechaHoraAndEstadoInAndIdNot(
+                fechaHora,
+                ESTADOS_ACTIVOS,
+                id
+            )
+        );
+
         aplicarDatos(cita, request, fechaHora);
-        return CitaResponse.from(repository.saveAndFlush(cita));
+        return CitaResponse.from(GuardadoCita.guardar(repository, cita));
     }
 
     @Transactional
@@ -135,19 +151,7 @@ public class CitaGestionService {
     }
 
     private LocalDateTime validarFechaFutura(CitaRequest request) {
-        LocalDateTime fechaHora = LocalDateTime.of(
-            request.fecha(),
-            request.hora()
-        );
-
-        if (!fechaHora.isAfter(LocalDateTime.now(ZONA_CLINICA))) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "La fecha y hora deben ser futuras"
-            );
-        }
-
-        return fechaHora;
+        return HorarioCitas.validar(request.fecha(), request.hora());
     }
 
     private void aplicarDatos(

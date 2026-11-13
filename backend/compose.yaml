@@ -1,97 +1,122 @@
 services:
-  pacientes:
-    build: ./pacientes-service
-    ports:
-      - "8082:8082"
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
     environment:
-      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
-      DB_USER: "GP_PACIENTES"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${POSTGRES_ADMIN_PASSWORD:?Falta POSTGRES_ADMIN_PASSWORD}"
+      AUTH_DB_PASSWORD: "${AUTH_DB_PASSWORD:?Falta AUTH_DB_PASSWORD}"
       DB_PASSWORD: "${DB_PASSWORD:?Falta DB_PASSWORD}"
-      JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+      PRODUCTOS_DB_PASSWORD: "${PRODUCTOS_DB_PASSWORD:?Falta PRODUCTOS_DB_PASSWORD}"
+      PEDIDOS_DB_PASSWORD: "${PEDIDOS_DB_PASSWORD:?Falta PEDIDOS_DB_PASSWORD}"
+      CITAS_DB_PASSWORD: "${CITAS_DB_PASSWORD:?Falta CITAS_DB_PASSWORD}"
+    ports:
+      - "127.0.0.1:5433:5432"
     volumes:
-      - type: bind
-        source: "${WALLET_DIR:?Falta WALLET_DIR}"
-        target: /wallet
-        read_only: true
-      - type: bind
-        source: "${KEYS_DIR:?Falta KEYS_DIR}"
-        target: /keys
-        read_only: true
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-databases.sh:ro
+      - ./postgres/init-comercio.sh:/docker-entrypoint-initdb.d/02-comercio.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   auth:
     build: ./auth-service
     ports:
       - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
-      DB_USER: "GP_AUTH"
+      DB_URL: "jdbc:postgresql://postgres:5432/gp_auth"
+      DB_USER: "gp_auth"
       DB_PASSWORD: "${AUTH_DB_PASSWORD:?Falta AUTH_DB_PASSWORD}"
       JWT_PRIVATE_KEY: "file:/keys/auth-private.pem"
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
     volumes:
       - type: bind
-        source: "${WALLET_DIR:?Falta WALLET_DIR}"
-        target: /wallet
+        source: "${KEYS_DIR:?Falta KEYS_DIR}"
+        target: /keys
         read_only: true
+
+  pacientes:
+    build: ./pacientes-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: "jdbc:postgresql://postgres:5432/gp_pacientes"
+      DB_USER: "gp_pacientes"
+      DB_PASSWORD: "${DB_PASSWORD:?Falta DB_PASSWORD}"
+      JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+    volumes:
       - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"
         target: /keys
         read_only: true
+
   citas:
     build: ./citas-service
     ports:
       - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
-      DB_USER: "GP_CITAS"
+      DB_URL: "jdbc:postgresql://postgres:5432/gp_citas"
+      DB_USER: "gp_citas"
       DB_PASSWORD: "${CITAS_DB_PASSWORD:?Falta CITAS_DB_PASSWORD}"
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
       PACIENTES_BASE_URL: "http://pacientes:8082"
       AUTH_BASE_URL: "http://auth:8081"
     volumes:
       - type: bind
-        source: "${WALLET_DIR:?Falta WALLET_DIR}"
-        target: /wallet
-        read_only: true
-      - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"
         target: /keys
         read_only: true
+
   productos:
     build: ./productos-service
     ports:
       - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
-      DB_USER: "GP_PRODUCTOS"
+      DB_URL: "jdbc:postgresql://postgres:5432/gp_productos"
+      DB_USER: "gp_productos"
       DB_PASSWORD: "${PRODUCTOS_DB_PASSWORD:?Falta PRODUCTOS_DB_PASSWORD}"
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
       INTERNAL_API_TOKEN: "${INTERNAL_API_TOKEN:?Falta INTERNAL_API_TOKEN}"
     volumes:
       - type: bind
-        source: "${WALLET_DIR:?Falta WALLET_DIR}"
-        target: /wallet
-        read_only: true
-      - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"
         target: /keys
         read_only: true
+
   pedidos:
     build: ./pedidos-service
     ports:
       - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      DB_URL: "jdbc:oracle:thin:@${DB_ALIAS:?Falta DB_ALIAS}?TNS_ADMIN=/wallet"
-      DB_USER: "GP_PEDIDOS"
+      DB_URL: "jdbc:postgresql://postgres:5432/gp_pedidos"
+      DB_USER: "gp_pedidos"
       DB_PASSWORD: "${PEDIDOS_DB_PASSWORD:?Falta PEDIDOS_DB_PASSWORD}"
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
       INTERNAL_API_TOKEN: "${INTERNAL_API_TOKEN:?Falta INTERNAL_API_TOKEN}"
       PRODUCTOS_BASE_URL: "http://productos:8084"
     volumes:
       - type: bind
-        source: "${WALLET_DIR:?Falta WALLET_DIR}"
-        target: /wallet
-        read_only: true
-      - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"
         target: /keys
         read_only: true
+
+volumes:
+  postgres_data:

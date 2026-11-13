@@ -42,7 +42,7 @@ public class MascotaService {
         mascota.setUserId(userId);
         aplicarDatos(mascota, request);
 
-        // Oracle genera el ID al guardar. Ya no asignamos un UUID.
+        // La base de datos genera el ID al guardar.
         return MascotaResponse.from(repository.save(mascota));
     }
 

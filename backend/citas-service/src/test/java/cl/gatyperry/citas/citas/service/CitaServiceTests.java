@@ -45,12 +45,12 @@ class CitaServiceTests {
         CitaRequest request = new CitaRequest(
             5L,
             "Consulta General",
-            LocalDate.now(ZONA_CLINICA).plusDays(1),
+            FechasDePrueba.diaHabilDesdeHoy(1),
             LocalTime.of(10, 0),
             "Control anual"
         );
 
-        when(repository.save(any(Cita.class)))
+        when(repository.saveAndFlush(any(Cita.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         var creada = service.crear(1L, "token-cliente", request);
@@ -85,7 +85,7 @@ class CitaServiceTests {
         CitaRequest request = new CitaRequest(
             5L,
             "Consulta General",
-            LocalDate.now(ZONA_CLINICA).plusDays(1),
+            FechasDePrueba.diaHabilDesdeHoy(1),
             LocalTime.of(10, 0),
             "Control anual"
         );

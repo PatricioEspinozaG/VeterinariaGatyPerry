@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/mis-pedidos")
                     .hasRole("CLIENTE")
-                .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/*")
+                    .hasAnyRole("CLIENTE", "RECEPCION", "ADMIN")
                 .anyRequest().denyAll()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt

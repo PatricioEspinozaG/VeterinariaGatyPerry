@@ -61,7 +61,7 @@ class CitaReprogramacionServiceTests {
         assertEquals(1L, resultado.userId());
         assertEquals(EstadoCita.CONFIRMADA, resultado.estado());
         assertEquals(
-            LocalDate.now(ZONA_CLINICA).plusDays(2),
+            FechasDePrueba.diaHabilDesdeHoy(2),
             resultado.fecha()
         );
         verify(clienteClient).verificarClienteActivo(
@@ -179,7 +179,7 @@ class CitaReprogramacionServiceTests {
         return new CitaRequest(
             mascotaId,
             "Consulta General",
-            LocalDate.now(ZONA_CLINICA).plusDays(2),
+            FechasDePrueba.diaHabilDesdeHoy(2),
             LocalTime.of(12, 0),
             "Control reprogramado"
         );

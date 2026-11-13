@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -130,6 +131,44 @@ class PedidosServiceTests {
             anyLong(),
             anyList()
         );
+    }
+
+    @Test
+    void clientePuedeConsultarSoloSuPedido() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        pedido.setUserId(17L);
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+
+        var response = service.obtener(id, 17L, false);
+
+        assertEquals(id, response.id());
+    }
+
+    @Test
+    void clienteNoPuedeConsultarPedidoAjeno() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        pedido.setUserId(23L);
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+
+        ResponseStatusException error = assertThrows(
+            ResponseStatusException.class,
+            () -> service.obtener(id, 17L, false)
+        );
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+    }
+
+    @Test
+    void personalPuedeConsultarPedidoDeInvitado() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+
+        var response = service.obtener(id, 17L, true);
+
+        assertEquals(id, response.id());
     }
 
     private Pedido pedido(String id, long subtotal, long envio) {

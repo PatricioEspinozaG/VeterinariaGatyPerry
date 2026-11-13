@@ -7,6 +7,7 @@ import cl.gatyperry.pedidos.pedidos.repository.PedidoRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.Locale;
 import org.slf4j.Logger;
@@ -99,9 +100,21 @@ public class PedidosService {
     }
 
     @Transactional(readOnly = true)
-    public PedidoResponse obtener(String id) {
+    public PedidoResponse obtener(
+        String id,
+        Long userId,
+        boolean staff
+    ) {
         return repository.buscarConItems(id)
-            .map(PedidoResponse::from)
+            .map(pedido -> {
+                if (!staff && !Objects.equals(pedido.getUserId(), userId)) {
+                    throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Pedido no encontrado"
+                    );
+                }
+                return PedidoResponse.from(pedido);
+            })
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
                 "Pedido no encontrado"
