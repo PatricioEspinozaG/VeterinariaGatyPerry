@@ -113,7 +113,7 @@ class ClinicaHttpIntegrationTests {
 
     @Test
     void adminPuedeRegistrarVacunaYSeGuardaLaAuditoria() {
-        when(mascotaClient.verificarParaPersonal(42L, anyString()))
+        when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
             .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         String fecha = java.time.LocalDate.now(
             java.time.ZoneId.of("America/Santiago")
@@ -141,7 +141,7 @@ class ClinicaHttpIntegrationTests {
 
     @Test
     void validaFechaFuturaDeVacunaEnLaApi() {
-        when(mascotaClient.verificarParaPersonal(42L, anyString()))
+        when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
             .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         String fechaFutura = java.time.LocalDate.now(
             java.time.ZoneId.of("America/Santiago")
@@ -187,7 +187,7 @@ class ClinicaHttpIntegrationTests {
 
     @Test
     void adminPuedeCrearAtencionYSeGuardaLaAuditoria() {
-        when(mascotaClient.verificarParaPersonal(42L, anyString()))
+        when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
             .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         String body = """
             {
@@ -270,9 +270,9 @@ class ClinicaHttpIntegrationTests {
 
     @Test
     void rechazaCitasDeOtraMascota() {
-        when(mascotaClient.verificarParaPersonal(42L, anyString()))
+        when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
             .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
-        when(citaClient.obtener(73L, anyString()))
+        when(citaClient.obtener(eq(73L), anyString()))
             .thenReturn(new CitaClient.CitaRemota(
                 73L,
                 7L,
@@ -306,7 +306,7 @@ class ClinicaHttpIntegrationTests {
             token("ADMIN", Instant.now().plusSeconds(120)),
             "{}"
         );
-        when(mascotaClient.verificarParaPersonal(42L, anyString()))
+        when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
             .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         ResponseEntity<String> creado = post(
             "/api/v1/clinica/gestion/atenciones",
@@ -465,7 +465,7 @@ class ClinicaHttpIntegrationTests {
                 .issuer("gaty-perry-auth")
                 .subject("7")
                 .audience(java.util.List.of("gaty-perry-api"))
-                .issuedAt(now)
+                .issuedAt(expiresAt.isAfter(now) ? now : expiresAt.minusSeconds(60))
                 .expiresAt(expiresAt)
                 .claim("rol", role)
                 .build()
