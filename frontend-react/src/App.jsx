@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router'
 import useLocalStorage from './hooks/useLocalStorage.js'
 import { readCartBuckets, STORAGE_KEYS } from './services/storage.js'
 import { getMe, logout, refreshSession } from './services/authApi.js'
-import { products as initialProducts } from './data/products.js'
+import { getProducts } from './services/productsApi.js'
 import { users as initialUsers } from './data/users.js'
 import {
   addToCart,
@@ -52,10 +52,9 @@ function App() {
   const [sessionLoading, setSessionLoading] = useState(true)
   const [sessionError, setSessionError] = useState('')
 
-  const [products, setProducts, productsError] = useLocalStorage(
-    STORAGE_KEYS.products,
-    initialProducts,
-  )
+  const [products, setProducts] = useState([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState('')
   const [orders, setOrders, ordersError] = useLocalStorage(
     STORAGE_KEYS.orders,
     [],
@@ -64,6 +63,29 @@ function App() {
     'users',
     initialUsers,
   )
+
+  useEffect(() => {
+    let active = true
+
+    async function loadProducts() {
+      try {
+        const catalog = await getProducts()
+        if (active) setProducts(catalog)
+      } catch (error) {
+        if (active) {
+          setProductsError(error.message || 'No pudimos cargar los productos.')
+        }
+      } finally {
+        if (active) setProductsLoading(false)
+      }
+    }
+
+    loadProducts()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -93,10 +115,10 @@ function App() {
   // La API usa roles en mayúsculas; las vistas actuales usan minúsculas.
   const currentUser = usuario
     ? {
-        ...usuario,
-        role: usuario.rol?.toLowerCase(),
-        active: usuario.activo,
-      }
+      ...usuario,
+      role: usuario.rol?.toLowerCase(),
+      active: usuario.activo,
+    }
     : null
 
   const currentUserId = currentUser?.id ?? ''
@@ -111,8 +133,7 @@ function App() {
     (total, item) => total + item.quantity,
     0,
   )
-  const storageError =
-    productsError || cartError || ordersError || usersError
+  const storageError = cartError || ordersError || usersError
 
   const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
   const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta')
@@ -209,6 +230,16 @@ function App() {
       {sessionError && (
         <p className="container" role="alert">{sessionError}</p>
       )}
+      {productsLoading && (
+        <p className="container" role="status">
+          Cargando productos...
+        </p>
+      )}
+      {productsError && (
+        <p className="container" role="alert">
+          {productsError}
+        </p>
+      )}
 
       <main>
         <Routes>
@@ -222,20 +253,24 @@ function App() {
           <Route
             path="/productos"
             element={
-              <Productos
-                products={products}
-                cart={validCart}
-                onAddToCart={handleAddToCart}
-              />
+              productsLoading || productsError ? null : (
+                <Productos
+                  products={products}
+                  cart={validCart}
+                  onAddToCart={handleAddToCart}
+                />
+              )
             }
           />
           <Route
             path="/productos/:code"
             element={
-              <DetalleProducto
-                products={products}
-                onAddToCart={handleAddToCart}
-              />
+              productsLoading || productsError ? null : (
+                <DetalleProducto
+                  products={products}
+                  onAddToCart={handleAddToCart}
+                />
+              )
             }
           />
           <Route

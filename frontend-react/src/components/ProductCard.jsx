@@ -7,11 +7,13 @@ function ProductCard({ product, onAddToCart }) {
   return (
     <article className="service-card product-card">
       <div className="service-card-image">
-        <img
-          src={productImage(product.code, product.category)}
-          alt={`Imagen de ${product.name}`}
-          loading="lazy"
-        />
+        <Link to={`/productos/${encodeURIComponent(product.code)}`}>
+          <img
+            src={productImage(product.code, product.category)}
+            alt={`Imagen de ${product.name}`}
+            loading="lazy"
+          />
+        </Link>
       </div>
 
       <div className="service-card-body">
@@ -19,7 +21,7 @@ function ProductCard({ product, onAddToCart }) {
 
         <p>Código: {product.code}</p>
 
-        <h3>{product.name}</h3>
+        <h3>{product.name}</h3>s
 
         <p>
           {product.activeIngredient} · {product.presentation}

@@ -10,6 +10,8 @@ import {
   refreshSession,
   register,
 } from './services/authApi.js'
+import { getProducts } from './services/productsApi.js'
+import { products as sampleProducts } from './data/products.js'
 
 vi.mock('./services/authApi.js', () => ({
   getMe: vi.fn(),
@@ -18,11 +20,15 @@ vi.mock('./services/authApi.js', () => ({
   refreshSession: vi.fn(),
   register: vi.fn(),
 }))
+vi.mock('./services/productsApi.js', () => ({
+  getProducts: vi.fn(),
+}))
 
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
   vi.mocked(refreshSession).mockResolvedValue(null)
+  vi.mocked(getProducts).mockResolvedValue(sampleProducts)
 })
 
 function renderAt(path) {
@@ -49,7 +55,9 @@ it('permite agregar un producto y verlo en el carrito', async () => {
   ).toBeInTheDocument()
 
   await user.type(screen.getByLabelText('Buscar productos'), 'Nexgard')
-  await user.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
+  await user.click(
+    await screen.findByRole('button', { name: 'Agregar al carrito' }),
+  )
 
   await user.click(
     screen.getByRole('link', { name: 'Carrito, 1 productos' }),
@@ -65,8 +73,13 @@ it('completa una compra y deja el carrito vacío', async () => {
   const user = userEvent.setup()
   renderAt('/productos')
 
-  await user.type(screen.getByLabelText('Buscar productos'), 'Nexgard')
-  await user.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
+  await user.type(
+    await screen.findByLabelText('Buscar productos'),
+    'Nexgard',
+  )
+  await user.click(
+    await screen.findByRole('button', { name: 'Agregar al carrito' }),
+  )
   await user.click(screen.getByRole('link', { name: 'Carrito, 1 productos' }))
   await user.click(screen.getByRole('link', { name: 'Continuar a compra' }))
 
