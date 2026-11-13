@@ -9,6 +9,7 @@ services:
       DB_PASSWORD: "${DB_PASSWORD:?Falta DB_PASSWORD}"
       PRODUCTOS_DB_PASSWORD: "${PRODUCTOS_DB_PASSWORD:?Falta PRODUCTOS_DB_PASSWORD}"
       PEDIDOS_DB_PASSWORD: "${PEDIDOS_DB_PASSWORD:?Falta PEDIDOS_DB_PASSWORD}"
+      CLINICA_DB_PASSWORD: "${CLINICA_DB_PASSWORD:?Falta CLINICA_DB_PASSWORD}"
       CITAS_DB_PASSWORD: "${CITAS_DB_PASSWORD:?Falta CITAS_DB_PASSWORD}"
     ports:
       - "127.0.0.1:5432:5432"
@@ -16,6 +17,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-databases.sh:ro
       - ./postgres/init-comercio.sh:/docker-entrypoint-initdb.d/02-comercio.sh:ro
+      - ./postgres/init-clinica.sh:/docker-entrypoint-initdb.d/03-clinica.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d postgres"]
       interval: 5s
@@ -112,6 +114,26 @@ services:
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
       INTERNAL_API_TOKEN: "${INTERNAL_API_TOKEN:?Falta INTERNAL_API_TOKEN}"
       PRODUCTOS_BASE_URL: "http://productos:8084"
+    volumes:
+      - type: bind
+        source: "${KEYS_DIR:?Falta KEYS_DIR}"
+        target: /keys
+        read_only: true
+
+  clinica:
+    build: ./clinica-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: "jdbc:postgresql://postgres:5432/gp_clinica"
+      DB_USER: "gp_clinica"
+      DB_PASSWORD: "${CLINICA_DB_PASSWORD:?Falta CLINICA_DB_PASSWORD}"
+      JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+      PACIENTES_BASE_URL: "http://pacientes:8082"
+      CITAS_BASE_URL: "http://citas:8083"
     volumes:
       - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"
