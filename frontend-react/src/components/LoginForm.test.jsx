@@ -1,101 +1,96 @@
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import LoginForm from './LoginForm.jsx'
+import { login } from '../services/authApi.js'
 
-it('impide iniciar sesión con una cuenta desactivada', async () => {
-  const user = userEvent.setup()
-  const onLogin = vi.fn()
+vi.mock('../services/authApi.js', () => ({
+  login: vi.fn(),
+}))
 
+beforeEach(() => {
+  vi.clearAllMocks()
+  localStorage.clear()
+})
+
+function renderLogin(onLogin = vi.fn()) {
   render(
-    <MemoryRouter>
-      <LoginForm
-        users={[{
-          id: 'usuario-1',
-          email: 'cliente@gmail.com',
-          password: 'clave1234',
-          active: false,
-        }]}
-        onLogin={onLogin}
-      />
+    <MemoryRouter initialEntries={['/login']}>
+      <Routes>
+        <Route
+          path="/login"
+          element={<LoginForm onLogin={onLogin} />}
+        />
+        <Route
+          path="/recepcion"
+          element={<h1>Panel de recepción</h1>}
+        />
+      </Routes>
     </MemoryRouter>,
   )
 
-  await user.type(screen.getByLabelText('Correo'), 'cliente@gmail.com')
-  await user.type(screen.getByLabelText('Contraseña'), 'clave1234')
+  return onLogin
+}
+
+it('inicia sesión con la API y entrega el usuario recibido', async () => {
+  const usuario = {
+    id: 5,
+    nombre: 'Recepción',
+    email: 'recepcion.prueba@example.test',
+    rol: 'RECEPCION',
+    activo: true,
+  }
+  vi.mocked(login).mockResolvedValue({
+    accessToken: 'jwt-de-prueba',
+    expiresIn: 900,
+    usuario,
+  })
+
+  const onLogin = renderLogin()
+  const user = userEvent.setup()
+
+  await user.type(
+    screen.getByLabelText('Correo'),
+    'recepcion.prueba@example.test',
+  )
+  await user.type(screen.getByLabelText('Contraseña'), 'clave-de-prueba')
   await user.click(screen.getByRole('button', { name: 'Ingresar' }))
 
-  expect(screen.getByRole('alert')).toHaveTextContent(
-    'Tu cuenta se encuentra deshabilitada.',
+  expect(login).toHaveBeenCalledWith(
+    'recepcion.prueba@example.test',
+    'clave-de-prueba',
+  )
+  expect(onLogin).toHaveBeenCalledWith(usuario)
+  expect(
+    await screen.findByRole('heading', { name: 'Panel de recepción' }),
+  ).toBeInTheDocument()
+  expect(localStorage.getItem('currentUserId')).toBeNull()
+})
+
+it('muestra un error y no abre sesión cuando la API responde 401', async () => {
+  vi.mocked(login).mockRejectedValue({ status: 401 })
+  const onLogin = renderLogin()
+  const user = userEvent.setup()
+
+  await user.type(screen.getByLabelText('Correo'), 'otro@example.test')
+  await user.type(screen.getByLabelText('Contraseña'), 'clave-incorrecta')
+  await user.click(screen.getByRole('button', { name: 'Ingresar' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Correo o contraseña incorrectos.',
   )
   expect(onLogin).not.toHaveBeenCalled()
 })
 
-it('entrega el ID de la cuenta al iniciar sesión correctamente', async () => {
+it('no llama a la API si faltan correo o contraseña', async () => {
+  renderLogin()
   const user = userEvent.setup()
-  const onLogin = vi.fn()
-
-  render(
-    <MemoryRouter>
-      <LoginForm
-        users={[{
-          id: 'usuario-1',
-          email: 'cliente@gmail.com',
-          password: 'clave1234',
-          active: true,
-        }]}
-        onLogin={onLogin}
-      />
-    </MemoryRouter>,
-  )
-
-  await user.type(screen.getByLabelText('Correo'), 'cliente@gmail.com')
-  await user.type(screen.getByLabelText('Contraseña'), 'clave1234')
 
   await user.click(screen.getByRole('button', { name: 'Ingresar' }))
 
-  expect(onLogin).toHaveBeenCalledWith('usuario-1')
   expect(screen.getByRole('alert')).toHaveTextContent(
-    '¡Inicio de sesión exitoso!',
+    'Ingresa tu correo y contraseña.',
   )
-})
-
-it('muestra errores de formato y credenciales incorrectas', async () => {
-  const user = userEvent.setup()
-  render(<MemoryRouter><LoginForm users={[]} /></MemoryRouter>)
-
-  await user.type(screen.getByLabelText('Correo'), 'persona@example.com')
-  await user.type(screen.getByLabelText('Contraseña'), 'corta')
-  await user.click(screen.getByRole('button', { name: 'Ingresar' }))
-
-  expect(screen.getByText(/Ingresa un correo permitido/)).toBeInTheDocument()
-  expect(screen.getByText(/al menos 8 caracteres/)).toBeInTheDocument()
-
-  await user.clear(screen.getByLabelText('Correo'))
-  await user.type(screen.getByLabelText('Correo'), 'persona@gmail.com')
-  await user.clear(screen.getByLabelText('Contraseña'))
-  await user.type(screen.getByLabelText('Contraseña'), 'clavevalida')
-  await user.click(screen.getByRole('button', { name: 'Ingresar' }))
-
-  expect(screen.getByRole('alert')).toHaveTextContent('Credenciales incorrectas.')
-})
-
-it('usa los usuarios de localStorage si no recibe usuarios por props', async () => {
-  localStorage.setItem('users', JSON.stringify([{
-    id: 'usuario-local',
-    email: 'local@gmail.com',
-    password: 'clave1234',
-    active: true,
-  }]))
-
-  const user = userEvent.setup()
-  render(<MemoryRouter><LoginForm /></MemoryRouter>)
-
-  await user.type(screen.getByLabelText('Correo'), 'local@gmail.com')
-  await user.type(screen.getByLabelText('Contraseña'), 'clave1234')
-  await user.click(screen.getByRole('button', { name: 'Ingresar' }))
-
-  expect(localStorage.getItem('currentUserId')).toBe('usuario-local')
-  expect(screen.getByRole('alert')).toHaveTextContent('¡Inicio de sesión exitoso!')
+  expect(login).not.toHaveBeenCalled()
 })

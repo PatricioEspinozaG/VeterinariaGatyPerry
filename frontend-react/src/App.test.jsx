@@ -1,16 +1,41 @@
-import { expect, it } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import App from './App.jsx'
+import {
+  getMe,
+  login,
+  logout,
+  refreshSession,
+  register,
+} from './services/authApi.js'
 
-it('permite agregar un producto y verlo en el carrito', async () => {
-  const user = userEvent.setup()
-  render(
-    <MemoryRouter initialEntries={['/']}>
+vi.mock('./services/authApi.js', () => ({
+  getMe: vi.fn(),
+  login: vi.fn(),
+  logout: vi.fn(),
+  refreshSession: vi.fn(),
+  register: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  localStorage.clear()
+  vi.mocked(refreshSession).mockResolvedValue(null)
+})
+
+function renderAt(path) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
       <App />
     </MemoryRouter>,
   )
+}
+
+it('permite agregar un producto y verlo en el carrito', async () => {
+  const user = userEvent.setup()
+  renderAt('/')
 
   const navegacion = screen.getByRole('navigation', {
     name: 'Navegación principal',
@@ -38,21 +63,28 @@ it('permite agregar un producto y verlo en el carrito', async () => {
 
 it('completa una compra y deja el carrito vacío', async () => {
   const user = userEvent.setup()
-  render(
-    <MemoryRouter initialEntries={['/productos']}>
-      <App />
-    </MemoryRouter>,
-  )
+  renderAt('/productos')
 
   await user.type(screen.getByLabelText('Buscar productos'), 'Nexgard')
   await user.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
   await user.click(screen.getByRole('link', { name: 'Carrito, 1 productos' }))
   await user.click(screen.getByRole('link', { name: 'Continuar a compra' }))
 
-  await user.type(screen.getByLabelText('Nombre completo'), 'Patricio Espinoza')
-  await user.type(screen.getByLabelText('Correo electrónico'), 'patricio@gmail.com')
-  await user.selectOptions(screen.getByLabelText('Método de entrega'), 'retiro')
-  await user.click(screen.getByRole('button', { name: 'Confirmar compra simulada' }))
+  await user.type(
+    screen.getByLabelText('Nombre completo'),
+    'Patricio Espinoza',
+  )
+  await user.type(
+    screen.getByLabelText('Correo electrónico'),
+    'patricio@gmail.com',
+  )
+  await user.selectOptions(
+    screen.getByLabelText('Método de entrega'),
+    'retiro',
+  )
+  await user.click(
+    screen.getByRole('button', { name: 'Confirmar compra simulada' }),
+  )
 
   expect(
     await screen.findByRole('heading', { name: '¡Pedido registrado!' }),
@@ -62,12 +94,8 @@ it('completa una compra y deja el carrito vacío', async () => {
   ).toBeInTheDocument()
 })
 
-it('envía al inicio de sesión si se intenta abrir citas sin cuenta', async () => {
-  render(
-    <MemoryRouter initialEntries={['/citas']}>
-      <App />
-    </MemoryRouter>,
-  )
+it('envía al login si se intenta abrir citas sin sesión', async () => {
+  renderAt('/citas')
 
   expect(
     await screen.findByRole('heading', { name: 'Iniciar sesión' }),
@@ -77,51 +105,101 @@ it('envía al inicio de sesión si se intenta abrir citas sin cuenta', async () 
   ).not.toBeInTheDocument()
 })
 
-it('activa la sesión al registrarse y permite abrir mascotas', async () => {
-  const user = userEvent.setup()
-  const { container } = render(
-    <MemoryRouter initialEntries={['/registro']}>
-      <App />
-    </MemoryRouter>,
-  )
-
-  const escribir = async (campo, valor) => {
-    await user.type(container.querySelector(`[name="${campo}"]`), valor)
+it('activa la sesión real después del registro', async () => {
+  const usuario = {
+    id: 12,
+    nombre: 'Camila',
+    apellidos: 'Soto',
+    email: 'camila@example.test',
+    rol: 'CLIENTE',
+    activo: true,
   }
+  vi.mocked(register).mockResolvedValue(usuario)
+  vi.mocked(login).mockResolvedValue({
+    accessToken: 'jwt-de-prueba',
+    expiresIn: 900,
+    usuario,
+  })
 
-  await escribir('nombre', 'Camila')
-  await escribir('apellidos', 'Soto')
-  await escribir('run', '12.345.678-5')
-  await escribir('email', 'camila@gmail.com')
-  await escribir('telefono', '+56 9 1234 5678')
-  await escribir('password', 'clave1234')
-  await escribir('confirmPassword', 'clave1234')
+  const user = userEvent.setup()
+  renderAt('/registro')
 
+  await user.type(screen.getByLabelText('Nombre'), 'Camila')
+  await user.type(screen.getByLabelText('Apellidos'), 'Soto')
+  await user.type(screen.getByLabelText('RUN'), '18.765.432-7')
+  await user.type(
+    screen.getByLabelText('Correo electrónico'),
+    'camila@example.test',
+  )
+  await user.type(
+    screen.getByLabelText('Teléfono de contacto'),
+    '+56912345678',
+  )
+  await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
+  await user.type(
+    screen.getByLabelText('Confirmar contraseña'),
+    'clave12345',
+  )
   await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
 
-  await user.click(await screen.findByRole('button', { name: 'Camila' }))
+  expect(register).toHaveBeenCalledOnce()
+  expect(
+    await screen.findByRole('heading', { name: 'Mi cuenta' }),
+  ).toBeInTheDocument()
+
   await user.click(screen.getByRole('link', { name: 'Administrar mascotas' }))
-  const enlaceMascota = await screen.findByRole('link', { name: '+ Agregar mascota' })
-  await user.click(enlaceMascota)
+  await user.click(
+    await screen.findByRole('link', { name: '+ Agregar mascota' }),
+  )
 
   expect(
     screen.getByRole('heading', { name: 'Registrar Mascota' }),
+  ).toBeInTheDocument()
+  expect(localStorage.getItem('currentUserId')).toBeNull()
+})
+
+it('recupera la sesión y permite cerrarla', async () => {
+  const usuario = {
+    id: 5,
+    nombre: 'Recepción',
+    email: 'recepcion.prueba@example.test',
+    rol: 'RECEPCION',
+    activo: true,
+  }
+  vi.mocked(refreshSession).mockResolvedValue({
+    accessToken: 'jwt-renovado',
+    usuario,
+  })
+  vi.mocked(getMe).mockResolvedValue(usuario)
+  vi.mocked(logout).mockResolvedValue(null)
+
+  const user = userEvent.setup()
+  renderAt('/recepcion')
+
+  expect(
+    await screen.findByRole('heading', { name: 'Panel de recepción' }),
+  ).toBeInTheDocument()
+  expect(refreshSession).toHaveBeenCalled()
+  expect(getMe).toHaveBeenCalled()
+
+  await user.click(screen.getByRole('button', { name: 'Salir' }))
+
+  expect(logout).toHaveBeenCalled()
+  expect(
+    await screen.findByRole('heading', { name: 'Iniciar sesión' }),
   ).toBeInTheDocument()
 })
 
 it('permite abrir un consejo y volver a la lista', async () => {
   const user = userEvent.setup()
-
-  render(
-    <MemoryRouter initialEntries={['/']}>
-      <App />
-    </MemoryRouter>,
-  )
+  renderAt('/')
 
   const navegacion = screen.getByRole('navigation', {
     name: 'Navegación principal',
   })
-  await user.click(within(navegacion).getByRole('link', { name: 'Consejos' }))
+  await user.click(
+    within(navegacion).getByRole('link', { name: 'Consejos' }),
+  )
 
   expect(
     screen.getByRole('heading', { name: 'Consejos para cuidarlos mejor' }),
@@ -141,11 +219,7 @@ it('permite abrir un consejo y volver a la lista', async () => {
 })
 
 it('muestra un aviso cuando el consejo no existe', () => {
-  render(
-    <MemoryRouter initialEntries={['/consejos/no-existe']}>
-      <App />
-    </MemoryRouter>,
-  )
+  renderAt('/consejos/no-existe')
 
   expect(
     screen.getByRole('heading', { name: 'Consejo no encontrado' }),

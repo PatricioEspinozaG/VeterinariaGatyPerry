@@ -1,10 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import useLocalStorage from './hooks/useLocalStorage.js'
 import { readCartBuckets, STORAGE_KEYS } from './services/storage.js'
+import { getMe, logout, refreshSession } from './services/authApi.js'
 import { products as initialProducts } from './data/products.js'
 import { users as initialUsers } from './data/users.js'
-import { addToCart, changeQuantity, normalizeCart, removeFromCart } from './utils/cartLogic.js'
+import {
+  addToCart,
+  changeQuantity,
+  normalizeCart,
+  removeFromCart,
+} from './utils/cartLogic.js'
 import { preparePurchase } from './utils/purchaseLogic.js'
 import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
@@ -19,8 +25,8 @@ import DetalleProducto from './pages/DetalleProducto.jsx'
 import Carrito from './pages/Carrito.jsx'
 import Checkout from './pages/Checkout.jsx'
 import ResultadoCompra from './pages/ResultadoCompra.jsx'
-import { RegisterForm } from './components/RegisterForm.jsx'
 import LoginForm from './components/LoginForm.jsx'
+import { RegisterForm } from './components/RegisterForm.jsx'
 import PetForm from './components/PetForm.jsx'
 import AppointmentForm from './components/AppointmentForm.jsx'
 import AppointmentsList from './components/AppointmentsList.jsx'
@@ -42,23 +48,76 @@ function ScrollToTop() {
 
 function App() {
   const location = useLocation()
-  const [products, setProducts, productsError] = useLocalStorage(STORAGE_KEYS.products, initialProducts)
-  const [orders, setOrders, ordersError] = useLocalStorage(STORAGE_KEYS.orders, [])
-  const [users, setUsers, usersError] = useLocalStorage('users', initialUsers)
-  const [currentUserId, setCurrentUserId, sessionError] = useLocalStorage('currentUserId', '')
+  const [usuario, setUsuario] = useState(null)
+  const [sessionLoading, setSessionLoading] = useState(true)
+  const [sessionError, setSessionError] = useState('')
 
-  const currentUser = users.find((user) => user.id === currentUserId && user.active) || null
-  const cartOwnerId = currentUser?.id || 'anonymous'
+  const [products, setProducts, productsError] = useLocalStorage(
+    STORAGE_KEYS.products,
+    initialProducts,
+  )
+  const [orders, setOrders, ordersError] = useLocalStorage(
+    STORAGE_KEYS.orders,
+    [],
+  )
+  const [users, setUsers, usersError] = useLocalStorage(
+    'users',
+    initialUsers,
+  )
+
+  useEffect(() => {
+    let active = true
+
+    async function recoverSession() {
+      try {
+        const renewed = await refreshSession()
+
+        if (renewed) {
+          const actual = await getMe()
+          if (active) setUsuario(actual)
+        }
+      } catch {
+        if (active) setUsuario(null)
+      } finally {
+        if (active) setSessionLoading(false)
+      }
+    }
+
+    recoverSession()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // La API usa roles en mayúsculas; las vistas actuales usan minúsculas.
+  const currentUser = usuario
+    ? {
+        ...usuario,
+        role: usuario.rol?.toLowerCase(),
+        active: usuario.activo,
+      }
+    : null
+
+  const currentUserId = currentUser?.id ?? ''
+  const cartOwnerId = String(currentUserId || 'anonymous')
   const [cartBuckets, setCartBuckets, cartError] = useLocalStorage(
     STORAGE_KEYS.carts,
     readCartBuckets(cartOwnerId),
   )
   const cart = cartBuckets[cartOwnerId] || []
   const validCart = normalizeCart(cart, products)
-  const cartQuantity = validCart.reduce((total, item) => total + item.quantity, 0)
-  const storageError = productsError || cartError || ordersError || usersError || sessionError
+  const cartQuantity = validCart.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  )
+  const storageError =
+    productsError || cartError || ordersError || usersError
+
   const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
-  const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta') ? requestedReturnTo : '/'
+  const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta')
+    ? requestedReturnTo
+    : '/'
 
   function saveCart(nextCart) {
     setCartBuckets((previous) => ({
@@ -70,6 +129,7 @@ function App() {
   function handleAddToCart(product) {
     const actual = products.find((item) => item.code === product.code)
     if (!actual) return { ok: false, error: 'Producto no disponible.' }
+
     const result = addToCart(validCart, actual)
     if (result.ok) saveCart(result.cart)
     return result
@@ -85,36 +145,71 @@ function App() {
     const result = preparePurchase(validCart, products, delivery)
     if (!result.ok) return result
 
-    const orderId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()
+    const orderId = crypto.randomUUID
+      ? crypto.randomUUID()
+      : Date.now().toString()
+
     setProducts(result.products)
-    setOrders((previous) => [...previous, {
-      id: orderId,
-      ...result,
-      delivery,
-      userId: currentUser?.id || null,
-      createdAt: new Date().toISOString(),
-    }])
+    setOrders((previous) => [
+      ...previous,
+      {
+        id: orderId,
+        ...result,
+        delivery,
+        userId: currentUser?.id || null,
+        createdAt: new Date().toISOString(),
+      },
+    ])
     saveCart([])
+
     return { ok: true, orderId }
   }
 
-  function handleRegister(newUser) {
-    const userWithId = {
-      ...newUser,
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-      role: 'cliente',
-      active: true,
+  async function handleLogout() {
+    setSessionError('')
+
+    try {
+      await logout()
+    } catch {
+      setSessionError(
+        'No pudimos confirmar el cierre de sesión con el servidor. Inténtalo nuevamente.',
+      )
+      return
     }
-    setUsers((previous) => [...previous, userWithId])
-    setCurrentUserId(userWithId.id)
-    return { ok: true }
+
+    setUsuario(null)
+  }
+
+  function protectedPage(element) {
+    if (sessionLoading) {
+      return (
+        <p className="container py-4" role="status">
+          Comprobando sesión...
+        </p>
+      )
+    }
+
+    return currentUser ? element : <Navigate to="/login" replace />
   }
 
   return (
     <div className="app-shell">
       <ScrollToTop />
-      <Header currentUser={currentUser} cartQuantity={cartQuantity} onLogout={() => setCurrentUserId('')} />
-      {storageError && <p className="container" role="alert">No pudimos guardar los cambios en este navegador.</p>}
+      <Header
+        currentUser={currentUser}
+        cartQuantity={cartQuantity}
+        onLogout={handleLogout}
+      />
+
+      {storageError && (
+        <p className="container" role="alert">
+          No pudimos guardar los cambios en este navegador.
+        </p>
+      )}
+      {sessionError && (
+        <p className="container" role="alert">{sessionError}</p>
+      )}
+
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -123,40 +218,195 @@ function App() {
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/consejos" element={<Consejos />} />
           <Route path="/consejos/:id" element={<DetalleConsejo />} />
-          <Route path="/productos" element={<Productos products={products} cart={validCart} onAddToCart={handleAddToCart} />} />
-          <Route path="/productos/:code" element={<DetalleProducto products={products} onAddToCart={handleAddToCart} />} />
-          <Route path="/carrito" element={<Carrito products={products} cart={validCart} onChangeQuantity={handleChangeQuantity} onRemove={(code) => saveCart(removeFromCart(validCart, code))} onClear={() => saveCart([])} />} />
-          <Route path="/checkout" element={<Checkout products={products} cart={validCart} currentUser={currentUser} onCompletePurchase={handleCompletePurchase} />} />
-          <Route path="/compra/:id" element={<ResultadoCompra orders={orders} />} />
+
+          <Route
+            path="/productos"
+            element={
+              <Productos
+                products={products}
+                cart={validCart}
+                onAddToCart={handleAddToCart}
+              />
+            }
+          />
+          <Route
+            path="/productos/:code"
+            element={
+              <DetalleProducto
+                products={products}
+                onAddToCart={handleAddToCart}
+              />
+            }
+          />
+          <Route
+            path="/carrito"
+            element={
+              <Carrito
+                products={products}
+                cart={validCart}
+                onChangeQuantity={handleChangeQuantity}
+                onRemove={(code) =>
+                  saveCart(removeFromCart(validCart, code))
+                }
+                onClear={() => saveCart([])}
+              />
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <Checkout
+                products={products}
+                cart={validCart}
+                currentUser={currentUser}
+                onCompletePurchase={handleCompletePurchase}
+              />
+            }
+          />
+          <Route
+            path="/compra/:id"
+            element={<ResultadoCompra orders={orders} />}
+          />
+
           <Route
             path="/registro"
-            element={<RegisterForm users={users} onRegister={handleRegister} />}
+            element={
+              <RegisterForm
+                onRegister={(usuarioRegistrado) => {
+                  setUsuario(usuarioRegistrado)
+                  setSessionError('')
+                }}
+              />
+            }
           />
           <Route
             path="/login"
-            element={<LoginForm users={users} onLogin={(userId) => setCurrentUserId(userId)} />}
+            element={
+              <LoginForm
+                onLogin={(usuarioAutenticado) => {
+                  setUsuario(usuarioAutenticado)
+                  setSessionError('')
+                }}
+              />
+            }
           />
+
           <Route
             path="/mascotas/nueva"
-            element={currentUser ? <PetForm currentUserId={currentUserId} returnTo={accountReturnTo} /> : <Navigate to="/login" replace />}
+            element={protectedPage(
+              <PetForm
+                currentUserId={currentUserId}
+                returnTo={accountReturnTo}
+              />,
+            )}
           />
           <Route
             path="/citas/nueva"
-            element={currentUser ? <AppointmentForm currentUserId={currentUserId} returnTo={accountReturnTo} /> : <Navigate to="/login" replace />}
+            element={protectedPage(
+              <AppointmentForm
+                currentUserId={currentUserId}
+                returnTo={accountReturnTo}
+              />,
+            )}
           />
           <Route
             path="/citas"
-            element={currentUser ? <AppointmentsList userRole={currentUser.role} currentUserId={currentUserId} /> : <Navigate to="/login" replace />}
+            element={protectedPage(
+              <AppointmentsList
+                userRole={currentUser?.role}
+                currentUserId={currentUserId}
+              />,
+            )}
           />
-          <Route path="/mi-cuenta" element={<UserPanel currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/mi-cuenta/compras" element={<UserPanel section="compras" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/mi-cuenta/mascotas" element={<UserPanel section="mascotas" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/mi-cuenta/citas" element={<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/recepcion" element={<ReceptionPanel currentUser={currentUser} users={users} />} />
+
+          <Route
+            path="/mi-cuenta"
+            element={protectedPage(
+              <UserPanel
+                currentUser={currentUser}
+                orders={orders}
+                setOrders={setOrders}
+              />,
+            )}
+          />
+          <Route
+            path="/mi-cuenta/compras"
+            element={protectedPage(
+              <UserPanel
+                section="compras"
+                currentUser={currentUser}
+                orders={orders}
+                setOrders={setOrders}
+              />,
+            )}
+          />
+          <Route
+            path="/mi-cuenta/mascotas"
+            element={protectedPage(
+              <UserPanel
+                section="mascotas"
+                currentUser={currentUser}
+                orders={orders}
+                setOrders={setOrders}
+              />,
+            )}
+          />
+          <Route
+            path="/mi-cuenta/citas"
+            element={protectedPage(
+              <UserPanel
+                section="citas"
+                currentUser={currentUser}
+                orders={orders}
+                setOrders={setOrders}
+              />,
+            )}
+          />
+          <Route
+            path="/recepcion"
+            element={protectedPage(
+              <ReceptionPanel currentUser={currentUser} users={users} />,
+            )}
+          />
+          <Route
+            path="/admin"
+            element={protectedPage(
+              <AdminPanel
+                products={products}
+                setProducts={setProducts}
+                users={users}
+                currentUser={currentUser}
+              />,
+            )}
+          />
+          <Route
+            path="/admin/usuarios"
+            element={protectedPage(
+              <AdminPanel
+                section="usuarios"
+                products={products}
+                setProducts={setProducts}
+                users={users}
+                setUsers={setUsers}
+                currentUser={currentUser}
+              />,
+            )}
+          />
+          <Route
+            path="/admin/citas"
+            element={protectedPage(
+              <AdminPanel
+                key={location.key}
+                section="citas"
+                products={products}
+                setProducts={setProducts}
+                users={users}
+                currentUser={currentUser}
+              />,
+            )}
+          />
+
           <Route path="*" element={<NoEncontrado />} />
-          <Route path="/admin" element={<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
-          <Route path="/admin/usuarios" element={<AdminPanel section="usuarios" products={products} setProducts={setProducts} users={users} setUsers={setUsers} currentUser={currentUser} />} />
-          <Route path="/admin/citas" element={<AdminPanel key={location.key} section="citas" products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
         </Routes>
       </main>
       <Footer />
