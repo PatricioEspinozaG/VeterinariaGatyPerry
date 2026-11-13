@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: clinica-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gp_clinica}
+    username: ${DB_USER:gp_clinica}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8086}
+
+app:
+  jwt:
+    issuer: gaty-perry-auth
+    public-key: ${JWT_PUBLIC_KEY:file:./keys/auth-public.pem}
+  pacientes:
+    base-url: ${PACIENTES_BASE_URL:http://localhost:8082}
+  citas:
+    base-url: ${CITAS_BASE_URL:http://localhost:8083}
+  http:
+    connect-timeout: ${HTTP_CONNECT_TIMEOUT:2s}
+    read-timeout: ${HTTP_READ_TIMEOUT:3s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
