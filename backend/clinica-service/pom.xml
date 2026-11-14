@@ -16,7 +16,7 @@
     <description>Gestión del historial clínico de mascotas</description>
     <properties>
         <java.version>21</java.version>
-        <springdoc.version>3.0.0</springdoc.version>
+        <springdoc.version>3.2.0</springdoc.version>
     </properties>
     <dependencies>
         <dependency>
