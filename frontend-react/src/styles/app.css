@@ -1693,3 +1693,15 @@
   height: 260px;
   border: 0;
 }
+
+.btn.user-danger-action {
+  background: #dc3545;
+  border: 1px solid #dc3545;
+  color: #fff;
+}
+
+.btn.user-danger-action:hover {
+  background: #fff;
+  border-color: #dc3545;
+  color: #dc3545;
+}

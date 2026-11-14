@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { deleteMyPet, getMyPets } from '../services/petsApi.js'
+import { getMyAppointments, cancelMyAppointment } from '../services/appointmentsApi.js'
 import UserPanel from './UserPanel.jsx'
 
 vi.mock('../services/petsApi.js', () => ({
@@ -11,11 +12,19 @@ vi.mock('../services/petsApi.js', () => ({
   deleteMyPet: vi.fn(),
 }))
 
+vi.mock('../services/appointmentsApi.js', () => ({
+  getMyAppointments: vi.fn(),
+  cancelMyAppointment: vi.fn(),
+}))
+
 beforeEach(() => {
   vi.mocked(getMyPets).mockReset()
   vi.mocked(deleteMyPet).mockReset()
   vi.mocked(getMyPets).mockResolvedValue([])
   vi.mocked(deleteMyPet).mockResolvedValue(undefined)
+  vi.mocked(getMyAppointments).mockReset()
+  vi.mocked(cancelMyAppointment).mockReset()
+  vi.mocked(getMyAppointments).mockResolvedValue([])
 })
 
 const customer = {
@@ -144,21 +153,38 @@ it('permite quitar una compra del historial después de confirmar', async () => 
   expect(screen.getByRole('status')).toHaveTextContent('La compra se quitó del historial.')
 })
 
-it('presenta las citas del cliente como tarjetas adaptables a móvil', () => {
-  localStorage.setItem('appointments', JSON.stringify([{
-    id: 'cita-1',
-    userId: customer.id,
-    petName: 'Luna',
-    servicio: 'Consulta general',
-    fecha: '2026-10-20',
-    hora: '10:00',
-    status: 'pending',
-  }]))
+it('presenta las citas del cliente cargadas desde la API', async () => {
+  vi.mocked(getMyPets).mockResolvedValue([{
+    id: 21,
+    nombre: 'Luna',
+    especie: 'Gato',
+  }])
+  vi.mocked(getMyAppointments).mockResolvedValue([{
+    id: 42,
+    mascotaId: 21,
+    servicio: 'Consulta General',
+    fecha: '2099-11-16',
+    hora: '10:00:00',
+    estado: 'PENDIENTE',
+  }])
 
   render(<StatefulUserPanel section="citas" />)
 
+  const petCell = (await screen.findByText('Luna')).closest('td')
+  expect(petCell).toHaveAttribute('data-label', 'Mascota')
   expect(screen.getByRole('table')).toHaveClass('user-appointments-table')
-  expect(screen.getByText('Luna').closest('td')).toHaveAttribute('data-label', 'Mascota')
   expect(screen.getByRole('button', { name: 'Cancelar cita' }).closest('td'))
     .toHaveAttribute('data-label', 'Acciones')
+  expect(getMyAppointments).toHaveBeenCalledOnce()
+})
+
+it('cuenta las citas de la API en el resumen', async () => {
+  vi.mocked(getMyAppointments).mockResolvedValue([{
+    id: 42,
+    mascotaId: 21,
+    estado: 'PENDIENTE',
+  }])
+  render(<StatefulUserPanel section="resumen" />)
+  await waitFor(() => expect(getMyAppointments).toHaveBeenCalledOnce())
+  expect(screen.getByText('Citas').parentElement).toHaveTextContent('1')
 })

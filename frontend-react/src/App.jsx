@@ -30,6 +30,7 @@ import { RegisterForm } from './components/RegisterForm.jsx'
 import PetForm from './components/PetForm.jsx'
 import AppointmentForm from './components/AppointmentForm.jsx'
 import AppointmentsList from './components/AppointmentsList.jsx'
+import ClientAppointmentsList from './components/ClientAppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
 import AdminProductsPage from './pages/AdminProductsPage.jsx'
@@ -348,10 +349,12 @@ function App() {
           <Route
             path="/citas"
             element={protectedPage(
-              <AppointmentsList
-                userRole={currentUser?.role}
-                currentUserId={currentUserId}
-              />,
+              currentUser?.role === 'cliente'
+                ? <ClientAppointmentsList />
+                : <AppointmentsList
+                  userRole={currentUser?.role}
+                  currentUserId={currentUserId}
+                />,
             )}
           />
 
