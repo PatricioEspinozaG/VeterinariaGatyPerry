@@ -21,7 +21,7 @@ function ProductCard({ product, onAddToCart }) {
 
         <p>Código: {product.code}</p>
 
-        <h3>{product.name}</h3>s
+        <h3>{product.name}</h3>
 
         <p>
           {product.activeIngredient} · {product.presentation}

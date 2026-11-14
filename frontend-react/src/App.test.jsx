@@ -13,6 +13,7 @@ import {
 import { getProducts } from './services/productsApi.js'
 import { products as sampleProducts } from './data/products.js'
 import { getMyPets } from './services/petsApi.js'
+import { createOrder, getOrder } from './services/ordersApi.js'
 
 vi.mock('./services/authApi.js', () => ({
   getMe: vi.fn(),
@@ -27,6 +28,11 @@ vi.mock('./services/productsApi.js', () => ({
 vi.mock('./services/petsApi.js', () => ({
   getMyPets: vi.fn(),
 }))
+vi.mock('./services/ordersApi.js', () => ({
+  createOrder: vi.fn(),
+  getOrder: vi.fn(),
+}))
+
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -34,6 +40,33 @@ beforeEach(() => {
   vi.mocked(refreshSession).mockResolvedValue(null)
   vi.mocked(getProducts).mockResolvedValue(sampleProducts)
   vi.mocked(getMyPets).mockResolvedValue([])
+  vi.mocked(createOrder).mockResolvedValue({
+  id: 'pedido-api-1',
+  items: [],
+  subtotal: 9500,
+  shipping: 0,
+  total: 9500,
+  deliveryMethod: 'retiro',
+  status: 'PENDIENTE',
+  createdAt: '2026-11-14T12:00:00Z',
+})
+  vi.mocked(getOrder).mockResolvedValue({
+  id: 'pedido-api-1',
+  items: [{
+    code: 'ME004',
+    name: 'Nexgard',
+    quantity: 1,
+    unitPrice: 9500,
+    lineTotal: 9500,
+  }],
+  subtotal: 9500,
+  shipping: 0,
+  total: 9500,
+  deliveryMethod: 'retiro',
+  status: 'REGISTRADO',
+  createdAt: '2026-11-14T12:00:00Z',
+})
+
 })
 
 function renderAt(path) {
@@ -110,6 +143,17 @@ it('completa una compra y deja el carrito vacío', async () => {
   expect(
     screen.getByRole('link', { name: 'Carrito, 0 productos' }),
   ).toBeInTheDocument()
+  expect(createOrder).toHaveBeenCalledWith({
+    items: [{ code: 'ME004', quantity: 1 }],
+    delivery: {
+      name: 'Patricio Espinoza',
+      email: 'patricio@gmail.com',
+      region: '',
+      commune: '',
+      address: '',
+      method: 'retiro',
+    },
+  })
 })
 
 it('envía al login si se intenta abrir citas sin sesión', async () => {

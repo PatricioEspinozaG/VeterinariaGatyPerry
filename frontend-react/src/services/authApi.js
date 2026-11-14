@@ -1,4 +1,5 @@
 const AUTH_URL = '/api/v1/auth'
+const REFRESH_LOCK_NAME = 'gatyperry-refresh-session'
 
 let accessToken = null
 let refreshPending = null
@@ -68,7 +69,7 @@ export async function login(email, password) {
 
 export async function refreshSession() {
   if (!refreshPending) {
-    refreshPending = (async () => {
+    async function requestRefresh() {
       const response = await fetch(`${AUTH_URL}/refresh`, {
         method: 'POST',
         credentials: 'same-origin',
@@ -85,14 +86,21 @@ export async function refreshSession() {
       const data = await readResponse(response)
       accessToken = data.accessToken
       return data
-    })().finally(() => {
+    }
+
+    const locks = globalThis.navigator?.locks
+
+    refreshPending = (
+      locks
+        ? locks.request(REFRESH_LOCK_NAME, requestRefresh)
+        : requestRefresh()
+    ).finally(() => {
       refreshPending = null
     })
   }
 
   return refreshPending
 }
-
 export async function getMe() {
   if (!accessToken) {
     throw new AuthApiError('No hay una sesión activa.', 401)

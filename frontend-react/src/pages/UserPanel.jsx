@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate } from 'react-router'
+import ClientOrdersList from '../components/ClientOrdersList.jsx'
 import ClientAppointmentsList from '../components/ClientAppointmentsList.jsx'
 import { getMyAppointments } from '../services/appointmentsApi.js'
+import { getMyOrders } from '../services/ordersApi.js'
 import { deleteMyPet, getMyPets } from '../services/petsApi.js'
-import { money } from '../utils/format.js'
 import '../styles/app.css'
 
 const sections = [
@@ -13,14 +14,17 @@ const sections = [
   { id: 'citas', label: 'Mis citas', path: '/mi-cuenta/citas' },
 ]
 
-function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' }) {
+function UserPanel({ currentUser, section = 'resumen' }) {
   const [pets, setPets] = useState([])
   const [petsLoading, setPetsLoading] = useState(true)
   const [petsLoadError, setPetsLoadError] = useState('')
   const [appointments, setAppointments] = useState([])
   const [appointmentsLoading, setAppointmentsLoading] = useState(true)
   const [appointmentsError, setAppointmentsError] = useState('')
-  const [pendingAction, setPendingAction] = useState(null)
+  const [ordersCount, setOrdersCount] = useState(0)
+  const [ordersLoading, setOrdersLoading] = useState(true)
+  const [ordersError, setOrdersError] = useState('')
+  const [pendingPet, setPendingPet] = useState(null)
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
 
@@ -34,7 +38,9 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
         const result = await getMyPets()
         if (active) setPets(result)
       } catch (error) {
-        if (active) setPetsLoadError(error.message || 'No pudimos cargar tus mascotas.')
+        if (active) {
+          setPetsLoadError(error.message || 'No pudimos cargar tus mascotas.')
+        }
       } finally {
         if (active) setPetsLoading(false)
       }
@@ -48,7 +54,13 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
   }, [currentUser?.id, currentUser?.role])
 
   useEffect(() => {
-    if (section !== 'resumen' || !currentUser?.id || currentUser.role !== 'cliente') return
+    if (
+      section !== 'resumen' ||
+      !currentUser?.id ||
+      currentUser.role !== 'cliente'
+    ) {
+      return
+    }
 
     let active = true
 
@@ -57,7 +69,9 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
         const result = await getMyAppointments()
         if (active) setAppointments(result)
       } catch (error) {
-        if (active) setAppointmentsError(error.message || 'No pudimos cargar tus citas.')
+        if (active) {
+          setAppointmentsError(error.message || 'No pudimos cargar tus citas.')
+        }
       } finally {
         if (active) setAppointmentsLoading(false)
       }
@@ -70,50 +84,65 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
     }
   }, [currentUser?.id, currentUser?.role, section])
 
+  useEffect(() => {
+    if (
+      section !== 'resumen' ||
+      !currentUser?.id ||
+      currentUser.role !== 'cliente'
+    ) {
+      return
+    }
+
+    let active = true
+
+    async function loadOrdersCount() {
+      try {
+        const orders = await getMyOrders()
+        if (active) setOrdersCount(orders.length)
+      } catch (error) {
+        if (active) {
+          setOrdersError(error.message || 'No pudimos cargar tus compras.')
+        }
+      } finally {
+        if (active) setOrdersLoading(false)
+      }
+    }
+
+    loadOrdersCount()
+
+    return () => {
+      active = false
+    }
+  }, [currentUser?.id, currentUser?.role, section])
+
   if (!currentUser || currentUser.role !== 'cliente') {
     return <Navigate to="/login" replace />
   }
 
-  const userId = String(currentUser.id)
-  const email = currentUser.email?.toLowerCase()
   const customerName = [
     currentUser.nombre || currentUser.name,
     currentUser.apellidos || currentUser.lastName,
   ].filter(Boolean).join(' ')
 
-  const userOrders = orders.filter((order) => (
-    String(order.userId || '') === userId ||
-    (!order.userId && order.delivery?.email?.toLowerCase() === email)
-  ))
-
-  function requestRemoval(type, item) {
-    setPendingAction({ type, item })
+  function requestPetRemoval(pet) {
+    setPendingPet(pet)
     setActionMessage('')
     setActionError('')
   }
 
-  async function confirmRemoval() {
-    if (!pendingAction) return
+  async function confirmPetRemoval() {
+    if (!pendingPet) return
 
-    if (pendingAction.type === 'compra') {
-      setOrders((previous) => previous.filter(
-        (order) => order.id !== pendingAction.item.id,
+    try {
+      await deleteMyPet(pendingPet.id)
+      setPets((previous) => previous.filter(
+        (pet) => String(pet.id) !== String(pendingPet.id),
       ))
-      setActionMessage('La compra se quitó del historial.')
-    } else {
-      try {
-        await deleteMyPet(pendingAction.item.id)
-        setPets((previous) => previous.filter(
-          (pet) => String(pet.id) !== String(pendingAction.item.id),
-        ))
-        setActionMessage('La mascota se quitó de tu cuenta.')
-      } catch (error) {
-        setActionError(error.message || 'No pudimos quitar la mascota.')
-        return
-      }
+      setActionMessage('La mascota se quitó de tu cuenta.')
+      setPendingPet(null)
+    } catch (error) {
+      setActionError(error.message || 'No pudimos quitar la mascota.')
     }
-
-    setPendingAction(null)
   }
 
   return (
@@ -149,7 +178,9 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               <div className="admin-badges user-summary-stats">
                 <div className="stat-card">
                   <strong>Compras</strong>
-                  <div className="stat-value">{userOrders.length}</div>
+                  <div className="stat-value">
+                    {ordersLoading ? '…' : ordersError ? '—' : ordersCount}
+                  </div>
                 </div>
                 <div className="stat-card">
                   <strong>Mascotas</strong>
@@ -158,10 +189,19 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                 <div className="stat-card">
                   <strong>Citas</strong>
                   <div className="stat-value">
-                    {appointmentsLoading ? '…' : appointmentsError ? '—' : appointments.length}
+                    {appointmentsLoading
+                      ? '…'
+                      : appointmentsError
+                        ? '—'
+                        : appointments.length}
                   </div>
                 </div>
               </div>
+              {ordersError && (
+                <p className="admin-form-message error" role="alert">
+                  {ordersError}
+                </p>
+              )}
               {appointmentsError && (
                 <p className="admin-form-message error" role="alert">
                   {appointmentsError}
@@ -170,81 +210,7 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
             </section>
           )}
 
-          {section === 'compras' && (
-            <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
-              <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 rounded-pill fw-semibold fs-7 mb-2 d-inline-block">
-                HISTORIAL DE COMPRAS
-              </span>
-              <h2 className="h3 fw-bold text-dark">Mis compras</h2>
-              {actionMessage && (
-                <p className="admin-form-message success" role="status">
-                  {actionMessage}
-                </p>
-              )}
-              {userOrders.length === 0 ? (
-                <div className="text-center py-5">
-                  <p className="text-muted">Todavía no tienes compras registradas.</p>
-                  <Link
-                    className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold"
-                    to="/productos"
-                  >
-                    Ver productos
-                  </Link>
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle mb-0 user-mobile-card-table">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Pedido</th>
-                        <th>Fecha</th>
-                        <th>Productos</th>
-                        <th>Entrega</th>
-                        <th>Total</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userOrders.map((order) => (
-                        <tr key={order.id}>
-                          <td data-label="Pedido">
-                            <Link to={`/compra/${order.id}`}>#{order.id}</Link>
-                          </td>
-                          <td data-label="Fecha">
-                            {order.createdAt
-                              ? new Date(order.createdAt).toLocaleDateString('es-CL')
-                              : 'Sin fecha'}
-                          </td>
-                          <td data-label="Productos">
-                            {(order.items || [])
-                              .map((item) => `${item.name} × ${item.quantity}`)
-                              .join(', ') || 'Detalle no disponible'}
-                          </td>
-                          <td data-label="Entrega">
-                            {order.delivery?.method === 'envio'
-                              ? 'Envío'
-                              : 'Retiro en clínica'}
-                          </td>
-                          <td className="fw-semibold" data-label="Total">
-                            {money(order.total || 0)}
-                          </td>
-                          <td className="user-card-actions" data-label="Acciones">
-                            <button
-                              className="btn btn-delete"
-                              type="button"
-                              onClick={() => requestRemoval('compra', order)}
-                            >
-                              Quitar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          )}
+          {section === 'compras' && <ClientOrdersList />}
 
           {section === 'mascotas' && (
             <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
@@ -311,7 +277,7 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                             <button
                               className="btn btn-delete rounded-pill px-3 user-danger-action"
                               type="button"
-                              onClick={() => requestRemoval('mascota', pet)}
+                              onClick={() => requestPetRemoval(pet)}
                             >
                               Quitar
                             </button>
@@ -333,7 +299,7 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
           )}
         </div>
 
-        {pendingAction && (
+        {pendingPet && (
           <div className="overlay" role="presentation">
             <section
               className="overlay-panel admin-confirm-panel"
@@ -346,22 +312,20 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                 Confirmar acción
               </h2>
               <p id="account-removal-description">
-                {pendingAction.type === 'compra'
-                  ? `¿Quitar el pedido #${pendingAction.item.id} de tu historial?`
-                  : `¿Quitar a ${pendingAction.item.nombre} de tus mascotas?`}
+                ¿Quitar a {pendingPet.nombre} de tus mascotas?
               </p>
               <div className="form-actions">
                 <button
                   className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold"
                   type="button"
-                  onClick={() => setPendingAction(null)}
+                  onClick={() => setPendingPet(null)}
                 >
                   Cancelar
                 </button>
                 <button
                   className="btn btn-delete px-4 py-2 rounded-pill fw-semibold"
                   type="button"
-                  onClick={confirmRemoval}
+                  onClick={confirmPetRemoval}
                 >
                   Quitar
                 </button>

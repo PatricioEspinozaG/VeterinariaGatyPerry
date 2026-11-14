@@ -15,6 +15,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   const [address, setAddress] = useState('')
   const [method, setMethod] = useState('envio')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const lines = getCartLines(cart, products)
   const subtotal = getCartTotal(cart, products)
@@ -22,9 +23,12 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   const total = subtotal + shipping
   const communes = regions[region] ?? []
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (submitting) return
+
     setError('')
+    setSubmitting(true)
 
     const delivery = {
       name,
@@ -35,14 +39,20 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
       method,
     }
 
-    const result = onCompletePurchase(delivery)
+    try {
+      const result = await onCompletePurchase(delivery)
 
-    if (!result.ok) {
-      setError(result.error ?? 'No se pudo completar la compra simulada.')
-      return
+      if (!result.ok) {
+        setError(result.error ?? 'No se pudo completar la compra.')
+        setSubmitting(false)
+        return
+      }
+
+      navigate(`/compra/${result.orderId}`)
+    } catch (cause) {
+      setError(cause.message || 'No pudimos completar el pedido. Inténtalo nuevamente.')
+      setSubmitting(false)
     }
-
-    navigate(`/compra/${result.orderId}`)
   }
 
   return (
@@ -110,8 +120,8 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                     }}
                     required
                   >
-                    <option value="envio">Envío simulado — $3.990</option>
-                    <option value="retiro">Retiro en clínica — $0</option>
+                    <option value="envio">Envío simulado - $3.990</option>
+                    <option value="retiro">Retiro en clínica - $0</option>
                   </select>
                 </div>
 
@@ -174,8 +184,12 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
 
                 {error && <p role="alert">{error}</p>}
 
-                <button className="button button-primary" type="submit">
-                  Confirmar compra simulada
+                <button
+                  className="button button-primary"
+                  type="submit"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Procesando pedido...' : 'Confirmar compra simulada'}
                 </button>
               </form>
 
@@ -192,15 +206,13 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
 
                   <p>Subtotal: {money(subtotal)}</p>
                   <p>
-                    {method === 'envio'
-                      ? 'Envío simulado'
-                      : 'Retiro en clínica'}
+                    {method === 'envio' ? 'Envío simulado' : 'Retiro en clínica'}
                     : {money(shipping)}
                   </p>
                   <p>
                     <strong>Total: {money(total)}</strong>
                   </p>
-                  <p>El pago y la entrega son solo una simulación local.</p>
+                  <p>El pago y la entrega son solo una simulación.</p>
 
                   <Link className="button button-outline" to="/carrito">
                     Volver al carrito

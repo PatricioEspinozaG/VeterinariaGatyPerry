@@ -11,7 +11,7 @@ import {
   normalizeCart,
   removeFromCart,
 } from './utils/cartLogic.js'
-import { preparePurchase } from './utils/purchaseLogic.js'
+import { createOrder } from './services/ordersApi.js'
 import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
 import Home from './pages/Home.jsx'
@@ -164,28 +164,54 @@ function App() {
     return result
   }
 
-  function handleCompletePurchase(delivery) {
-    const result = preparePurchase(validCart, products, delivery)
-    if (!result.ok) return result
+  async function handleCompletePurchase(delivery) {
+    const items = validCart.map((item) => ({
+      code: item.code,
+      quantity: item.quantity,
+    }))
 
-    const orderId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : Date.now().toString()
+    if (items.length === 0) {
+      return { ok: false, error: 'El carrito está vacío.' }
+    }
 
-    setProducts(result.products)
-    setOrders((previous) => [
-      ...previous,
-      {
-        id: orderId,
-        ...result,
+    try {
+      const order = await createOrder({
+        items,
         delivery,
-        userId: currentUser?.id || null,
-        createdAt: new Date().toISOString(),
-      },
-    ])
-    saveCart([])
+      })
 
-    return { ok: true, orderId }
+      // Refresca el catálogo para mostrar el stock actualizado.
+      try {
+        const catalog = await getProducts()
+        setProducts(catalog)
+      } catch {
+        // El pedido ya se guardó; un fallo al refrescar el catálogo
+        // no debe mostrarse como un fallo de compra.
+      }
+
+      setOrders((previous) => [
+        ...previous,
+        {
+          id: order.id,
+          items: order.items,
+          total: order.total,
+          subtotal: order.subtotal,
+          shipping: order.shipping,
+          delivery: { ...delivery, method: order.deliveryMethod },
+          userId: currentUser?.id || null,
+          createdAt: order.createdAt,
+          status: order.status,
+        },
+      ])
+
+      saveCart([])
+      return { ok: true, orderId: order.id }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error.message || 'No pudimos completar el pedido.',
+      }
+    }
   }
 
   async function handleLogout() {
