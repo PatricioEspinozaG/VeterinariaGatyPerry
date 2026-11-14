@@ -182,11 +182,6 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
 
   const appointmentFormContent = (
     <form className="admin-form admin-user-form mb-4" onSubmit={handleSaveAppointment}>
-      <div className="admin-section-heading">
-        {editingAppointmentId === null && <h2>Nueva cita</h2>}
-        {editingAppointmentId !== null && !managementMode && <h2>Editar cita</h2>}
-        <button className="btn" type="button" onClick={() => setShowForm(false)}>Cancelar</button>
-      </div>
       <label>Cliente
         <select
           value={formData.userId}
@@ -265,6 +260,7 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
       {formError && <p className="admin-form-message error" role="alert">{formError}</p>}
       <div className="form-actions">
         <button className="btn btn-primary" type="submit">{editingAppointmentId === null ? 'Crear cita' : 'Guardar cambios'}</button>
+        <button className="btn" type="button" onClick={() => setShowForm(false)}>Cancelar</button>
       </div>
     </form>
   );
@@ -325,7 +321,6 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                 </div>
               </div>
 
-              {canManageAppointments && showForm && editingAppointmentId === null && appointmentFormContent}
 
               {/* Tabla de Citas */}
               {citasFiltradas.length === 0 ? (
@@ -419,11 +414,11 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
         </div>
       </div>
     </div>
-    {canManageAppointments && showForm && editingAppointmentId !== null && (
-      <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="appointment-edit-title">
+    {canManageAppointments && showForm && (
+      <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="appointment-form-title">
         <div className="overlay-panel admin-edit-panel">
-          <button className="overlay-close" type="button" onClick={() => setShowForm(false)} aria-label="Cerrar edición de cita">×</button>
-          <h2 id="appointment-edit-title" className="h4 fw-bold mb-3">Editar cita</h2>
+          <button className="overlay-close" type="button" onClick={() => setShowForm(false)} aria-label="Cerrar formulario de cita">×</button>
+          <h2 id="appointment-form-title" className="h4 fw-bold mb-3">{editingAppointmentId === null ? 'Nueva cita' : 'Editar cita'}</h2>
           {appointmentFormContent}
         </div>
       </div>

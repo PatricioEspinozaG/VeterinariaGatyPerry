@@ -202,6 +202,7 @@ it('permite a administración crear una cita nueva', async () => {
   )
 
   await user.click(screen.getByRole('button', { name: 'Agregar cita' }))
+  expect(screen.getByRole('dialog', { name: 'Nueva cita' })).toBeInTheDocument()
   await user.selectOptions(screen.getByLabelText('Cliente'), 'cliente-1')
   await user.type(screen.getByLabelText('Mascota'), 'Nina')
   await user.type(screen.getByLabelText('Fecha'), '2099-05-20')
@@ -296,7 +297,7 @@ it('rechaza crear una cita con fecha anterior a hoy', async () => {
   fireEvent.change(screen.getByLabelText('Fecha'), {
     target: { value: ayer },
   })
-  fireEvent.submit(screen.getByText('Nueva cita').closest('form'))
+  fireEvent.submit(screen.getByRole('dialog', { name: 'Nueva cita' }).querySelector('form'))
 
   expect(screen.getByRole('alert'))
     .toHaveTextContent('La fecha de la cita no puede ser anterior a hoy.')

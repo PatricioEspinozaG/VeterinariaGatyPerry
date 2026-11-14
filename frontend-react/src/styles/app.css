@@ -1292,7 +1292,7 @@
 }
 .fab-pill .fab-plus { font-size: 1.4rem; line-height: 1 }
 .fab-pill .fab-label { font-size: 0.95rem }
-.fab-pill:active { transform: scale(0.98) }
+.fab-pill:active { transform: translateY(calc(-1 * var(--fab-footer-offset, 0px))) scale(0.98) }
 
 .overlay {
   position: fixed;

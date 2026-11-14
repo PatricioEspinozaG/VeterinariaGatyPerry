@@ -242,6 +242,13 @@ it('desplaza el botón flotante hacia arriba cuando el footer se acerca', () => 
   )
   expect(offset).toBeGreaterThan(0)
 
+  footer.getBoundingClientRect = () => ({ top: -200 })
+  window.dispatchEvent(new Event('scroll'))
+  const boundedOffset = Number.parseFloat(
+    screen.getByRole('button', { name: 'Agregar usuario' }).style.getPropertyValue('--fab-footer-offset'),
+  )
+  expect(boundedOffset).toBeLessThanOrEqual(window.innerHeight - 16)
+
   footer.remove()
 })
 
@@ -252,6 +259,7 @@ it('mantiene el signo más en el botón circular al abrir el formulario de usuar
   const addButton = screen.getByRole('button', { name: 'Agregar usuario' })
   await user.click(addButton)
 
+  expect(screen.getByRole('dialog', { name: 'Nuevo usuario' })).toBeInTheDocument()
   expect(addButton.querySelector('.fab-plus')).toHaveTextContent('+')
   expect(screen.getByRole('button', { name: 'Cancelar creación de usuario' })).toBeInTheDocument()
 })
@@ -269,7 +277,7 @@ it('crea un usuario de recepción', async () => {
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
 
   expect(screen.getByText('Camila Soto')).toBeInTheDocument()
-  expect(screen.getAllByText('Recepción')).toHaveLength(2)
+  expect(screen.getAllByText('Recepción')).toHaveLength(1)
   expect(screen.getByRole('status'))
     .toHaveTextContent('Usuario agregado correctamente.')
 })
@@ -286,7 +294,7 @@ it('rechaza crear un usuario con un correo ya registrado', async () => {
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
 
   expect(screen.getAllByText('Ya existe un usuario con ese correo.'))
-    .toHaveLength(2)
+    .toHaveLength(1)
   expect(screen.queryByText('Otro Cliente')).not.toBeInTheDocument()
 })
 

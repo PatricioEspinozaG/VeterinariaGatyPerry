@@ -31,7 +31,9 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
       const footerTop = footer?.getBoundingClientRect().top ?? window.innerHeight
       document.querySelectorAll('.admin-panel .fab-pill').forEach((button) => {
         const bottom = Number.parseFloat(window.getComputedStyle(button).bottom) || 0
-        const offset = Math.max(0, window.innerHeight - footerTop - bottom + 12)
+        const desiredOffset = Math.max(0, window.innerHeight - footerTop - bottom + 12)
+        const maxOffset = Math.max(0, window.innerHeight - bottom - button.offsetHeight - 16)
+        const offset = Math.min(desiredOffset, maxOffset)
         button.style.setProperty('--fab-footer-offset', `${offset}px`)
       })
     }
@@ -136,6 +138,7 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
     setUsers((previous) => [newUser, ...previous])
     setUserForm({ name: '', lastName: '', email: '', password: '', role: 'cliente', active: true })
     setUserFormSuccess('Usuario agregado correctamente.')
+    setShowUserForm(false)
   }
 
   function handleDeleteUser(user) {
@@ -201,7 +204,6 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
 
   const userFormContent = (
     <form className="admin-form admin-user-form" onSubmit={handleUserFormSubmit}>
-      {!editingUser && <h3 className="h5 fw-bold mb-0">Nuevo usuario</h3>}
       <label>Nombre
         <input name="name" value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} required />
       </label>
@@ -313,8 +315,7 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
                   <span className="fab-label">{showUserForm && !editingUser ? 'Cancelar' : 'Agregar usuario'}</span>
                 </button>
               </div>
-              {showUserForm && !editingUser && userFormContent}
-              {userFormError && !editingUser && <p className="admin-form-message error" role="alert">{userFormError}</p>}
+              {userFormError && !showUserForm && <p className="admin-form-message error" role="alert">{userFormError}</p>}
               {userFormSuccess && <p className="admin-form-message success" role="status">{userFormSuccess}</p>}
               <div className="admin-table">
                 <div className="table-responsive">
@@ -366,11 +367,11 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
         </div>
       </div>
 
-      {showUserForm && editingUser && (
-        <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="user-edit-title">
+      {showUserForm && (
+        <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="user-form-title">
           <div className="overlay-panel admin-edit-panel">
-            <button className="overlay-close" type="button" onClick={closeUserForm} aria-label="Cerrar edición de usuario">×</button>
-            <h2 id="user-edit-title" className="h4 fw-bold mb-3">Editar usuario</h2>
+            <button className="overlay-close" type="button" onClick={closeUserForm} aria-label="Cerrar formulario de usuario">×</button>
+            <h2 id="user-form-title" className="h4 fw-bold mb-3">{editingUser ? 'Editar usuario' : 'Nuevo usuario'}</h2>
             {userFormContent}
           </div>
         </div>
