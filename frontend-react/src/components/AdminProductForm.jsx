@@ -10,7 +10,7 @@ export default function AdminProductForm({ product, onCreate, onUpdate, onCancel
       code: product.code,
       name: product.name || product.title || '',
       category: product.category || '',
-      price: product.price || '',
+      price: product.price ?? '',
       stock: product.stock ?? 0,
       status: product.status || 'Disponible',
     }
@@ -23,24 +23,46 @@ export default function AdminProductForm({ product, onCreate, onUpdate, onCancel
       status: 'Disponible',
     }
   )
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   function handleChange(e) {
     const { name, value } = e.target
-    setForm((s) => ({ ...s, [name]: name === 'stock' ? Number(value) : value }))
+    setForm((current) => ({
+      ...current,
+      [name]: name === 'stock' ? Number(value) : value,
+    }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
+    setError('')
+    setSaving(true)
+
     const payload = {
       ...form,
       price: Number(form.price),
       stock: Number(form.stock),
     }
-    if (product) {
-      onUpdate && onUpdate(product.code, payload)
-    } else {
-      onCreate && onCreate(payload)
-      setForm((s) => ({ ...s, code: generateCode(), name: '', category: '', price: '', stock: 0 }))
+
+    try {
+      if (product) {
+        await onUpdate?.(product.code, payload)
+      } else {
+        await onCreate?.(payload)
+        setForm((current) => ({
+          ...current,
+          code: generateCode(),
+          name: '',
+          category: '',
+          price: '',
+          stock: 0,
+        }))
+      }
+    } catch (cause) {
+      setError(cause.message || 'No pudimos guardar el producto.')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -74,9 +96,21 @@ export default function AdminProductForm({ product, onCreate, onUpdate, onCancel
         </select>
       </label>
 
+      {error && (
+        <p className="admin-form-message error" role="alert">
+          {error}
+        </p>
+      )}
+
       <div className="form-actions">
-        <button type="submit" className="btn btn-registro-custom">{product ? 'Guardar' : 'Crear'}</button>
-        {product ? <button type="button" className="btn" onClick={onCancel}>Cancelar</button> : null}
+        <button type="submit" className="btn btn-registro-custom" disabled={saving}>
+          {saving ? 'Guardando...' : product ? 'Guardar' : 'Crear'}
+        </button>
+        {product ? (
+          <button type="button" className="btn" onClick={onCancel} disabled={saving}>
+            Cancelar
+          </button>
+        ) : null}
       </div>
     </form>
   )

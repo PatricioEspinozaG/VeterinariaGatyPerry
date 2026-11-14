@@ -32,6 +32,7 @@ import AppointmentForm from './components/AppointmentForm.jsx'
 import AppointmentsList from './components/AppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
+import AdminProductsPage from './pages/AdminProductsPage.jsx'
 import UserPanel from './pages/UserPanel.jsx'
 import ReceptionPanel from './pages/ReceptionPanel.jsx'
 import './styles/app.css'
@@ -406,11 +407,10 @@ function App() {
           <Route
             path="/admin"
             element={protectedPage(
-              <AdminPanel
-                products={products}
-                setProducts={setProducts}
-                users={users}
+              <AdminProductsPage
                 currentUser={currentUser}
+                users={users}
+                setUsers={setUsers}
               />,
             )}
           />

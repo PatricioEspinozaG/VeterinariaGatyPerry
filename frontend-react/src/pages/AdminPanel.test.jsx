@@ -1,9 +1,20 @@
 import { expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import AdminPanel from './AdminPanel.jsx'
+import {
+  createProduct,
+  discontinueProduct,
+  updateProduct,
+} from '../services/productsApi.js'
+
+vi.mock('../services/productsApi.js', () => ({
+  createProduct: vi.fn(),
+  discontinueProduct: vi.fn(),
+  updateProduct: vi.fn(),
+}))
 
 const initialUsers = [
   { id: 'admin-1', name: 'Administradora', lastName: 'Demo', email: 'admin@duoc.cl', password: 'admin12345', role: 'admin', active: true },
@@ -67,7 +78,8 @@ it('permite eliminar un usuario después de confirmar', async () => {
   render(<StatefulAdminPanel />)
 
   await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[1])
-  expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Eliminar al usuario “Cliente Demo”?')
+  expect(screen.getByRole('alertdialog')).toHaveTextContent(
+  '¿Eliminar al usuario "Cliente Demo"?',)
   expect(screen.getByText('Cliente Demo')).toBeInTheDocument()
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-delete'))
 
@@ -75,10 +87,19 @@ it('permite eliminar un usuario después de confirmar', async () => {
   expect(screen.getByRole('status')).toHaveTextContent('Usuario eliminado correctamente.')
 })
 
-it('elimina un producto al confirmar desde el diálogo de la página', async () => {
+it('descontinúa un producto después de confirmarlo en la API', async () => {
+  vi.mocked(discontinueProduct).mockResolvedValue(null)
+
   const user = userEvent.setup()
-  const product = { code: 'ME001', name: 'Producto demo', category: 'Consulta', price: 1000, stock: 4 }
-  const setProducts = vi.fn((update) => update([product]))
+  const product = {
+    code: 'ME001',
+    name: 'Producto demo',
+    category: 'Consulta',
+    price: 1000,
+    stock: 4,
+  }
+  const setProducts = vi.fn()
+
   render(
     <MemoryRouter>
       <AdminPanel
@@ -90,11 +111,24 @@ it('elimina un producto al confirmar desde el diálogo de la página', async () 
     </MemoryRouter>,
   )
 
-  await user.click(screen.getByRole('button', { name: 'Eliminar' }))
-  expect(screen.getByRole('alertdialog')).toBeInTheDocument()
-  await user.click(screen.getByRole('alertdialog').querySelector('button.btn-delete'))
+  await user.click(screen.getByRole('button', { name: 'Descontinuar' }))
+  expect(screen.getByRole('alertdialog')).toHaveTextContent(
+    '¿Descontinuar el producto "Producto demo"?',
+  )
 
-  expect(setProducts).toHaveBeenCalled()
+  await user.click(
+    screen.getByRole('alertdialog').querySelector('button.btn-delete'),
+  )
+
+  await waitFor(() => {
+    expect(discontinueProduct).toHaveBeenCalledWith('ME001')
+    expect(setProducts).toHaveBeenCalledOnce()
+  })
+
+  const updateProducts = setProducts.mock.calls[0][0]
+  expect(updateProducts([product])).toEqual([
+    { ...product, status: 'Descontinuado' },
+  ])
   expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
 })
 
@@ -111,10 +145,19 @@ it('conserva el usuario cuando se cancela la confirmación de eliminación', asy
   expect(screen.queryByRole('status')).not.toBeInTheDocument()
 })
 
-it('conserva el producto cuando se cancela la confirmación de eliminación', async () => {
+it('conserva el producto si se cancela la descontinuación', async () => {
+  vi.mocked(discontinueProduct).mockClear()
+
   const user = userEvent.setup()
-  const product = { code: 'ME001', name: 'Producto demo', category: 'Consulta', price: 1000, stock: 4 }
+  const product = {
+    code: 'ME001',
+    name: 'Producto demo',
+    category: 'Consulta',
+    price: 1000,
+    stock: 4,
+  }
   const setProducts = vi.fn()
+
   render(
     <MemoryRouter>
       <AdminPanel
@@ -125,12 +168,20 @@ it('conserva el producto cuando se cancela la confirmación de eliminación', as
       />
     </MemoryRouter>,
   )
-  await user.click(screen.getByRole('button', { name: 'Eliminar' }))
-  expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Eliminar el producto “Producto demo”?')
-  await user.click(screen.getByRole('alertdialog').querySelector('button.btn-outline-secondary'))
 
+  await user.click(screen.getByRole('button', { name: 'Descontinuar' }))
+  expect(screen.getByRole('alertdialog')).toHaveTextContent(
+    '¿Descontinuar el producto "Producto demo"?',
+  )
+
+  await user.click(
+    screen.getByRole('alertdialog').querySelector('button.btn-outline-secondary'),
+  )
+
+  expect(discontinueProduct).not.toHaveBeenCalled()
   expect(setProducts).not.toHaveBeenCalled()
   expect(screen.getByText('Producto demo')).toBeInTheDocument()
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
 })
 
 it('impide eliminar la cuenta del administrador que inició sesión', async () => {
@@ -239,7 +290,13 @@ it('rechaza crear un usuario con un correo ya registrado', async () => {
   expect(screen.queryByText('Otro Cliente')).not.toBeInTheDocument()
 })
 
-it('crea un producto desde el panel de administración', async () => {
+it('crea un producto y muestra la respuesta de la API', async () => {
+  vi.mocked(createProduct).mockImplementation(async (product) => ({
+    ...product,
+    stock: 6,
+    version: 1,
+  }))
+
   const user = userEvent.setup()
   const setProducts = vi.fn()
 
@@ -262,12 +319,77 @@ it('crea un producto desde el panel de administración', async () => {
   await user.type(screen.getByLabelText('Stock'), '5')
   await user.click(screen.getByRole('button', { name: 'Crear' }))
 
-  expect(setProducts).toHaveBeenCalledTimes(1)
-  const actualizarProductos = setProducts.mock.calls[0][0]
-  expect(actualizarProductos([])[0]).toMatchObject({
+  await waitFor(() => {
+    expect(createProduct).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Vacuna demo',
+        category: 'Vacunas',
+        price: 6500,
+        stock: 5,
+      }),
+    )
+    expect(setProducts).toHaveBeenCalledOnce()
+  })
+
+  const updateProducts = setProducts.mock.calls[0][0]
+  expect(updateProducts([])[0]).toMatchObject({
     name: 'Vacuna demo',
     category: 'Vacunas',
     price: 6500,
-    stock: 5,
+    stock: 6,
+    version: 1,
   })
+})
+
+it('actualiza un producto y muestra la respuesta de la API', async () => {
+  vi.mocked(updateProduct).mockImplementation(async (code, changes) => ({
+    ...changes,
+    code,
+    price: 1100,
+    version: 2,
+  }))
+
+  const user = userEvent.setup()
+  const product = {
+    code: 'ME001',
+    name: 'Producto demo',
+    category: 'Consulta',
+    price: 1000,
+    stock: 4,
+    status: 'Disponible',
+    version: 1,
+  }
+  const setProducts = vi.fn()
+
+  render(
+    <MemoryRouter>
+      <AdminPanel
+        products={[product]}
+        setProducts={setProducts}
+        users={initialUsers}
+        currentUser={initialUsers[0]}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Editar' }))
+  await user.clear(screen.getByLabelText('Precio'))
+  await user.type(screen.getByLabelText('Precio'), '1050')
+  await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+  await waitFor(() => {
+    expect(updateProduct).toHaveBeenCalledWith(
+      'ME001',
+      expect.objectContaining({ price: 1050 }),
+    )
+    expect(setProducts).toHaveBeenCalledOnce()
+  })
+
+  const updateProducts = setProducts.mock.calls[0][0]
+  expect(updateProducts([product])[0]).toMatchObject({
+    code: 'ME001',
+    price: 1100,
+    version: 2,
+  })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })

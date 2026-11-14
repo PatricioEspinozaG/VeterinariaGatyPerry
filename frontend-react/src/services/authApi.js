@@ -123,3 +123,36 @@ export async function logout() {
     accessToken = null
   }
 }
+
+export async function fetchWithAuth(url, options = {}) {
+  if (!accessToken) {
+    const renewed = await refreshSession()
+    if (!renewed) {
+      throw new AuthApiError('Inicia sesión para continuar.', 401)
+    }
+  }
+
+  async function send() {
+    const headers = new Headers(options.headers)
+    headers.set('Authorization', `Bearer ${accessToken}`)
+
+    return fetch(url, {
+      ...options,
+      credentials: 'same-origin',
+      headers,
+    })
+  }
+
+  let response = await send()
+
+  if (response.status === 401) {
+    const renewed = await refreshSession()
+    if (!renewed) {
+      throw new AuthApiError('Tu sesión expiró. Inicia sesión nuevamente.', 401)
+    }
+
+    response = await send()
+  }
+
+  return response
+}
