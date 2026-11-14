@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate } from 'react-router'
 import AppointmentsList from '../components/AppointmentsList.jsx'
-import { readStorage, writeStorage } from '../services/storage.js'
+import { readStorage } from '../services/storage.js'
+import { deleteMyPet, getMyPets } from '../services/petsApi.js'
 import { money } from '../utils/format.js'
 import '../styles/app.css'
 
@@ -13,12 +14,35 @@ const sections = [
 ]
 
 function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' }) {
-  const [pets, setPets] = useState(() => (
-    readStorage('pets', []).filter((pet) => String(pet.userId) === String(currentUser?.id))
-  ))
+  const [pets, setPets] = useState([])
+  const [petsLoading, setPetsLoading] = useState(true)
+  const [petsLoadError, setPetsLoadError] = useState('')
   const [pendingAction, setPendingAction] = useState(null)
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
+
+  useEffect(() => {
+    if (!currentUser?.id || currentUser.role !== 'cliente') return
+
+    let active = true
+
+    async function loadPets() {
+      try {
+        const result = await getMyPets()
+        if (active) setPets(result)
+      } catch (error) {
+        if (active) setPetsLoadError(error.message || 'No pudimos cargar tus mascotas.')
+      } finally {
+        if (active) setPetsLoading(false)
+      }
+    }
+
+    loadPets()
+
+    return () => {
+      active = false
+    }
+  }, [currentUser?.id, currentUser?.role])
 
   if (!currentUser || currentUser.role !== 'cliente') return <Navigate to="/login" replace />
 
@@ -39,22 +63,23 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
     setActionError('')
   }
 
-  function confirmRemoval() {
+  async function confirmRemoval() {
     if (!pendingAction) return
 
     if (pendingAction.type === 'compra') {
       setOrders((previous) => previous.filter((order) => order.id !== pendingAction.item.id))
       setActionMessage('La compra se quitó del historial.')
     } else {
-      const updatedPets = readStorage('pets', []).filter((pet) => (
-        String(pet.userId) !== userId || String(pet.id) !== String(pendingAction.item.id)
-      ))
-      if (!writeStorage('pets', updatedPets)) {
-        setActionError('No se pudo quitar la mascota en este navegador.')
+      try {
+        await deleteMyPet(pendingAction.item.id)
+        setPets((previous) => previous.filter(
+          (pet) => String(pet.id) !== String(pendingAction.item.id),
+        ))
+        setActionMessage('La mascota se quitó de tu cuenta.')
+      } catch (error) {
+        setActionError(error.message || 'No pudimos quitar la mascota.')
         return
       }
-      setPets(updatedPets.filter((pet) => String(pet.userId) === userId))
-      setActionMessage('La mascota se quitó de tu cuenta.')
     }
 
     setPendingAction(null)
@@ -95,17 +120,12 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                 <div className="stat-card"><strong>Mascotas</strong><div className="stat-value">{pets.length}</div></div>
                 <div className="stat-card"><strong>Citas</strong><div className="stat-value">{appointments.length}</div></div>
               </div>
-              <div className="user-panel-shortcuts">
-                <Link className="button button-primary" to="/mi-cuenta/compras">Ver historial de compras</Link>
-                <Link className="button button-secondary" to="/mi-cuenta/mascotas">Administrar mascotas</Link>
-                <Link className="button button-secondary" to="/mi-cuenta/citas">Revisar mis citas</Link>
-              </div>
             </section>
           )}
 
           {section === 'compras' && (
             <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
-              <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">
+              <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 rounded-pill fw-semibold fs-7 mb-2 d-inline-block">
                 HISTORIAL DE COMPRAS
               </span>
               <h2 className="h3 fw-bold text-dark">Mis compras</h2>
@@ -120,7 +140,6 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                   <table className="table table-hover align-middle mb-0 user-mobile-card-table">
                     <thead className="table-light"><tr><th>Pedido</th><th>Fecha</th><th>Productos</th><th>Entrega</th><th>Total</th><th>Acciones</th></tr></thead>
                     <tbody>
-                      {userOrders.length === 0 && <tr><td colSpan="6" className="text-center text-secondary py-4">No hay compras registradas.</td></tr>}
                       {userOrders.map((order) => (
                         <tr key={order.id}>
                           <td data-label="Pedido"><Link to={`/compra/${order.id}`}>#{order.id}</Link></td>
@@ -151,14 +170,17 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               </div>
               {actionMessage && <p className="admin-form-message success" role="status">{actionMessage}</p>}
               {actionError && <p className="admin-form-message error" role="alert">{actionError}</p>}
-              {pets.length === 0 ? (
+              {petsLoading ? (
+                <p role="status">Cargando mascotas...</p>
+              ) : petsLoadError ? (
+                <p className="admin-form-message error" role="alert">{petsLoadError}</p>
+              ) : pets.length === 0 ? (
                 <div className="text-center py-5"><p className="text-muted">Aún no registras mascotas.</p></div>
               ) : (
                 <div className="table-responsive">
                   <table className="table table-hover align-middle mb-0 user-mobile-card-table">
                     <thead className="table-light"><tr><th>Nombre</th><th>Especie</th><th>Raza</th><th>Edad</th><th>Notas</th><th>Acciones</th></tr></thead>
                     <tbody>
-                      {pets.length === 0 && <tr><td colSpan="6" className="text-center text-secondary py-4">Aún no registras mascotas.</td></tr>}
                       {pets.map((pet) => (
                         <tr key={pet.id}>
                           <td className="fw-semibold" data-label="Nombre">{pet.nombre}</td>

@@ -12,6 +12,7 @@ import {
 } from './services/authApi.js'
 import { getProducts } from './services/productsApi.js'
 import { products as sampleProducts } from './data/products.js'
+import { getMyPets } from './services/petsApi.js'
 
 vi.mock('./services/authApi.js', () => ({
   getMe: vi.fn(),
@@ -23,12 +24,16 @@ vi.mock('./services/authApi.js', () => ({
 vi.mock('./services/productsApi.js', () => ({
   getProducts: vi.fn(),
 }))
+vi.mock('./services/petsApi.js', () => ({
+  getMyPets: vi.fn(),
+}))
 
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
   vi.mocked(refreshSession).mockResolvedValue(null)
   vi.mocked(getProducts).mockResolvedValue(sampleProducts)
+  vi.mocked(getMyPets).mockResolvedValue([])
 })
 
 function renderAt(path) {
@@ -160,7 +165,7 @@ it('activa la sesión real después del registro', async () => {
     await screen.findByRole('heading', { name: 'Mi cuenta' }),
   ).toBeInTheDocument()
 
-  await user.click(screen.getByRole('link', { name: 'Administrar mascotas' }))
+  await user.click(screen.getByRole('link', { name: 'Mis mascotas' }))
   await user.click(
     await screen.findByRole('link', { name: '+ Agregar mascota' }),
   )
