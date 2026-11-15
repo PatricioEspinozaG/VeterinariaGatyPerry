@@ -29,7 +29,6 @@ import LoginForm from './components/LoginForm.jsx'
 import { RegisterForm } from './components/RegisterForm.jsx'
 import PetForm from './components/PetForm.jsx'
 import AppointmentForm from './components/AppointmentForm.jsx'
-import AppointmentsList from './components/AppointmentsList.jsx'
 import ClientAppointmentsList from './components/ClientAppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
@@ -377,10 +376,11 @@ function App() {
             element={protectedPage(
               currentUser?.role === 'cliente'
                 ? <ClientAppointmentsList />
-                : <AppointmentsList
-                  userRole={currentUser?.role}
-                  currentUserId={currentUserId}
-                />,
+                : currentUser?.role === 'admin'
+                  ? <Navigate to="/admin/citas" replace />
+                  : currentUser?.role === 'recepcion'
+                    ? <Navigate to="/recepcion" replace />
+                    : <Navigate to="/" replace />,
             )}
           />
 

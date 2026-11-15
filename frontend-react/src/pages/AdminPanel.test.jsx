@@ -1,4 +1,4 @@
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
@@ -9,12 +9,21 @@ import {
   discontinueProduct,
   updateProduct,
 } from '../services/productsApi.js'
+import { getManagedAppointments } from '../services/appointmentsApi.js'
 
 vi.mock('../services/productsApi.js', () => ({
   createProduct: vi.fn(),
   discontinueProduct: vi.fn(),
   updateProduct: vi.fn(),
 }))
+vi.mock('../services/appointmentsApi.js', () => ({
+  getManagedAppointments: vi.fn(),
+  changeManagedAppointmentStatus: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.mocked(getManagedAppointments).mockResolvedValue([])
+})
 
 const initialUsers = [
   { id: 'admin-1', name: 'Administradora', lastName: 'Demo', email: 'admin@duoc.cl', password: 'admin12345', role: 'admin', active: true },
@@ -196,7 +205,19 @@ it('impide eliminar la cuenta del administrador que inició sesión', async () =
   expect(screen.getByText('Administradora Demo')).toBeInTheDocument()
 })
 
-it('crea y muestra una cita de ejemplo al abrir la sección de citas vacía', async () => {
+it('muestra las citas recibidas desde citas-service', async () => {
+  vi.mocked(getManagedAppointments).mockResolvedValue([{
+    id: 77,
+    userId: 'client-1',
+    mascotaId: 15,
+    servicio: 'Consulta general',
+    fecha: '2099-05-20',
+    hora: '10:00:00',
+    motivo: 'Control anual',
+    estado: 'PENDIENTE',
+    version: 0,
+  }])
+
   render(
     <MemoryRouter initialEntries={['/admin/citas']}>
       <AdminPanel
@@ -210,17 +231,10 @@ it('crea y muestra una cita de ejemplo al abrir la sección de citas vacía', as
     </MemoryRouter>,
   )
 
-  expect(await screen.findByText('Luna')).toBeInTheDocument()
+  expect(await screen.findByText('Cliente Demo')).toBeInTheDocument()
+  expect(screen.getByText('#15')).toBeInTheDocument()
   expect(screen.getByText('Consulta general')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Agregar cita' })).toHaveClass('fab-pill')
-  expect(JSON.parse(localStorage.getItem('appointments'))).toEqual([
-    expect.objectContaining({
-      id: 'cita-demo-admin',
-      userId: 'client-1',
-      petName: 'Luna',
-      estado: 'Pendiente',
-    }),
-  ])
+  expect(getManagedAppointments).toHaveBeenCalledOnce()
 })
 
 it('usa el mismo botón flotante de creación en la sección de usuarios', () => {

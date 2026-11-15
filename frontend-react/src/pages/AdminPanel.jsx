@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router'
-import { readStorage } from '../services/storage.js'
-import { ensureDemoAppointment } from '../utils/appointments.js'
+import { getManagedAppointments } from '../services/appointmentsApi.js'
 import AdminProductsList from '../components/AdminProductsList.jsx'
 import AdminProductForm from '../components/AdminProductForm.jsx'
-import AppointmentsList from '../components/AppointmentsList.jsx'
+import ManagedAppointmentsList from '../components/ManagedAppointmentsList.jsx'
 import { validateEmail } from '../utils/userValidation.js'
 import { NavLink } from 'react-router'
 import { createProduct, discontinueProduct, updateProduct } from '../services/productsApi.js'
@@ -21,9 +20,7 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
   const [userForm, setUserForm] = useState({ name: '', lastName: '', email: '', password: '', role: 'cliente', active: true })
   const [userFormError, setUserFormError] = useState('')
   const [userFormSuccess, setUserFormSuccess] = useState('')
-  const [appointmentInitialization] = useState(() => (
-    section === 'citas' && currentUser?.role === 'admin' ? ensureDemoAppointment(users) : null
-  ))
+  const [managedAppointments, setManagedAppointments] = useState(null)
 
   useEffect(() => {
     const updateFloatingButtonPosition = () => {
@@ -46,17 +43,34 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
       window.removeEventListener('resize', updateFloatingButtonPosition)
     }
   }, [])
+  useEffect(() => {
+    if (currentUser?.role !== 'admin' || section === 'citas') {
+      return undefined
+    }
+
+    let active = true
+
+    getManagedAppointments()
+      .then((appointments) => {
+        if (active) setManagedAppointments(appointments)
+      })
+      .catch(() => {
+        // El contador conserva “—” si no se pueden cargar las citas.
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUser?.role, section])
 
   if (!currentUser || currentUser.role !== 'admin') return <Navigate to="/login" replace />
 
   const unidades = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0)
-  const appointments = appointmentInitialization?.appointments || readStorage('appointments', []) || []
-  const pendientes = Array.isArray(appointments)
-    ? appointments.filter((a) => {
-      const s = (a.status || a.estado || '').toString().toLowerCase()
-      return s === 'pendiente' || s === 'pending' || s === 'pending' || s === ''
-    }).length
-    : 0
+  const pendientes = managedAppointments === null
+    ? '—'
+    : managedAppointments.filter(
+      (appointment) => appointment.estado === 'PENDIENTE',
+    ).length
 
   async function handleCreate(product) {
     const created = await createProduct(product)
@@ -359,10 +373,10 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
             </section>
           )}
           {section === 'citas' && (
-            <>
-              {appointmentInitialization?.error && <p className="admin-form-message error" role="alert">{appointmentInitialization.error}</p>}
-              <AppointmentsList userRole="admin" adminMode users={users} initialAppointments={appointments} />
-            </>
+            <ManagedAppointmentsList
+              users={users}
+              onAppointmentsChange={setManagedAppointments}
+            />
           )}
         </div>
       </div>

@@ -60,3 +60,59 @@ export async function cancelMyAppointment(id) {
 
   return readResponse(response, 'No pudimos cancelar la cita')
 }
+
+export async function getManagedAppointments() {
+  const response = await fetchWithAuth(`${APPOINTMENTS_URL}/gestion`)
+  const appointments = await readResponse(
+    response,
+    'No pudimos cargar las citas',
+  )
+
+  if (!Array.isArray(appointments)) {
+    throw new Error('El servidor devolvió una lista de citas inválida.')
+  }
+
+  return appointments
+}
+
+export async function createManagedAppointment(userId, appointment) {
+  const response = await fetchWithAuth(`${APPOINTMENTS_URL}/gestion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: Number(userId),
+      cita: appointment,
+    }),
+  })
+
+  return readResponse(response, 'No pudimos crear la cita')
+}
+
+export async function rescheduleManagedAppointment(id, version, appointment) {
+  const response = await fetchWithAuth(
+    `${APPOINTMENTS_URL}/gestion/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        version,
+        cita: appointment,
+      }),
+    },
+  )
+
+  return readResponse(response, 'No pudimos reprogramar la cita')
+}
+
+export async function changeManagedAppointmentStatus(id, estado) {
+  const response = await fetchWithAuth(
+    `${APPOINTMENTS_URL}/gestion/${encodeURIComponent(id)}/estado`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado }),
+    },
+  )
+
+  return readResponse(response, 'No pudimos actualizar el estado de la cita')
+}
