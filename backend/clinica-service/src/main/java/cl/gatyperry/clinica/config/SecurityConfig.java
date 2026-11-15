@@ -33,14 +33,15 @@ public class SecurityConfig {
                     "/swagger-ui.html"
                 ).permitAll()
                 .requestMatchers("/api/v1/clinica/gestion/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole("ADMIN", "RECEPCION")
                 .requestMatchers(
                     HttpMethod.GET,
                     "/api/v1/clinica/mascotas/**",
                     "/api/v1/clinica/atenciones/**",
                     "/api/v1/clinica/vacunas/**"
-                ).hasAnyRole("ADMIN", "CLIENTE")
-                .requestMatchers("/api/v1/clinica/**").hasRole("ADMIN")
+                ).hasAnyRole("ADMIN", "RECEPCION", "CLIENTE")
+                .requestMatchers("/api/v1/clinica/**")
+                    .hasAnyRole("ADMIN", "RECEPCION")
                 .anyRequest().denyAll()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
@@ -48,6 +49,7 @@ public class SecurityConfig {
             ))
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable);
+
         return http.build();
     }
 
@@ -57,9 +59,11 @@ public class SecurityConfig {
             new JwtGrantedAuthoritiesConverter();
         roles.setAuthoritiesClaimName("rol");
         roles.setAuthorityPrefix("ROLE_");
+
         JwtAuthenticationConverter converter =
             new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(roles);
+
         return converter;
     }
 }

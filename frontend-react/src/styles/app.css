@@ -1705,3 +1705,44 @@
   border-color: #dc3545;
   color: #dc3545;
 }
+/* Agenda de administración y recepción */
+.managed-appointments-card { max-width: 1120px; }
+.managed-appointments-card .table-responsive { overflow-x: auto; }
+.admin-appointments-table { min-width: 850px; }
+.admin-appointments-table th,
+.admin-appointments-table td { vertical-align: middle; }
+.admin-appointments-table th:last-child,
+.admin-appointments-table td.managed-appointment-action { min-width: 160px; }
+.admin-appointments-table .managed-appointment-action .btn { white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .managed-appointments-card .table-responsive { overflow-x: visible; }
+  .admin-appointments-table { min-width: 0; }
+  .admin-appointments-table tbody td.managed-appointment-action { display: grid; }
+  .admin-appointments-table tbody td.managed-appointment-action::before { display: block; margin: 0; }
+  .admin-appointments-table .managed-appointment-action .btn { width: fit-content; max-width: 100%; white-space: normal; text-align: center; }
+}
+
+/* Espacio para la agenda y sus acciones en pantallas grandes */
+.managed-appointments-card { max-width: 1120px; margin-inline: auto; }
+.admin-appointments-table { min-width: 1020px; }
+.admin-appointments-table th:nth-child(4),
+.admin-appointments-table td:nth-child(4) { white-space: nowrap; }
+.admin-appointments-table .managed-appointment-action .btn.btn-outline-secondary {
+  border: 1px solid var(--petroleo);
+  color: var(--petroleo);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  font-weight: 600;
+}
+.admin-appointments-table .managed-appointment-action .btn.btn-outline-secondary:hover,
+.admin-appointments-table .managed-appointment-action .btn.btn-outline-secondary:focus-visible {
+  background: var(--petroleo);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .admin-appointments-table { min-width: 0; }
+  .admin-appointments-table td:nth-child(4) { white-space: normal; }
+}

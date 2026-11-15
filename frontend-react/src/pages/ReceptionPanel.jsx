@@ -29,7 +29,7 @@ export default function ReceptionPanel({ currentUser, users = [] }) {
       </nav>
 
       <div className="admin-main admin-main-background bg-vet-doodle">
-        <div className="admin-main-content">
+        <div className="admin-main-content wide">
           <ManagedAppointmentsList users={users} />
         </div>
       </div>

@@ -5,6 +5,7 @@ import ClientAppointmentsList from '../components/ClientAppointmentsList.jsx'
 import { getMyAppointments } from '../services/appointmentsApi.js'
 import { getMyOrders } from '../services/ordersApi.js'
 import { deleteMyPet, getMyPets } from '../services/petsApi.js'
+import ClientPetHistory from '../components/ClientPetHistory.jsx'
 import '../styles/app.css'
 
 const sections = [
@@ -274,8 +275,9 @@ function UserPanel({ currentUser, section = 'resumen' }) {
                           <td data-label="Edad">{pet.edad} años</td>
                           <td data-label="Notas">{pet.notas || '-'}</td>
                           <td className="user-card-actions" data-label="Acciones">
+                            <ClientPetHistory pet={pet} />
                             <button
-                              className="btn btn-delete rounded-pill px-3 user-danger-action"
+                            className="btn btn-delete rounded-pill px-3 user-danger-action"
                               type="button"
                               onClick={() => requestPetRemoval(pet)}
                             >

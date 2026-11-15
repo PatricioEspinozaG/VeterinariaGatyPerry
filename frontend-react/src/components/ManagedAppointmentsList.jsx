@@ -3,6 +3,8 @@ import {
   changeManagedAppointmentStatus,
   getManagedAppointments,
 } from '../services/appointmentsApi.js'
+import ClinicalVisitForm from './ClinicalVisitForm.jsx'
+import { getManagedClient, getManagedPet } from '../services/appointmentPeopleApi.js'
 
 const statusLabels = {
   PENDIENTE: 'Pendiente',
@@ -30,6 +32,14 @@ function getCustomerName(user) {
   ].filter(Boolean).join(' ') || user.email || `Cliente #${user.id}`
 }
 
+function searchText(value) {
+  return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+function appointmentTime(appointment) {
+  return `${appointment.fecha || ''}T${appointment.hora || '00:00'}`
+}
+
 export default function ManagedAppointmentsList({
   users = [],
   onAppointmentsChange,
@@ -38,7 +48,10 @@ export default function ManagedAppointmentsList({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
-  const [filter, setFilter] = useState('todas')
+  const [filter, setFilter] = useState('PENDIENTE')
+  const [query, setQuery] = useState('')
+  const [clients, setClients] = useState({})
+  const [pets, setPets] = useState({})
 
   useEffect(() => {
     let active = true
@@ -50,6 +63,22 @@ export default function ManagedAppointmentsList({
         if (active) {
           setAppointments(result)
           onAppointmentsChange?.(result)
+
+          // Consultar cada persona una vez, incluso si tiene varias citas.
+          const clientIds = [...new Set(result.map((cita) => cita.userId).filter(Boolean))]
+          const petIds = [...new Set(result.map((cita) => cita.mascotaId).filter(Boolean))]
+          Promise.all([
+            Promise.allSettled(clientIds.map((id) => getManagedClient(id))),
+            Promise.allSettled(petIds.map((id) => getManagedPet(id))),
+          ]).then(([clientResults, petResults]) => {
+            if (!active) return
+            setClients(Object.fromEntries(clientResults.flatMap((item, index) => (
+              item.status === 'fulfilled' ? [[String(clientIds[index]), item.value]] : []
+            ))))
+            setPets(Object.fromEntries(petResults.flatMap((item, index) => (
+              item.status === 'fulfilled' ? [[String(petIds[index]), item.value]] : []
+            ))))
+          })
         }
       } catch (cause) {
         if (active) {
@@ -90,18 +119,34 @@ export default function ManagedAppointmentsList({
     }
   }
 
-  const visibleAppointments = appointments.filter((appointment) => (
-    filter === 'todas' || appointment.estado === filter
-  ))
+  const visibleAppointments = appointments
+    .filter((appointment) => filter === 'todas' || appointment.estado === filter)
+    .filter((appointment) => {
+      const customer = clients[String(appointment.userId)]
+        || users.find((user) => String(user.id) === String(appointment.userId))
+      const pet = pets[String(appointment.mascotaId)]
+      const haystack = [
+        customer && getCustomerName(customer),
+        pet?.nombre,
+        appointment.userId,
+        appointment.mascotaId,
+        appointment.id,
+        appointment.servicio,
+        appointment.fecha,
+      ].map(searchText).join(' ')
+      return haystack.includes(searchText(query.trim()))
+    })
+    .sort((a, b) => appointmentTime(a).localeCompare(appointmentTime(b))
+      || Number(a.id) - Number(b.id))
 
   return (
-    <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
+    <section className="managed-appointments-card admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
       <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">
         GESTIÓN DE CITAS
       </span>
       <h2 className="h3 fw-bold text-dark">Citas registradas</h2>
 
-      <div className="row mb-4">
+      <div className="row g-3 mb-4 align-items-end">
         <div className="col-12 col-md-4">
           <label htmlFor="managedAppointmentFilter" className="form-label">
             Filtrar por estado
@@ -112,12 +157,25 @@ export default function ManagedAppointmentsList({
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
           >
-            <option value="todas">Todas las citas</option>
             <option value="PENDIENTE">Pendientes</option>
+            <option value="todas">Todas las citas</option>
             <option value="CONFIRMADA">Confirmadas</option>
             <option value="COMPLETADA">Completadas</option>
             <option value="CANCELADA">Canceladas</option>
           </select>
+        </div>
+        <div className="col-12 col-md-8">
+          <label htmlFor="managedAppointmentSearch" className="form-label">
+            Buscar cita
+          </label>
+          <input
+            id="managedAppointmentSearch"
+            className="form-control"
+            type="search"
+            placeholder="Cliente, mascota, número, servicio o fecha"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
         </div>
       </div>
 
@@ -131,7 +189,7 @@ export default function ManagedAppointmentsList({
         <p role="status">Cargando citas...</p>
       ) : visibleAppointments.length === 0 ? (
         <p className="text-muted">
-          No hay citas registradas en esta categoría.
+          No hay citas que coincidan con el filtro o la búsqueda.
         </p>
       ) : (
         <div className="table-responsive">
@@ -145,6 +203,7 @@ export default function ManagedAppointmentsList({
                 <th>Hora</th>
                 <th>Estado</th>
                 <th>Motivo</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -152,16 +211,18 @@ export default function ManagedAppointmentsList({
                 const customer = users.find(
                   (user) => String(user.id) === String(appointment.userId),
                 )
+                const realCustomer = clients[String(appointment.userId)]
+                const pet = pets[String(appointment.mascotaId)]
                 const transitions = allowedTransitions[appointment.estado]
 
                 return (
                   <tr key={appointment.id}>
                     <td data-label="Cliente">
-                      {customer
-                        ? getCustomerName(customer)
+                      {realCustomer || customer
+                        ? getCustomerName(realCustomer || customer)
                         : `Cliente #${appointment.userId}`}
                     </td>
-                    <td data-label="Mascota">#{appointment.mascotaId}</td>
+                    <td data-label="Mascota">{pet?.nombre || `#${appointment.mascotaId}`}</td>
                     <td data-label="Servicio">{appointment.servicio}</td>
                     <td data-label="Fecha">{appointment.fecha}</td>
                     <td data-label="Hora">{appointment.hora.slice(0, 5)}</td>
@@ -185,10 +246,9 @@ export default function ManagedAppointmentsList({
                         </select>
                       ) : (
                         <span
-                          className={`badge rounded-pill px-3 py-2 ${
-                            statusClasses[appointment.estado]
-                              || 'bg-secondary text-white'
-                          }`}
+                          className={`badge rounded-pill px-3 py-2 ${statusClasses[appointment.estado]
+                            || 'bg-secondary text-white'
+                            }`}
                         >
                           {statusLabels[appointment.estado]
                             || appointment.estado}
@@ -196,6 +256,11 @@ export default function ManagedAppointmentsList({
                       )}
                     </td>
                     <td data-label="Motivo">{appointment.motivo}</td>
+                    <td data-label="Acciones" className="managed-appointment-action">
+                      {appointment.estado === 'COMPLETADA'
+                        ? <ClinicalVisitForm appointment={appointment} />
+                        : '-'}
+                    </td>
                   </tr>
                 )
               })}

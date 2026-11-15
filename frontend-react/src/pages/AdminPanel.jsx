@@ -289,7 +289,7 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
       </div>
 
       <div className="admin-main admin-main-background bg-vet-doodle">
-        <div className={`admin-main-content${section === 'productos' && editing ? ' wide' : ''}`}>
+        <div className={`admin-main-content${(section === 'citas' || (section === 'productos' && editing)) ? ' wide' : ''}`}>
           {section === 'productos' && (
             <>
               <div className={`admin-left admin-view-card card shadow border-0 rounded-4 p-4 bg-white ${!editing ? 'full' : ''}`}>
