@@ -36,12 +36,7 @@ export function validateRun(run) {
 // Validación de Email
 export function validateEmail(email) {
   if (!email?.trim()) return "El correo es obligatorio."
-  const emailLower = email.trim().toLowerCase()
-  const validDomains = ["@duoc.cl", "@profesor.duoc.cl", "@gmail.com"]
-  const isValidDomain = validDomains.some((domain) => emailLower.endsWith(domain))
-  if (!isValidDomain) {
-    return "Solo se permiten correos @duoc.cl, @profesor.duoc.cl o @gmail.com."
-  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Ingresa un correo electrónico válido."
   return ""
 }
 

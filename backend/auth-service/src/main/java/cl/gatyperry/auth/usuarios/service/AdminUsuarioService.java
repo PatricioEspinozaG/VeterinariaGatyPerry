@@ -1,6 +1,7 @@
 package cl.gatyperry.auth.usuarios.service;
 
 import cl.gatyperry.auth.usuarios.dto.AdminUsuarioUpdateRequest;
+import cl.gatyperry.auth.usuarios.dto.AdminUsuarioCreateRequest;
 import cl.gatyperry.auth.usuarios.dto.UsuarioResponse;
 import cl.gatyperry.auth.usuarios.model.Rol;
 import cl.gatyperry.auth.usuarios.model.Usuario;
@@ -9,6 +10,7 @@ import java.util.Locale;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,9 +20,37 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminUsuarioService {
 
     private final UsuarioRepository repository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AdminUsuarioService(UsuarioRepository repository) {
+    public AdminUsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Transactional
+    public UsuarioResponse crear(Long adminId, AdminUsuarioCreateRequest request) {
+        verificarAdmin(adminId);
+        String run = UsuarioService.normalizarRun(request.run());
+        if (!UsuarioService.esRunValido(run)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El RUN no es válido");
+        }
+        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        if (repository.existsByRun(run) || repository.existsByEmailIgnoreCase(email)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "RUN o correo ya registrado");
+        }
+        Usuario usuario = new Usuario();
+        usuario.setRun(run);
+        usuario.setNombre(request.nombre().trim());
+        usuario.setApellidos(request.apellidos().trim());
+        usuario.setEmail(email);
+        usuario.setTelefono(request.telefono().trim());
+        usuario.setPasswordHash(passwordEncoder.encode(request.password()));
+        usuario.setRegion(request.region().trim());
+        usuario.setComuna(request.comuna().trim());
+        usuario.setDireccion(request.direccion() == null ? null : request.direccion().trim());
+        usuario.setRol(request.rol());
+        usuario.setActivo(request.activo());
+        return UsuarioResponse.from(repository.save(usuario));
     }
 
     @Transactional(readOnly = true)
@@ -61,6 +91,14 @@ public class AdminUsuarioService {
             );
         }
 
+        if (usuario.isActivo() && usuario.getRol() == Rol.ADMIN
+            && (!request.activo() || request.rol() != Rol.ADMIN)
+            && repository.countByRolAndActivoTrue(Rol.ADMIN) <= 1) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT, "Debe permanecer al menos un administrador activo"
+            );
+        }
+
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         repository.findByEmailIgnoreCase(email)
             .filter(existente -> !existente.getId().equals(id))
@@ -98,6 +136,12 @@ public class AdminUsuarioService {
         }
 
         Usuario usuario = buscar(id);
+        if (usuario.isActivo() && usuario.getRol() == Rol.ADMIN
+            && repository.countByRolAndActivoTrue(Rol.ADMIN) <= 1) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT, "Debe permanecer al menos un administrador activo"
+            );
+        }
         usuario.setActivo(false);
         repository.save(usuario);
     }

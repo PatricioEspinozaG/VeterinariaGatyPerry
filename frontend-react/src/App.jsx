@@ -4,7 +4,6 @@ import useLocalStorage from './hooks/useLocalStorage.js'
 import { readCartBuckets, STORAGE_KEYS } from './services/storage.js'
 import { getMe, logout, refreshSession } from './services/authApi.js'
 import { getProducts } from './services/productsApi.js'
-import { users as initialUsers } from './data/users.js'
 import {
   addToCart,
   changeQuantity,
@@ -59,10 +58,6 @@ function App() {
   const [orders, setOrders, ordersError] = useLocalStorage(
     STORAGE_KEYS.orders,
     [],
-  )
-  const [users, setUsers, usersError] = useLocalStorage(
-    'users',
-    initialUsers,
   )
 
   useEffect(() => {
@@ -134,7 +129,7 @@ function App() {
     (total, item) => total + item.quantity,
     0,
   )
-  const storageError = cartError || ordersError || usersError
+  const storageError = cartError || ordersError
 
   const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
   const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta')
@@ -430,7 +425,7 @@ function App() {
           <Route
             path="/recepcion"
             element={protectedPage(
-              <ReceptionPanel currentUser={currentUser} users={users} />,
+              <ReceptionPanel currentUser={currentUser} />,
             )}
           />
           <Route
@@ -438,8 +433,6 @@ function App() {
             element={protectedPage(
               <AdminProductsPage
                 currentUser={currentUser}
-                users={users}
-                setUsers={setUsers}
               />,
             )}
           />
@@ -450,8 +443,6 @@ function App() {
                 section="usuarios"
                 products={products}
                 setProducts={setProducts}
-                users={users}
-                setUsers={setUsers}
                 currentUser={currentUser}
               />,
             )}
@@ -464,7 +455,6 @@ function App() {
                 section="citas"
                 products={products}
                 setProducts={setProducts}
-                users={users}
                 currentUser={currentUser}
               />,
             )}

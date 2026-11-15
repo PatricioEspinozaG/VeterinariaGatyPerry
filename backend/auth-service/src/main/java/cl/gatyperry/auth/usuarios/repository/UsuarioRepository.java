@@ -1,6 +1,7 @@
 package cl.gatyperry.auth.usuarios.repository;
 
 import cl.gatyperry.auth.usuarios.model.Usuario;
+import cl.gatyperry.auth.usuarios.model.Rol;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,4 +12,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByRun(String run);
+
+    long countByRolAndActivoTrue(Rol rol);
 }

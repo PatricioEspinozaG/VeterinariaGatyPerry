@@ -10,6 +10,14 @@ import {
   updateProduct,
 } from '../services/productsApi.js'
 import { getManagedAppointments } from '../services/appointmentsApi.js'
+import { createAdminUser, deactivateAdminUser, getAdminUsers, updateAdminUser } from '../services/adminUsersApi.js'
+
+vi.mock('../services/adminUsersApi.js', () => ({
+  getAdminUsers: vi.fn(),
+  createAdminUser: vi.fn(),
+  updateAdminUser: vi.fn(),
+  deactivateAdminUser: vi.fn(),
+}))
 
 vi.mock('../services/productsApi.js', () => ({
   createProduct: vi.fn(),
@@ -23,11 +31,20 @@ vi.mock('../services/appointmentsApi.js', () => ({
 
 beforeEach(() => {
   vi.mocked(getManagedAppointments).mockResolvedValue([])
+  vi.mocked(getAdminUsers).mockResolvedValue(initialUsers)
+  vi.mocked(deactivateAdminUser).mockResolvedValue(undefined)
+  vi.mocked(updateAdminUser).mockImplementation(async (id, form) => ({
+    ...initialUsers.find((item) => item.id === id), name: form.name,
+  }))
+  vi.mocked(createAdminUser).mockImplementation(async (form) => ({
+    id: 'new-user', name: form.name, lastName: form.lastName,
+    email: form.email, role: form.role, active: form.active,
+  }))
 })
 
 const initialUsers = [
-  { id: 'admin-1', name: 'Administradora', lastName: 'Demo', email: 'admin@duoc.cl', password: 'admin12345', role: 'admin', active: true },
-  { id: 'client-1', name: 'Cliente', lastName: 'Demo', email: 'cliente@gmail.com', password: 'cliente12345', role: 'cliente', active: true },
+  { id: 'admin-1', run: '123456785', phone: '+56912345678', region: "O'Higgins", commune: 'Rancagua', name: 'Administradora', lastName: 'Demo', email: 'admin@duoc.cl', role: 'admin', active: true },
+  { id: 'client-1', run: '111111111', phone: '+56912345679', region: "O'Higgins", commune: 'Rancagua', name: 'Cliente', lastName: 'Demo', email: 'cliente@gmail.com', role: 'cliente', active: true },
 ]
 
 function StatefulAdminPanel() {
@@ -52,13 +69,14 @@ it('permite editar los datos de un usuario', async () => {
   const user = userEvent.setup()
   render(<StatefulAdminPanel />)
 
-  await user.click(screen.getAllByRole('button', { name: 'Editar' })[0])
+  await user.click((await screen.findAllByRole('button', { name: 'Editar' }))[0])
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   await user.clear(screen.getByLabelText('Nombre'))
   await user.type(screen.getByLabelText('Nombre'), 'Nuevo nombre')
   await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
-  expect(screen.getByText('Nuevo nombre Demo')).toBeInTheDocument()
+  expect(await screen.findByText('Nuevo nombre Demo')).toBeInTheDocument()
+  expect(updateAdminUser).toHaveBeenCalledWith('admin-1', expect.objectContaining({ name: 'Nuevo nombre' }))
   expect(screen.getByRole('status')).toHaveTextContent('Usuario actualizado correctamente.')
 })
 
@@ -86,14 +104,15 @@ it('permite eliminar un usuario después de confirmar', async () => {
   const user = userEvent.setup()
   render(<StatefulAdminPanel />)
 
-  await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[1])
+  await user.click((await screen.findAllByRole('button', { name: 'Desactivar' }))[1])
   expect(screen.getByRole('alertdialog')).toHaveTextContent(
-  '¿Eliminar al usuario "Cliente Demo"?',)
+  '¿Desactivar al usuario "Cliente Demo"?',)
   expect(screen.getByText('Cliente Demo')).toBeInTheDocument()
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-delete'))
 
-  expect(screen.queryByText('Cliente Demo')).not.toBeInTheDocument()
-  expect(screen.getByRole('status')).toHaveTextContent('Usuario eliminado correctamente.')
+  expect(await screen.findByText('Inactivo')).toBeInTheDocument()
+  expect(deactivateAdminUser).toHaveBeenCalledWith('client-1')
+  expect(screen.getByRole('status')).toHaveTextContent('Usuario desactivado correctamente.')
 })
 
 it('descontinúa un producto después de confirmarlo en la API', async () => {
@@ -145,7 +164,7 @@ it('conserva el usuario cuando se cancela la confirmación de eliminación', asy
   const user = userEvent.setup()
   render(<StatefulAdminPanel />)
 
-  await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[1])
+  await user.click((await screen.findAllByRole('button', { name: 'Desactivar' }))[1])
   expect(screen.getByRole('alertdialog')).toBeInTheDocument()
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-outline-secondary'))
 
@@ -197,7 +216,7 @@ it('impide eliminar la cuenta del administrador que inició sesión', async () =
   const user = userEvent.setup()
   render(<StatefulAdminPanel />)
 
-  const deleteButtons = screen.getAllByRole('button', { name: 'Eliminar' })
+  const deleteButtons = await screen.findAllByRole('button', { name: 'Desactivar' })
   expect(deleteButtons[0]).toBeDisabled()
   await user.click(deleteButtons[0])
 
@@ -285,12 +304,17 @@ it('crea un usuario de recepción', async () => {
   await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
   await user.type(screen.getByLabelText('Nombre'), 'Camila')
   await user.type(screen.getByLabelText('Apellidos'), 'Soto')
+  await user.type(screen.getByLabelText('RUN'), '12.345.678-5')
+  await user.type(screen.getByLabelText('Teléfono'), '+56912345678')
   await user.type(screen.getByLabelText('Correo electrónico'), 'camila@gmail.com')
   await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
   await user.selectOptions(screen.getByLabelText('Rol'), 'recepcion')
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
 
-  expect(screen.getByText('Camila Soto')).toBeInTheDocument()
+  expect(await screen.findByText('Camila Soto')).toBeInTheDocument()
+  expect(createAdminUser).toHaveBeenCalledWith(expect.objectContaining({
+    run: '12.345.678-5', phone: '+56912345678', role: 'recepcion',
+  }))
   expect(screen.getAllByText('Recepción')).toHaveLength(1)
   expect(screen.getByRole('status'))
     .toHaveTextContent('Usuario agregado correctamente.')
@@ -303,6 +327,8 @@ it('rechaza crear un usuario con un correo ya registrado', async () => {
   await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
   await user.type(screen.getByLabelText('Nombre'), 'Otro')
   await user.type(screen.getByLabelText('Apellidos'), 'Cliente')
+  await user.type(screen.getByLabelText('RUN'), '12.345.678-5')
+  await user.type(screen.getByLabelText('Teléfono'), '+56912345678')
   await user.type(screen.getByLabelText('Correo electrónico'), 'cliente@gmail.com')
   await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))

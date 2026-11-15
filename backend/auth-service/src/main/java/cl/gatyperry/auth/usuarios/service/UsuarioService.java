@@ -105,13 +105,13 @@ public class UsuarioService {
         return UsuarioResponse.from(usuario);
     }
 
-    private String normalizarRun(String run) {
+    static String normalizarRun(String run) {
         return run.trim()
             .toUpperCase(Locale.ROOT)
             .replaceAll("[.\\s-]", "");
     }
 
-    private boolean esRunValido(String run) {
+    static boolean esRunValido(String run) {
         if (!run.matches("\\d{7,8}[0-9K]")) {
             return false;
         }

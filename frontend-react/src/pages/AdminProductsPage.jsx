@@ -3,7 +3,7 @@ import { Navigate } from 'react-router'
 import AdminPanel from './AdminPanel.jsx'
 import { getManagedProducts } from '../services/productsApi.js'
 
-export default function AdminProductsPage({ currentUser, users, setUsers }) {
+export default function AdminProductsPage({ currentUser }) {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -49,8 +49,6 @@ export default function AdminProductsPage({ currentUser, users, setUsers }) {
     <AdminPanel
       products={products}
       setProducts={setProducts}
-      users={users}
-      setUsers={setUsers}
       currentUser={currentUser}
     />
   )
