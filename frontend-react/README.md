@@ -14,6 +14,8 @@ La gestión de mascotas usa `pacientes-service` en `http://localhost:8082`.
 Puedes cambiar esa dirección con `VITE_PACIENTES_API_URL` en `.env.local`.
 La gestión de citas usa `citas-service` en `http://localhost:8083` y admite
 la variable `VITE_CITAS_API_URL` en el mismo archivo.
+El catálogo público usa `productos-service` en `http://localhost:8084`; puedes
+configurar `VITE_PRODUCTOS_API_URL` en `.env.local`.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

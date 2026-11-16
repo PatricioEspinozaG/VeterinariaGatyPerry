@@ -1,9 +1,26 @@
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
+import { products as catalogProducts } from './data/products.js'
+import { listAppointments } from './services/citas.js'
+import { listPets } from './services/mascotas.js'
+import { listProducts } from './services/productos.js'
 import App from './App.jsx'
 
+vi.mock('./services/citas.js', () => ({
+  cancelAppointment: vi.fn(),
+  createAppointment: vi.fn(),
+  listAppointments: vi.fn(),
+}))
+vi.mock('./services/mascotas.js', () => ({
+  createPet: vi.fn(),
+  deletePet: vi.fn(),
+  listPets: vi.fn(),
+}))
+vi.mock('./services/productos.js', () => ({
+  listProducts: vi.fn(),
+}))
 vi.mock('./services/auth.js', () => ({
   loginUser: vi.fn(async () => ({
     id: 'usuario-backend',
@@ -18,6 +35,12 @@ vi.mock('./services/auth.js', () => ({
   registerUser: vi.fn(async () => ({})),
   restoreSession: vi.fn(async () => null),
 }))
+
+beforeEach(() => {
+  listProducts.mockResolvedValue(catalogProducts)
+  listPets.mockResolvedValue([])
+  listAppointments.mockResolvedValue([])
+})
 
 it('permite agregar un producto y verlo en el carrito', async () => {
   const user = userEvent.setup()
@@ -35,7 +58,7 @@ it('permite agregar un producto y verlo en el carrito', async () => {
   )
 
   expect(
-    screen.getByRole('heading', { name: 'Catálogo de productos' }),
+    await screen.findByRole('heading', { name: 'Catálogo de productos' }),
   ).toBeInTheDocument()
 
   await user.type(screen.getByLabelText('Buscar productos'), 'Nexgard')
@@ -51,6 +74,18 @@ it('permite agregar un producto y verlo en el carrito', async () => {
   expect(screen.getByText('Unidades: 1')).toBeInTheDocument()
 })
 
+it('muestra el error si no se puede cargar el catálogo', async () => {
+  listProducts.mockRejectedValueOnce(new Error('Catálogo no disponible.'))
+
+  render(
+    <MemoryRouter initialEntries={['/productos']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Catálogo no disponible.')
+})
+
 it('completa una compra y deja el carrito vacío', async () => {
   const user = userEvent.setup()
   render(
@@ -59,6 +94,7 @@ it('completa una compra y deja el carrito vacío', async () => {
     </MemoryRouter>,
   )
 
+  await screen.findByRole('heading', { name: 'Catálogo de productos' })
   await user.type(screen.getByLabelText('Buscar productos'), 'Nexgard')
   await user.click(screen.getByRole('button', { name: 'Agregar al carrito' }))
   await user.click(screen.getByRole('link', { name: 'Carrito, 1 productos' }))

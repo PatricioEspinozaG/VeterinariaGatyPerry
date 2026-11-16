@@ -5,6 +5,7 @@ import { readCartBuckets, STORAGE_KEYS } from './services/storage.js'
 import { products as initialProducts } from './data/products.js'
 import { users as initialUsers } from './data/users.js'
 import { loginUser, logoutUser, registerUser, restoreSession } from './services/auth.js'
+import { listProducts } from './services/productos.js'
 import { addToCart, changeQuantity, normalizeCart, removeFromCart } from './utils/cartLogic.js'
 import { preparePurchase } from './utils/purchaseLogic.js'
 import Header from './components/Header.jsx'
@@ -43,13 +44,34 @@ function ScrollToTop() {
 
 function App() {
   const location = useLocation()
-  const [products, setProducts, productsError] = useLocalStorage(STORAGE_KEYS.products, initialProducts)
+  const [adminProducts, setAdminProducts, adminProductsError] = useLocalStorage(STORAGE_KEYS.products, initialProducts)
+  const [products, setProducts] = useState([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState('')
   const [orders, setOrders, ordersError] = useLocalStorage(STORAGE_KEYS.orders, [])
   const [users, setUsers, usersError] = useLocalStorage('users', initialUsers)
   const [currentUser, setCurrentUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState('')
   const authTouched = useRef(false)
+
+  useEffect(() => {
+    let active = true
+    listProducts()
+      .then((catalog) => {
+        if (active) setProducts(catalog)
+      })
+      .catch((error) => {
+        if (active) setProductsError(error.message)
+      })
+      .finally(() => {
+        if (active) setProductsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -78,7 +100,7 @@ function App() {
   const cart = cartBuckets[cartOwnerId] || []
   const validCart = normalizeCart(cart, products)
   const cartQuantity = validCart.reduce((total, item) => total + item.quantity, 0)
-  const storageError = productsError || cartError || ordersError || usersError
+  const storageError = adminProductsError || cartError || ordersError || usersError
   const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
   const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta') ? requestedReturnTo : '/'
 
@@ -162,6 +184,12 @@ function App() {
     return currentUser ? element : <Navigate to="/login" replace />
   }
 
+  function requireCatalog(element) {
+    if (productsLoading) return <p className="container" role="status">Cargando catálogo...</p>
+    if (productsError) return <p className="container" role="alert">{productsError}</p>
+    return element
+  }
+
   return (
     <div className="app-shell">
       <ScrollToTop />
@@ -176,10 +204,10 @@ function App() {
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/consejos" element={<Consejos />} />
           <Route path="/consejos/:id" element={<DetalleConsejo />} />
-          <Route path="/productos" element={<Productos products={products} cart={validCart} onAddToCart={handleAddToCart} />} />
-          <Route path="/productos/:code" element={<DetalleProducto products={products} onAddToCart={handleAddToCart} />} />
-          <Route path="/carrito" element={<Carrito products={products} cart={validCart} onChangeQuantity={handleChangeQuantity} onRemove={(code) => saveCart(removeFromCart(validCart, code))} onClear={() => saveCart([])} />} />
-          <Route path="/checkout" element={<Checkout products={products} cart={validCart} currentUser={currentUser} onCompletePurchase={handleCompletePurchase} />} />
+          <Route path="/productos" element={requireCatalog(<Productos products={products} cart={validCart} onAddToCart={handleAddToCart} />)} />
+          <Route path="/productos/:code" element={requireCatalog(<DetalleProducto products={products} onAddToCart={handleAddToCart} />)} />
+          <Route path="/carrito" element={requireCatalog(<Carrito products={products} cart={validCart} onChangeQuantity={handleChangeQuantity} onRemove={(code) => saveCart(removeFromCart(validCart, code))} onClear={() => saveCart([])} />)} />
+          <Route path="/checkout" element={requireCatalog(<Checkout products={products} cart={validCart} currentUser={currentUser} onCompletePurchase={handleCompletePurchase} />)} />
           <Route path="/compra/:id" element={<ResultadoCompra orders={orders} />} />
           <Route
             path="/registro"
@@ -207,9 +235,9 @@ function App() {
           <Route path="/mi-cuenta/citas" element={requireUser(<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/recepcion" element={requireUser(<ReceptionPanel currentUser={currentUser} users={users} />)} />
           <Route path="*" element={<NoEncontrado />} />
-          <Route path="/admin" element={requireUser(<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />)} />
-          <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={products} setProducts={setProducts} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
-          <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={products} setProducts={setProducts} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={adminProducts} setProducts={setAdminProducts} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
+          <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={adminProducts} setProducts={setAdminProducts} users={users} currentUser={currentUser} />)} />
         </Routes>
       </main>
       <Footer />
