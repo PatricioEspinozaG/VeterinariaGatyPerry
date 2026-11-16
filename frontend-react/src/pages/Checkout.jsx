@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { regions } from '../data/regions.js'
 import { getCartLines, getCartTotal } from '../utils/cartLogic.js'
@@ -15,6 +15,8 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   const [address, setAddress] = useState('')
   const [method, setMethod] = useState('envio')
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const idempotencyKey = useRef(null)
 
   const lines = getCartLines(cart, products)
   const subtotal = getCartTotal(cart, products)
@@ -22,8 +24,9 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   const total = subtotal + shipping
   const communes = regions[region] ?? []
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (isSubmitting) return
     setError('')
 
     const delivery = {
@@ -35,23 +38,34 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
       method,
     }
 
-    const result = onCompletePurchase(delivery)
+    setIsSubmitting(true)
+    try {
+      if (!idempotencyKey.current) {
+        if (typeof globalThis.crypto?.randomUUID !== 'function') {
+          throw new Error('Tu navegador no permite generar un identificador seguro para el pedido.')
+        }
+        idempotencyKey.current = globalThis.crypto.randomUUID()
+      }
 
-    if (!result.ok) {
-      setError(result.error ?? 'No se pudo completar la compra simulada.')
-      return
+      const order = await onCompletePurchase(delivery, idempotencyKey.current)
+      if (!order?.id) {
+        throw new Error('El servidor no confirmó el registro del pedido.')
+      }
+      navigate(`/compra/${order.id}`)
+    } catch (submitError) {
+      setError(submitError.message || 'No se pudo registrar el pedido.')
+    } finally {
+      setIsSubmitting(false)
     }
-
-    navigate(`/compra/${result.orderId}`)
   }
 
   return (
     <>
       <section className="intro-section bg-vet-doodle">
         <div className="container intro-content">
-          <span className="eyebrow">Compra simulada</span>
+          <span className="eyebrow">Pedido</span>
           <h1>Finalizar compra</h1>
-          <p>No se realizará ningún pago ni se enviarán correos.</p>
+          <p>El pedido se registrará en el sistema; no se realizará ningún pago ni se enviarán correos.</p>
         </div>
       </section>
 
@@ -80,6 +94,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                     type="text"
                     autoComplete="name"
                     value={name}
+                    disabled={isSubmitting}
                     onChange={(event) => setName(event.target.value)}
                     required
                   />
@@ -93,6 +108,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                     type="email"
                     autoComplete="email"
                     value={email}
+                    disabled={isSubmitting}
                     onChange={(event) => setEmail(event.target.value)}
                     required
                   />
@@ -104,6 +120,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                     id="checkoutMethod"
                     name="method"
                     value={method}
+                    disabled={isSubmitting}
                     onChange={(event) => {
                       setMethod(event.target.value)
                       setError('')
@@ -123,6 +140,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                         id="checkoutRegion"
                         name="region"
                         value={region}
+                        disabled={isSubmitting}
                         onChange={(event) => {
                           setRegion(event.target.value)
                           setCommune('')
@@ -144,8 +162,8 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                         id="checkoutCommune"
                         name="commune"
                         value={commune}
+                        disabled={isSubmitting || !region}
                         onChange={(event) => setCommune(event.target.value)}
-                        disabled={!region}
                         required
                       >
                         <option value="">Selecciona una comuna</option>
@@ -165,6 +183,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                         type="text"
                         autoComplete="street-address"
                         value={address}
+                        disabled={isSubmitting}
                         onChange={(event) => setAddress(event.target.value)}
                         required
                       />
@@ -174,8 +193,8 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
 
                 {error && <p role="alert">{error}</p>}
 
-                <button className="button button-primary" type="submit">
-                  Confirmar compra simulada
+                <button className="button button-primary" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Registrando pedido...' : 'Confirmar pedido'}
                 </button>
               </form>
 
@@ -200,7 +219,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                   <p>
                     <strong>Total: {money(total)}</strong>
                   </p>
-                  <p>El pago y la entrega son solo una simulación local.</p>
+                  <p>El pedido y el stock se registrarán. El pago no se realizará.</p>
 
                   <Link className="button button-outline" to="/carrito">
                     Volver al carrito

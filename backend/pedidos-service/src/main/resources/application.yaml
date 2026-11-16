@@ -17,6 +17,8 @@ server:
   port: 8085
 
 app:
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
   jwt:
     issuer: gaty-perry-auth
     public-key: ${JWT_PUBLIC_KEY}

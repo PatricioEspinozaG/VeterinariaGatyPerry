@@ -6,10 +6,7 @@ import Checkout from './Checkout.jsx'
 
 it('permite confirmar una compra con retiro en clínica', async () => {
   const user = userEvent.setup()
-  const onCompletePurchase = vi.fn().mockReturnValue({
-    ok: true,
-    orderId: 'pedido-1',
-  })
+  const onCompletePurchase = vi.fn().mockResolvedValue({ id: 'pedido-1' })
 
   render(
     <MemoryRouter initialEntries={['/checkout']}>
@@ -41,7 +38,7 @@ it('permite confirmar una compra con retiro en clínica', async () => {
 
   expect(screen.queryByLabelText('Región')).not.toBeInTheDocument()
 
-  await user.click(screen.getByRole('button', { name: 'Confirmar compra simulada' }))
+  await user.click(screen.getByRole('button', { name: 'Confirmar pedido' }))
 
   expect(onCompletePurchase).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -52,6 +49,9 @@ it('permite confirmar una compra con retiro en clínica', async () => {
       commune: '',
       address: '',
     }),
+    expect.stringMatching(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    ),
   )
   expect(
     await screen.findByRole('heading', { name: 'Compra completada' }),
@@ -60,10 +60,9 @@ it('permite confirmar una compra con retiro en clínica', async () => {
 
 it('muestra el motivo cuando la compra es rechazada', async () => {
   const user = userEvent.setup()
-  const onCompletePurchase = vi.fn().mockReturnValue({
-    ok: false,
-    error: 'El stock cambió. Revisa tu carrito.',
-  })
+  const onCompletePurchase = vi.fn().mockRejectedValue(
+    new Error('El stock cambió. Revisa tu carrito.'),
+  )
 
   render(
     <MemoryRouter>
@@ -82,9 +81,9 @@ it('muestra el motivo cuando la compra es rechazada', async () => {
   )
 
   await user.selectOptions(screen.getByLabelText('Método de entrega'), 'retiro')
-  await user.click(screen.getByRole('button', { name: 'Confirmar compra simulada' }))
+  await user.click(screen.getByRole('button', { name: 'Confirmar pedido' }))
 
-  expect(screen.getByRole('alert')).toHaveTextContent(
+  expect(await screen.findByRole('alert')).toHaveTextContent(
     'El stock cambió. Revisa tu carrito.',
   )
 })

@@ -10,14 +10,14 @@ function ResultadoCompra({ orders }) {
         {order ? (
           <article className="service-card">
             <div className="service-card-body">
-              <span className="eyebrow">Compra simulada</span>
+              <span className="eyebrow">Pedido registrado</span>
               <h1>¡Pedido registrado!</h1>
               <p>
                 Tu número de pedido es <strong>{order.id}</strong>.
               </p>
               <p>
-                No se realizó ningún pago ni se envió un correo. Este pedido
-                existe solo en esta demostración local.
+                El pedido quedó guardado en el sistema y el stock fue actualizado.
+                No se realizó ningún pago ni se envió un correo.
               </p>
               <Link className="button button-primary" to="/productos">
                 Volver al catálogo

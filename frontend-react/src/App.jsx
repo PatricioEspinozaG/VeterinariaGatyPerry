@@ -5,9 +5,9 @@ import { readCartBuckets, STORAGE_KEYS } from './services/storage.js'
 import { products as initialProducts } from './data/products.js'
 import { users as initialUsers } from './data/users.js'
 import { loginUser, logoutUser, registerUser, restoreSession } from './services/auth.js'
+import { createOrder } from './services/pedidos.js'
 import { listProducts } from './services/productos.js'
 import { addToCart, changeQuantity, normalizeCart, removeFromCart } from './utils/cartLogic.js'
-import { preparePurchase } from './utils/purchaseLogic.js'
 import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
 import Home from './pages/Home.jsx'
@@ -125,21 +125,27 @@ function App() {
     return result
   }
 
-  function handleCompletePurchase(delivery) {
-    const result = preparePurchase(validCart, products, delivery)
-    if (!result.ok) return result
-
-    const orderId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()
-    setProducts(result.products)
-    setOrders((previous) => [...previous, {
-      id: orderId,
-      ...result,
+  async function handleCompletePurchase(delivery, idempotencyKey) {
+    const order = await createOrder({
+      items: validCart.map(({ code, quantity }) => ({ code, quantity })),
       delivery,
-      userId: currentUser?.id || null,
-      createdAt: new Date().toISOString(),
-    }])
+    }, idempotencyKey)
+
+    setOrders((previous) => [
+      {
+        ...order,
+        delivery,
+        userId: currentUser?.id || null,
+        persisted: true,
+      },
+      ...previous.filter((item) => item.id !== order.id),
+    ])
     saveCart([])
-    return { ok: true, orderId }
+    listProducts()
+      .then(setProducts)
+      .catch((error) => setProductsError(error.message))
+
+    return order
   }
 
   async function handleLogin(credentials) {

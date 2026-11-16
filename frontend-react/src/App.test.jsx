@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router'
 import { products as catalogProducts } from './data/products.js'
 import { listAppointments } from './services/citas.js'
 import { listPets } from './services/mascotas.js'
+import { createOrder } from './services/pedidos.js'
 import { listProducts } from './services/productos.js'
 import App from './App.jsx'
 
@@ -20,6 +21,9 @@ vi.mock('./services/mascotas.js', () => ({
 }))
 vi.mock('./services/productos.js', () => ({
   listProducts: vi.fn(),
+}))
+vi.mock('./services/pedidos.js', () => ({
+  createOrder: vi.fn(),
 }))
 vi.mock('./services/auth.js', () => ({
   loginUser: vi.fn(async () => ({
@@ -40,6 +44,16 @@ beforeEach(() => {
   listProducts.mockResolvedValue(catalogProducts)
   listPets.mockResolvedValue([])
   listAppointments.mockResolvedValue([])
+  createOrder.mockResolvedValue({
+    id: 'pedido-1',
+    items: [{ code: 'ME004', name: 'Nexgard', quantity: 1, unitPrice: 9500 }],
+    subtotal: 9500,
+    shipping: 0,
+    total: 9500,
+    deliveryMethod: 'retiro',
+    status: 'PENDIENTE',
+    createdAt: '2026-11-16T18:00:00Z',
+  })
 })
 
 it('permite agregar un producto y verlo en el carrito', async () => {
@@ -103,7 +117,7 @@ it('completa una compra y deja el carrito vacío', async () => {
   await user.type(screen.getByLabelText('Nombre completo'), 'Patricio Espinoza')
   await user.type(screen.getByLabelText('Correo electrónico'), 'patricio@gmail.com')
   await user.selectOptions(screen.getByLabelText('Método de entrega'), 'retiro')
-  await user.click(screen.getByRole('button', { name: 'Confirmar compra simulada' }))
+  await user.click(screen.getByRole('button', { name: 'Confirmar pedido' }))
 
   expect(
     await screen.findByRole('heading', { name: '¡Pedido registrado!' }),
@@ -111,6 +125,19 @@ it('completa una compra y deja el carrito vacío', async () => {
   expect(
     screen.getByRole('link', { name: 'Carrito, 0 productos' }),
   ).toBeInTheDocument()
+  expect(createOrder).toHaveBeenCalledWith(
+    {
+      items: [{ code: 'ME004', quantity: 1 }],
+      delivery: expect.objectContaining({
+        name: 'Patricio Espinoza',
+        email: 'patricio@gmail.com',
+        method: 'retiro',
+      }),
+    },
+    expect.stringMatching(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    ),
+  )
 })
 
 it('envía al inicio de sesión si se intenta abrir citas sin cuenta', async () => {

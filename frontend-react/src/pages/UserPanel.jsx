@@ -182,7 +182,9 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                           <td data-label="Entrega">{order.delivery?.method === 'envio' ? 'Envío' : 'Retiro en clínica'}</td>
                           <td className="fw-semibold" data-label="Total">{money(order.total || 0)}</td>
                           <td className="user-card-actions" data-label="Acciones">
-                            <button className="btn btn-delete" type="button" onClick={() => requestRemoval('compra', order)}>Quitar</button>
+                            {!order.persisted && (
+                              <button className="btn btn-delete" type="button" onClick={() => requestRemoval('compra', order)}>Quitar</button>
+                            )}
                           </td>
                         </tr>
                       ))}
