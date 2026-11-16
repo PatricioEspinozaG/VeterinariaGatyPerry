@@ -19,15 +19,23 @@ async function readResponse(response, fallbackMessage) {
   return data
 }
 
-export async function createOrder(order, idempotencyKey = crypto.randomUUID()) {
-  const response = await fetchWithAuth(ORDERS_URL, {
+export async function createOrder(
+  order,
+  idempotencyKey = crypto.randomUUID(),
+  guest = false,
+) {
+  const options = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Idempotency-Key': idempotencyKey,
     },
     body: JSON.stringify(order),
-  })
+  }
+
+  const response = guest
+    ? await fetch(ORDERS_URL, options)
+    : await fetchWithAuth(ORDERS_URL, options)
 
   return readResponse(response, 'No pudimos completar el pedido')
 }

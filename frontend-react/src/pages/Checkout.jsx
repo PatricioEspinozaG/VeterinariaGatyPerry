@@ -84,7 +84,9 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
         // La compra ya fue confirmada.
       }
 
-      navigate(`/compra/${result.orderId}`)
+      navigate(`/compra/${result.orderId}`, {
+        state: { guestOrder: currentUser ? null : result.order },
+      })
     } catch (cause) {
       setError(cause.message || 'No pudimos completar el pedido. Inténtalo nuevamente.')
       setSubmitting(false)

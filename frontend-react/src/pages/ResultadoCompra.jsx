@@ -1,15 +1,30 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useParams } from 'react-router'
 import { getOrder } from '../services/ordersApi.js'
 import { money } from '../utils/format.js'
 
-function ResultadoCompra() {
+function ResultadoCompra({ currentUser }) {
   const { id } = useParams()
-  const [order, setOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { state } = useLocation()
+  const userId = currentUser?.id
+
+  const [order, setOrder] = useState(() => {
+    if (userId) return null
+    if (state?.guestOrder?.id === id) return state.guestOrder
+
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('gaty-guest-receipt'))
+      return saved?.id === id ? saved : null
+    } catch {
+      return null
+    }
+  })
+  const [loading, setLoading] = useState(Boolean(userId))
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!userId) return undefined
+
     let active = true
 
     async function loadOrder() {
@@ -26,11 +41,8 @@ function ResultadoCompra() {
     }
 
     loadOrder()
-
-    return () => {
-      active = false
-    }
-  }, [id])
+    return () => { active = false }
+  }, [id, userId])
 
   return (
     <section className="contact-section">
@@ -78,7 +90,11 @@ function ResultadoCompra() {
             ) : (
               <>
                 <h1>No encontramos ese pedido</h1>
-                <p>Revisa el identificador o vuelve a tus compras.</p>
+                <p>
+                  {userId
+                    ? 'Revisa el identificador o vuelve a tus compras.'
+                    : 'No hay un comprobante de ese pedido disponible en esta pestaña.'}
+                </p>
               </>
             )}
 
@@ -86,9 +102,11 @@ function ResultadoCompra() {
               <Link className="button button-primary" to="/productos">
                 Volver al catálogo
               </Link>
-              <Link className="button button-outline" to="/mi-cuenta/compras">
-                Ver mis compras
-              </Link>
+              {currentUser?.role === 'cliente' && (
+                <Link className="button button-outline" to="/mi-cuenta/compras">
+                  Ver mis compras
+                </Link>
+              )}
             </div>
           </div>
         </article>

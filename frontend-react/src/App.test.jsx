@@ -37,35 +37,36 @@ vi.mock('./services/ordersApi.js', () => ({
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  sessionStorage.clear()
   vi.mocked(refreshSession).mockResolvedValue(null)
   vi.mocked(getProducts).mockResolvedValue(sampleProducts)
   vi.mocked(getMyPets).mockResolvedValue([])
   vi.mocked(createOrder).mockResolvedValue({
-  id: 'pedido-api-1',
-  items: [],
-  subtotal: 9500,
-  shipping: 0,
-  total: 9500,
-  deliveryMethod: 'retiro',
-  status: 'PENDIENTE',
-  createdAt: '2026-11-14T12:00:00Z',
-})
+    id: 'pedido-api-1',
+    items: [],
+    subtotal: 9500,
+    shipping: 0,
+    total: 9500,
+    deliveryMethod: 'retiro',
+    status: 'PENDIENTE',
+    createdAt: '2026-11-14T12:00:00Z',
+  })
   vi.mocked(getOrder).mockResolvedValue({
-  id: 'pedido-api-1',
-  items: [{
-    code: 'ME004',
-    name: 'Nexgard',
-    quantity: 1,
-    unitPrice: 9500,
-    lineTotal: 9500,
-  }],
-  subtotal: 9500,
-  shipping: 0,
-  total: 9500,
-  deliveryMethod: 'retiro',
-  status: 'REGISTRADO',
-  createdAt: '2026-11-14T12:00:00Z',
-})
+    id: 'pedido-api-1',
+    items: [{
+      code: 'ME004',
+      name: 'Nexgard',
+      quantity: 1,
+      unitPrice: 9500,
+      lineTotal: 9500,
+    }],
+    subtotal: 9500,
+    shipping: 0,
+    total: 9500,
+    deliveryMethod: 'retiro',
+    status: 'REGISTRADO',
+    createdAt: '2026-11-14T12:00:00Z',
+  })
 
 })
 
@@ -109,7 +110,7 @@ it('permite agregar un producto y verlo en el carrito', async () => {
 
 it('completa una compra y deja el carrito vacío', async () => {
   const user = userEvent.setup()
-  renderAt('/productos')
+  const { unmount } = renderAt('/productos')
 
   await user.type(
     await screen.findByLabelText('Buscar productos'),
@@ -153,7 +154,18 @@ it('completa una compra y deja el carrito vacío', async () => {
       address: '',
       method: 'retiro',
     },
-  }, expect.any(String))
+  }, expect.any(String), true)
+  expect(getOrder).not.toHaveBeenCalled()
+  expect(JSON.parse(sessionStorage.getItem('gaty-guest-receipt')).id)
+    .toBe('pedido-api-1')
+
+  unmount()
+  renderAt('/compra/pedido-api-1')
+
+  expect(
+    await screen.findByRole('heading', { name: '¡Pedido registrado!' }),
+  ).toBeInTheDocument()
+  expect(getOrder).not.toHaveBeenCalled()
 })
 
 it('envía al login si se intenta abrir citas sin sesión', async () => {

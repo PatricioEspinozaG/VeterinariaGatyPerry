@@ -168,7 +168,7 @@ function App() {
       const order = await createOrder({
         items,
         delivery,
-      }, idempotencyKey)
+      }, idempotencyKey, !currentUser)
 
       // Refresca el catálogo para mostrar el stock actualizado.
       try {
@@ -179,8 +179,27 @@ function App() {
         // no debe mostrarse como un fallo de compra.
       }
 
+      if (!currentUser) {
+        try {
+          sessionStorage.setItem(
+            'gaty-guest-receipt',
+            JSON.stringify({
+              id: order.id,
+              items: order.items,
+              subtotal: order.subtotal,
+              shipping: order.shipping,
+              total: order.total,
+              deliveryMethod: order.deliveryMethod,
+              status: order.status,
+            }),
+          )
+        } catch {
+          // La confirmación inmediata seguirá disponible al navegar.
+        }
+      }
+
       saveCart([])
-      return { ok: true, orderId: order.id }
+      return { ok: true, orderId: order.id, order }
     } catch (error) {
       return {
         ok: false,
@@ -303,7 +322,11 @@ function App() {
           />
           <Route
             path="/compra/:id"
-            element={<ResultadoCompra />}
+            element={
+              sessionLoading
+                ? <p className="container py-4" role="status">Comprobando sesión...</p>
+                : <ResultadoCompra currentUser={currentUser} />
+            }
           />
 
           <Route
