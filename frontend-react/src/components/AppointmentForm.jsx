@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { createAppointment } from '../services/citas.js';
 import { listPets } from '../services/mascotas.js';
 
-export default function AppointmentForm({ currentUserId, onAddAppointment, returnTo = '/' }) {
+export default function AppointmentForm({ returnTo = '/' }) {
   const navigate = useNavigate();
 
   const [mascotas, setMascotas] = useState([]);
@@ -18,6 +19,7 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
 
   const [errors, setErrors] = useState({});
   const [mensaje, setMensaje] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true
@@ -79,39 +81,29 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje(null);
 
     if (!validate()) return;
 
-    const userId = currentUserId || localStorage.getItem('currentUserId');
-    const mascotaSeleccionada = mascotas.find((m) => String(m.id) === String(selectedPetId));
+    setIsSubmitting(true);
+    try {
+      await createAppointment({
+        mascotaId: Number(selectedPetId),
+        servicio: formData.servicio,
+        fecha: formData.fecha,
+        hora: formData.hora,
+        motivo: formData.motivo.trim(),
+      });
 
-    const nuevaCita = {
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-      userId: userId || 'invitado',
-      petId: selectedPetId,
-      petName: mascotaSeleccionada ? mascotaSeleccionada.nombre : 'Mascota',
-      servicio: formData.servicio,
-      fecha: formData.fecha,
-      hora: formData.hora,
-      motivo: formData.motivo.trim(),
-      estado: 'Pendiente'
-    };
-
-    if (onAddAppointment) {
-      onAddAppointment(nuevaCita);
-    } else {
-      const citasGuardadas = JSON.parse(localStorage.getItem('appointments')) || [];
-      localStorage.setItem('appointments', JSON.stringify([...citasGuardadas, nuevaCita]));
+      setMensaje({ tipo: 'success', texto: '¡Cita agendada exitosamente!' });
+      setTimeout(() => navigate(returnTo), 1200);
+    } catch (error) {
+      setMensaje({ tipo: 'danger', texto: error.message });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setMensaje({ tipo: 'success', texto: '¡Cita agendada exitosamente!' });
-
-    setTimeout(() => {
-      navigate(returnTo);
-    }, 1200);
   };
 
   return (
@@ -247,8 +239,8 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
 
                     {/* Botón Agendar */}
                     <div className="col-12 text-center mt-4">
-                      <button className="btn btn-registro-custom btn-lg px-5 py-2 rounded-pill fw-semibold shadow-sm fs-6" type="submit">
-                        Confirmar Cita
+                      <button className="btn btn-registro-custom btn-lg px-5 py-2 rounded-pill fw-semibold shadow-sm fs-6" type="submit" disabled={isSubmitting || petsLoading}>
+                        {isSubmitting ? 'Agendando...' : 'Confirmar Cita'}
                       </button>
                     </div>
 

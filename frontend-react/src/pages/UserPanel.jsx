@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate } from 'react-router'
 import AppointmentsList from '../components/AppointmentsList.jsx'
+import { listAppointments } from '../services/citas.js'
 import { deletePet, listPets } from '../services/mascotas.js'
-import { readStorage } from '../services/storage.js'
 import { money } from '../utils/format.js'
 import '../styles/app.css'
 
@@ -17,6 +17,9 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
   const [pets, setPets] = useState([])
   const [petsLoading, setPetsLoading] = useState(true)
   const [petsError, setPetsError] = useState('')
+  const [appointmentsCount, setAppointmentsCount] = useState(0)
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true)
+  const [appointmentsError, setAppointmentsError] = useState('')
   const [pendingAction, setPendingAction] = useState(null)
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
@@ -46,6 +49,31 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
     }
   }, [currentUserId, currentUserRole])
 
+  useEffect(() => {
+    if (!currentUserId || currentUserRole !== 'cliente' || section !== 'resumen') {
+      return undefined
+    }
+
+    let active = true
+    listAppointments()
+      .then((items) => {
+        if (active) {
+          setAppointmentsCount(items.length)
+          setAppointmentsError('')
+        }
+      })
+      .catch((error) => {
+        if (active) setAppointmentsError(error.message)
+      })
+      .finally(() => {
+        if (active) setAppointmentsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUserId, currentUserRole, section])
+
   if (!currentUser || currentUser.role !== 'cliente') return <Navigate to="/login" replace />
 
   const userId = String(currentUser.id)
@@ -57,8 +85,6 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
     String(order.userId || '') === userId ||
     (!order.userId && order.delivery?.email?.toLowerCase() === email)
   ))
-  const appointments = readStorage('appointments', []).filter((appointment) => String(appointment.userId) === userId)
-
   function requestRemoval(type, item) {
     setPendingAction({ type, item })
     setActionMessage('')
@@ -118,9 +144,10 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               <div className="admin-badges user-summary-stats">
                 <div className="stat-card"><strong>Compras</strong><div className="stat-value">{userOrders.length}</div></div>
                 <div className="stat-card"><strong>Mascotas</strong><div className="stat-value">{petsLoading ? '...' : pets.length}</div></div>
-                <div className="stat-card"><strong>Citas</strong><div className="stat-value">{appointments.length}</div></div>
+                <div className="stat-card"><strong>Citas</strong><div className="stat-value">{appointmentsLoading ? '...' : appointmentsCount}</div></div>
               </div>
               {petsError && <p className="admin-form-message error" role="alert">{petsError}</p>}
+              {appointmentsError && <p className="admin-form-message error" role="alert">{appointmentsError}</p>}
               <div className="user-panel-shortcuts">
                 <Link className="button button-primary" to="/mi-cuenta/compras">Ver historial de compras</Link>
                 <Link className="button button-secondary" to="/mi-cuenta/mascotas">Administrar mascotas</Link>

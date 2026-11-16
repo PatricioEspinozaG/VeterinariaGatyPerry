@@ -3,9 +3,13 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
+import { listAppointments } from '../services/citas.js'
 import { deletePet, listPets } from '../services/mascotas.js'
 import UserPanel from './UserPanel.jsx'
 
+vi.mock('../services/citas.js', () => ({
+  listAppointments: vi.fn(),
+}))
 vi.mock('../services/mascotas.js', () => ({
   deletePet: vi.fn(),
   listPets: vi.fn(),
@@ -13,6 +17,7 @@ vi.mock('../services/mascotas.js', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  listAppointments.mockResolvedValue([])
   listPets.mockResolvedValue([])
   deletePet.mockResolvedValue(null)
 })
@@ -57,6 +62,19 @@ it('muestra los detalles de compras con etiquetas para su presentación móvil',
   expect(screen.getByRole('table')).toHaveClass('user-mobile-card-table')
   expect(screen.getByText('Alimento × 2').closest('td')).toHaveAttribute('data-label', 'Productos')
   expect(screen.getByRole('button', { name: 'Quitar' }).closest('td')).toHaveAttribute('data-label', 'Acciones')
+})
+
+it('muestra en el resumen la cantidad de citas obtenida del backend', async () => {
+  listAppointments.mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
+
+  render(
+    <MemoryRouter>
+      <UserPanel currentUser={customer} section="resumen" />
+    </MemoryRouter>,
+  )
+
+  const count = await screen.findByText('2')
+  expect(count).toHaveClass('stat-value')
 })
 
 it('muestra las mascotas con etiquetas para su presentación móvil', async () => {
@@ -121,16 +139,21 @@ it('permite quitar una compra del historial después de confirmar', async () => 
   expect(screen.getByRole('status')).toHaveTextContent('La compra se quitó del historial.')
 })
 
-it('presenta las citas del cliente como tarjetas adaptables a móvil', () => {
-  localStorage.setItem('appointments', JSON.stringify([{
-    id: 'cita-1',
+it('presenta las citas del cliente como tarjetas adaptables a móvil', async () => {
+  listAppointments.mockResolvedValueOnce([{
+    id: 1,
     userId: customer.id,
-    petName: 'Luna',
+    mascotaId: 10,
     servicio: 'Consulta general',
-    fecha: '2026-10-20',
-    hora: '10:00',
-    status: 'pending',
-  }]))
+    fecha: '2099-10-20',
+    hora: '10:00:00',
+    estado: 'PENDIENTE',
+  }])
+  listPets.mockResolvedValue([{
+    id: 10,
+    nombre: 'Luna',
+    especie: 'Gato',
+  }])
 
   render(
     <MemoryRouter>
@@ -138,7 +161,7 @@ it('presenta las citas del cliente como tarjetas adaptables a móvil', () => {
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('table')).toHaveClass('user-appointments-table')
+  expect(await screen.findByRole('table')).toHaveClass('user-appointments-table')
   expect(screen.getByText('Luna').closest('td')).toHaveAttribute('data-label', 'Mascota')
   expect(screen.getByRole('button', { name: 'Cancelar cita' }).closest('td'))
     .toHaveAttribute('data-label', 'Acciones')

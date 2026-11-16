@@ -90,6 +90,7 @@ services:
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
       PACIENTES_BASE_URL: "http://pacientes:8082"
       AUTH_BASE_URL: "http://auth:8081"
+      FRONTEND_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:5173}"
     volumes:
       - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"

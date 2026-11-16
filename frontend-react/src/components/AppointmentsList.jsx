@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { cancelAppointment, listAppointments } from '../services/citas.js';
+import { listPets } from '../services/mascotas.js';
 import { readStorage, writeStorage } from '../services/storage.js';
 import { services } from '../data/services.js';
 
@@ -33,13 +35,21 @@ function generateAppointmentId() {
 
 export default function AppointmentsList({ userRole = 'cliente', currentUserId, readOnly = false, adminMode = false, receptionMode = false, embedded = false, users = [], returnTo = '', initialAppointments }) {
   const navigate = useNavigate();
-  const [citas, setCitas] = useState(() => initialAppointments ?? readStorage('appointments', []));
+  const managementMode = adminMode || receptionMode;
+  const clientApiMode = userRole === 'cliente' && !managementMode && !readOnly;
+  const userId = currentUserId || localStorage.getItem('currentUserId');
+  const [citas, setCitas] = useState(() => (
+    clientApiMode ? [] : initialAppointments ?? readStorage('appointments', [])
+  ));
+  const [appointmentsLoading, setAppointmentsLoading] = useState(clientApiMode);
+  const [appointmentsError, setAppointmentsError] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todas');
   const [showForm, setShowForm] = useState(false);
   const [editingAppointmentId, setEditingAppointmentId] = useState(null);
   const [appointmentPendingDeletion, setAppointmentPendingDeletion] = useState(null);
   const [appointmentPendingCancellation, setAppointmentPendingCancellation] = useState(null);
   const [cancellationError, setCancellationError] = useState('');
+  const [cancellationLoading, setCancellationLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState({
     userId: '',
@@ -51,8 +61,38 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     motivo: '',
   });
 
+  useEffect(() => {
+    if (!clientApiMode) return undefined
+
+    let active = true
+    Promise.all([listAppointments(), listPets()])
+      .then(([appointments, pets]) => {
+        const petNames = new Map(pets.map((pet) => [String(pet.id), pet.nombre]))
+        const mappedAppointments = appointments.map((appointment) => ({
+          ...appointment,
+          userId: String(appointment.userId),
+          petId: String(appointment.mascotaId),
+          petName: petNames.get(String(appointment.mascotaId)) || `Mascota #${appointment.mascotaId}`,
+          hora: String(appointment.hora).slice(0, 5),
+        }))
+        if (active) {
+          setCitas(mappedAppointments)
+          setAppointmentsError('')
+        }
+      })
+      .catch((error) => {
+        if (active) setAppointmentsError(error.message)
+      })
+      .finally(() => {
+        if (active) setAppointmentsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [clientApiMode, userId])
+
   const canManageAppointments = (adminMode && userRole === 'admin') || (receptionMode && userRole === 'recepcion');
-  const managementMode = adminMode || receptionMode;
   const clientes = users.filter((user) => user.role === 'cliente' && user.active !== false);
   const today = new Date().toISOString().split('T')[0];
 
@@ -65,8 +105,27 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     return true;
   };
 
-  const confirmCancellation = () => {
+  const confirmCancellation = async () => {
     if (!appointmentPendingCancellation) return
+    if (clientApiMode) {
+      setCancellationLoading(true)
+      try {
+        const updated = await cancelAppointment(appointmentPendingCancellation.id)
+        setCitas((previous) => previous.map((appointment) => (
+          String(appointment.id) === String(appointmentPendingCancellation.id)
+            ? { ...appointment, estado: updated.estado }
+            : appointment
+        )))
+        setAppointmentPendingCancellation(null)
+        setCancellationError('')
+      } catch (error) {
+        setCancellationError(error.message)
+      } finally {
+        setCancellationLoading(false)
+      }
+      return
+    }
+
     if (!handleCambiarEstado(appointmentPendingCancellation.id, 'Cancelada')) {
       setCancellationError('No se pudo cancelar la cita en este navegador.')
       return
@@ -158,7 +217,6 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
     setFormError('');
   };
 
-  const userId = currentUserId || localStorage.getItem('currentUserId');
   const citasFiltradas = citas.filter((c) => {
     if (userRole === 'cliente' && String(c.userId) !== String(userId)) return false;
     if (filtroEstado === 'todas') return true;
@@ -306,6 +364,10 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
                 )}
               </div>
 
+              {clientApiMode && appointmentsError && (
+                <p className="admin-form-message error" role="alert">{appointmentsError}</p>
+              )}
+
               {/* Filtros */}
               <div className="row mb-4">
                 <div className="col-12 col-md-4">
@@ -328,7 +390,9 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
               {canManageAppointments && showForm && editingAppointmentId === null && appointmentFormContent}
 
               {/* Tabla de Citas */}
-              {citasFiltradas.length === 0 ? (
+              {clientApiMode && appointmentsLoading ? (
+                <p className="text-center py-5" role="status">Cargando tus citas...</p>
+              ) : clientApiMode && appointmentsError ? null : citasFiltradas.length === 0 ? (
                 <div className="text-center py-5">
                   <p className="text-muted mb-0">No hay citas registradas en esta categoría.</p>
                 </div>
@@ -452,8 +516,8 @@ export default function AppointmentsList({ userRole = 'cliente', currentUserId, 
           </p>
           {cancellationError && <p className="admin-form-message error" role="alert">{cancellationError}</p>}
           <div className="form-actions">
-            <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" onClick={() => setAppointmentPendingCancellation(null)}>Volver</button>
-            <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" onClick={confirmCancellation}>Sí, cancelar cita</button>
+            <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" onClick={() => setAppointmentPendingCancellation(null)} disabled={cancellationLoading}>Volver</button>
+            <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" onClick={confirmCancellation} disabled={cancellationLoading}>{cancellationLoading ? 'Cancelando...' : 'Sí, cancelar cita'}</button>
           </div>
         </section>
       </div>

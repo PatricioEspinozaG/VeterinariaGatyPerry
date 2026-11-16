@@ -1,30 +1,40 @@
-import { expect, it } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import AppointmentsList from './AppointmentsList.jsx'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { cancelAppointment, listAppointments } from '../services/citas.js'
+import { listPets } from '../services/mascotas.js'
 
-it('permite al dueño cancelar su cita y guarda el nuevo estado', async () => {
-  localStorage.setItem('appointments', JSON.stringify([
-    {
-      id: 'cita-1',
-      userId: 1,
-      petName: 'Michi',
-      servicio: 'Consulta General',
-      fecha: '2026-10-20',
-      hora: '10:00',
-      estado: 'Pendiente',
-    },
-    {
-      id: 'cita-2',
-      userId: 'usuario-2',
-      petName: 'Luna',
-      servicio: 'Vacunación',
-      fecha: '2026-10-21',
-      hora: '11:00',
-      estado: 'Pendiente',
-    },
-  ]))
+vi.mock('../services/citas.js', () => ({
+  cancelAppointment: vi.fn(),
+  listAppointments: vi.fn(),
+}))
+vi.mock('../services/mascotas.js', () => ({
+  listPets: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  listAppointments.mockResolvedValue([])
+  listPets.mockResolvedValue([])
+  cancelAppointment.mockResolvedValue({ estado: 'CANCELADA' })
+})
+
+it('permite al dueño cancelar su cita mediante el backend', async () => {
+  listAppointments.mockResolvedValueOnce([{
+    id: 1,
+    userId: 1,
+    mascotaId: 10,
+    servicio: 'Consulta General',
+    fecha: '2099-10-20',
+    hora: '10:00:00',
+    estado: 'PENDIENTE',
+  }])
+  listPets.mockResolvedValueOnce([
+    { id: 10, nombre: 'Michi', especie: 'Gato' },
+    { id: 11, nombre: 'Luna', especie: 'Gato' },
+  ])
 
   const user = userEvent.setup()
   render(
@@ -33,20 +43,19 @@ it('permite al dueño cancelar su cita y guarda el nuevo estado', async () => {
     </MemoryRouter>,
   )
 
-  expect(screen.getByText('Michi')).toBeInTheDocument()
+  expect(await screen.findByText('Michi')).toBeInTheDocument()
   expect(screen.queryByText('Luna')).not.toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Cancelar cita' }))
   expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Quieres cancelar la cita de “Michi”?')
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-outline-secondary'))
-  expect(JSON.parse(localStorage.getItem('appointments'))[0].estado).toBe('Pendiente')
+  expect(cancelAppointment).not.toHaveBeenCalled()
 
   await user.click(screen.getByRole('button', { name: 'Cancelar cita' }))
   await user.click(screen.getByRole('button', { name: 'Sí, cancelar cita' }))
 
-  const citasGuardadas = JSON.parse(localStorage.getItem('appointments'))
-  expect(citasGuardadas[0].estado).toBe('Cancelada')
-  expect(citasGuardadas[1].estado).toBe('Pendiente')
+  expect(await screen.findByText('Cancelada')).toBeInTheDocument()
+  expect(cancelAppointment).toHaveBeenCalledWith(1)
 })
 
 it('abre la edición administrativa de una cita en un overlay', async () => {

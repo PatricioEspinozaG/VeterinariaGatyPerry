@@ -195,7 +195,7 @@ function App() {
           />
           <Route
             path="/citas/nueva"
-            element={requireUser(<AppointmentForm currentUserId={currentUserId} returnTo={accountReturnTo} />)}
+            element={requireUser(<AppointmentForm returnTo={accountReturnTo} />)}
           />
           <Route
             path="/citas"
