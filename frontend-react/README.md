@@ -18,6 +18,8 @@ El catálogo público usa `productos-service` en `http://localhost:8084`; puedes
 configurar `VITE_PRODUCTOS_API_URL` en `.env.local`.
 El registro de pedidos usa `pedidos-service` en `http://localhost:8085`; puedes
 configurar `VITE_PEDIDOS_API_URL` en `.env.local`.
+El historial clínico usa `clinica-service` en `http://localhost:8086`; puedes
+configurar `VITE_CLINICA_API_URL` en `.env.local`.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

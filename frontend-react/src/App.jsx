@@ -253,6 +253,7 @@ function App() {
           <Route path="/mi-cuenta/compras" element={requireUser(<UserPanel section="compras" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/mi-cuenta/mascotas" element={requireUser(<UserPanel section="mascotas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/mi-cuenta/citas" element={requireUser(<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
+          <Route path="/mi-cuenta/historial" element={requireUser(<UserPanel section="historial" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/recepcion" element={requireUser(<ReceptionPanel currentUser={currentUser} users={users} />)} />
           <Route path="*" element={<NoEncontrado />} />
           <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} currentUser={currentUser} />)} />

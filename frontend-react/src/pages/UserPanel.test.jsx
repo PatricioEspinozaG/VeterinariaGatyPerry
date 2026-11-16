@@ -4,12 +4,16 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { listAppointments } from '../services/citas.js'
+import { listPetClinicalHistory } from '../services/clinica.js'
 import { deletePet, listPets } from '../services/mascotas.js'
 import { listOrders } from '../services/pedidos.js'
 import UserPanel from './UserPanel.jsx'
 
 vi.mock('../services/citas.js', () => ({
   listAppointments: vi.fn(),
+}))
+vi.mock('../services/clinica.js', () => ({
+  listPetClinicalHistory: vi.fn(),
 }))
 vi.mock('../services/mascotas.js', () => ({
   deletePet: vi.fn(),
@@ -22,6 +26,7 @@ vi.mock('../services/pedidos.js', () => ({
 beforeEach(() => {
   vi.clearAllMocks()
   listAppointments.mockResolvedValue([])
+  listPetClinicalHistory.mockResolvedValue({ registros: [] })
   listPets.mockResolvedValue([])
   listOrders.mockResolvedValue([])
   deletePet.mockResolvedValue(null)
@@ -206,4 +211,69 @@ it('presenta las citas del cliente como tarjetas adaptables a móvil', async () 
   expect(screen.getByText('Luna').closest('td')).toHaveAttribute('data-label', 'Mascota')
   expect(screen.getByRole('button', { name: 'Cancelar cita' }).closest('td'))
     .toHaveAttribute('data-label', 'Acciones')
+})
+
+it('muestra las atenciones y vacunas del backend por mascota', async () => {
+  const pet = {
+    id: 10,
+    nombre: 'Luna',
+    especie: 'Gato',
+  }
+  listPets.mockResolvedValueOnce([pet])
+  listPetClinicalHistory.mockResolvedValueOnce({
+    mascotaId: pet.id,
+    limite: 50,
+    registros: [
+      {
+        id: 7,
+        tipo: 'ATENCION',
+        fecha: '2026-10-12T10:30:00',
+        estado: 'ACTIVA',
+        motivo: 'Control',
+        diagnostico: 'Dermatitis',
+        tratamiento: 'Tratamiento tópico',
+        profesionalResponsable: 'Dra. Vet',
+      },
+      {
+        id: 9,
+        tipo: 'VACUNA',
+        fecha: '2026-09-10T00:00:00',
+        estado: 'ACTIVA',
+        nombreVacuna: 'Antirrábica',
+        profesionalResponsable: 'Dr. Vet',
+      },
+    ],
+  })
+
+  render(
+    <MemoryRouter>
+      <UserPanel currentUser={customer} section="historial" />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByText('Luna')).toBeInTheDocument()
+  expect(screen.getByText('Diagnóstico: Dermatitis')).toBeInTheDocument()
+  expect(screen.getByText('Tratamiento: Tratamiento tópico')).toBeInTheDocument()
+  expect(screen.getByText('Antirrábica')).toBeInTheDocument()
+  expect(listPetClinicalHistory).toHaveBeenCalledWith(10)
+})
+
+it('muestra los errores al consultar el historial clínico', async () => {
+  listPets.mockResolvedValueOnce([{
+    id: 10,
+    nombre: 'Luna',
+  }])
+  listPetClinicalHistory.mockRejectedValueOnce(
+    new Error('Historial clínico no disponible.'),
+  )
+
+  render(
+    <MemoryRouter>
+      <UserPanel currentUser={customer} section="historial" />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Historial clínico no disponible.',
+  )
 })

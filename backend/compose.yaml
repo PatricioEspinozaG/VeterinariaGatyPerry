@@ -164,6 +164,7 @@ services:
       DB_USER: "gp_clinica"
       DB_PASSWORD: "${CLINICA_DB_PASSWORD:?Falta CLINICA_DB_PASSWORD}"
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+      FRONTEND_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:5173}"
       PACIENTES_BASE_URL: "http://pacientes:8082"
       CITAS_BASE_URL: "http://citas:8083"
     volumes:

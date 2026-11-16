@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate } from 'react-router'
 import AppointmentsList from '../components/AppointmentsList.jsx'
 import { listAppointments } from '../services/citas.js'
+import { listPetClinicalHistory } from '../services/clinica.js'
 import { deletePet, listPets } from '../services/mascotas.js'
 import { listOrders } from '../services/pedidos.js'
 import { money } from '../utils/format.js'
@@ -12,7 +13,15 @@ const sections = [
   { id: 'compras', label: 'Mis compras', path: '/mi-cuenta/compras' },
   { id: 'mascotas', label: 'Mis mascotas', path: '/mi-cuenta/mascotas' },
   { id: 'citas', label: 'Mis citas', path: '/mi-cuenta/citas' },
+  { id: 'historial', label: 'Historial clínico', path: '/mi-cuenta/historial' },
 ]
+
+function formatClinicalDate(value) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? 'Fecha no disponible'
+    : date.toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' })
+}
 
 function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' }) {
   const [pets, setPets] = useState([])
@@ -21,6 +30,12 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
   const [appointmentsCount, setAppointmentsCount] = useState(0)
   const [appointmentsLoading, setAppointmentsLoading] = useState(true)
   const [appointmentsError, setAppointmentsError] = useState('')
+  const [clinicalHistoryQuery, setClinicalHistoryQuery] = useState({
+    key: '',
+    items: [],
+    error: '',
+    loading: true,
+  })
   const [ordersQuery, setOrdersQuery] = useState({
     key: '',
     items: [],
@@ -37,6 +52,15 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
   const backendOrders = currentOrdersQuery?.items || []
   const ordersLoading = !currentOrdersQuery || currentOrdersQuery.loading
   const ordersError = currentOrdersQuery?.error || ''
+  const petIdsKey = pets.map((pet) => String(pet.id)).join(',')
+  const clinicalHistoryKey = `${currentUserId || ''}:${petIdsKey}`
+  const currentClinicalHistoryQuery = clinicalHistoryQuery.key === clinicalHistoryKey
+    ? clinicalHistoryQuery
+    : null
+  const clinicalHistoryLoading = petsLoading
+    || (!petsError && pets.length > 0
+      && (!currentClinicalHistoryQuery || currentClinicalHistoryQuery.loading))
+  const clinicalHistoryError = petsError || currentClinicalHistoryQuery?.error || ''
 
   useEffect(() => {
     if (!currentUserId || currentUserRole !== 'cliente') return undefined
@@ -122,6 +146,44 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
       active = false
     }
   }, [currentUserId, currentUserRole, section])
+
+  useEffect(() => {
+    if (
+      !currentUserId
+      || currentUserRole !== 'cliente'
+      || section !== 'historial'
+      || petsLoading
+    ) {
+      return undefined
+    }
+
+    const key = `${currentUserId}:${pets.map((pet) => String(pet.id)).join(',')}`
+    if (petsError || pets.length === 0) return undefined
+
+    let active = true
+    Promise.all(pets.map(async (pet) => {
+      const history = await listPetClinicalHistory(pet.id)
+      return {
+        petId: String(pet.id),
+        petName: pet.nombre,
+        records: history.registros,
+      }
+    }))
+      .then((items) => {
+        if (active) {
+          setClinicalHistoryQuery({ key, items, error: '', loading: false })
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setClinicalHistoryQuery({ key, items: [], error: error.message, loading: false })
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUserId, currentUserRole, pets, petsError, petsLoading, section])
 
   if (!currentUser || currentUser.role !== 'cliente') return <Navigate to="/login" replace />
 
@@ -211,6 +273,7 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                 <Link className="button button-primary" to="/mi-cuenta/compras">Ver historial de compras</Link>
                 <Link className="button button-secondary" to="/mi-cuenta/mascotas">Administrar mascotas</Link>
                 <Link className="button button-secondary" to="/mi-cuenta/citas">Revisar mis citas</Link>
+                <Link className="button button-secondary" to="/mi-cuenta/historial">Ver historial clínico</Link>
               </div>
             </section>
           )}
@@ -293,6 +356,75 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </section>
+          )}
+
+          {section === 'historial' && (
+            <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
+              <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">
+                SALUD DE TUS MASCOTAS
+              </span>
+              <h2 className="h3 fw-bold text-dark">Historial clínico</h2>
+              {clinicalHistoryError && (
+                <p className="admin-form-message error" role="alert">{clinicalHistoryError}</p>
+              )}
+              {clinicalHistoryLoading ? (
+                <p className="text-center py-5" role="status">Cargando el historial clínico...</p>
+              ) : clinicalHistoryError ? null : pets.length === 0 ? (
+                <div className="text-center py-5">
+                  <p className="text-muted">Registra una mascota para consultar su historial clínico.</p>
+                  <Link
+                    className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold"
+                    to="/mascotas/nueva?returnTo=%2Fmi-cuenta%2Fhistorial"
+                  >
+                    Agregar mascota
+                  </Link>
+                </div>
+              ) : (
+                <div className="d-grid gap-4">
+                  {(currentClinicalHistoryQuery?.items || []).map((group) => (
+                    <section key={group.petId} aria-labelledby={`historial-mascota-${group.petId}`}>
+                      <h3 id={`historial-mascota-${group.petId}`} className="h5 fw-bold">
+                        {group.petName}
+                      </h3>
+                      {group.records.length === 0 ? (
+                        <p className="text-muted">Aún no hay registros clínicos para esta mascota.</p>
+                      ) : (
+                        <div className="table-responsive">
+                          <table className="table table-hover align-middle mb-0 user-mobile-card-table">
+                            <thead className="table-light">
+                              <tr><th>Fecha</th><th>Registro</th><th>Detalle</th><th>Profesional</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody>
+                              {group.records.map((record) => (
+                                <tr key={`${record.tipo}-${record.id}`}>
+                                  <td data-label="Fecha">{formatClinicalDate(record.fecha)}</td>
+                                  <td data-label="Registro">{record.tipo === 'VACUNA' ? 'Vacuna' : 'Atención'}</td>
+                                  <td data-label="Detalle">
+                                    <strong>
+                                      {record.tipo === 'VACUNA'
+                                        ? record.nombreVacuna || 'Vacuna registrada'
+                                        : record.motivo || 'Atención registrada'}
+                                    </strong>
+                                    {record.diagnostico && <div>Diagnóstico: {record.diagnostico}</div>}
+                                    {record.tratamiento && <div>Tratamiento: {record.tratamiento}</div>}
+                                  </td>
+                                  <td data-label="Profesional">{record.profesionalResponsable || '-'}</td>
+                                  <td data-label="Estado">
+                                    <span className={`badge rounded-pill ${record.estado === 'ACTIVA' ? 'text-bg-success' : 'text-bg-secondary'}`}>
+                                      {record.estado === 'ACTIVA' ? 'Activa' : 'Anulada'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </section>
+                  ))}
                 </div>
               )}
             </section>
