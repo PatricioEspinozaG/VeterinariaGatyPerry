@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from "react-router";
 
-export default function LoginForm({ users = [], onLogin }) {
+export default function LoginForm({ onLogin }) {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -11,6 +11,7 @@ export default function LoginForm({ users = [], onLogin }) {
     password: ''
   });
   const [mensaje, setMensaje] = useState({ type: '', text: '' });
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   // Expresión regular de correos permitidos
@@ -42,7 +43,7 @@ export default function LoginForm({ users = [], onLogin }) {
     return valid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje({ type: '', text: '' });
 
@@ -50,39 +51,24 @@ export default function LoginForm({ users = [], onLogin }) {
       return;
     }
 
-    // Usuarios recibidos por props o fallback del localStorage
-    const listaUsuarios = users.length > 0 
-      ? users 
-      : JSON.parse(localStorage.getItem('users')) || [];
-
-    // Buscar coincidencia por email y contraseña
-    const usuarioEncontrado = listaUsuarios.find(
-      (u) => u.email?.toLowerCase() === formData.email.toLowerCase() && u.password === formData.password
-    );
-
-    if (!usuarioEncontrado) {
-      setMensaje({ type: 'danger', text: 'Credenciales incorrectas. Inténtalo nuevamente.' });
+    if (!onLogin) {
+      setMensaje({ type: 'danger', text: 'El inicio de sesión no está disponible.' });
       return;
     }
 
-    // Verificación de cuenta activa (regla de negocio)
-    if (usuarioEncontrado.active === false) {
-      setMensaje({ type: 'danger', text: 'Tu cuenta se encuentra deshabilitada. Contacta al administrador.' });
-      return;
-    }
-
-    // Guardar sesión mediante la función del padre
-    if (onLogin) {
-      onLogin(usuarioEncontrado.id);
-    } else {
-      localStorage.setItem('currentUserId', usuarioEncontrado.id);
-    }
-
-    setMensaje({ type: 'success', text: '¡Inicio de sesión exitoso! Redirigiendo...' });
-
-    setTimeout(() => {
+    setSubmitting(true);
+    try {
+      await onLogin(formData);
+      setMensaje({ type: 'success', text: '¡Inicio de sesión exitoso! Redirigiendo...' });
       navigate('/');
-    }, 1200);
+    } catch (error) {
+      setMensaje({
+        type: 'danger',
+        text: error.message || 'No se pudo iniciar sesión.',
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -98,7 +84,7 @@ export default function LoginForm({ users = [], onLogin }) {
                   <span className="eyebrow">Acceso</span>
                   <h1 className="h2 mt-3">Iniciar sesión</h1>
                   <p className="text-secondary small">
-                    Simulación académica con datos guardados en localStorage.
+                    Ingresa con tu cuenta de Gaty Perry.
                   </p>
                 </div>
 
@@ -143,17 +129,10 @@ export default function LoginForm({ users = [], onLogin }) {
                   </div>
 
                   {/* Botón Ingresar */}
-                  <button className="button button-primary login-submit w-100" type="submit">
-                    Ingresar
+                  <button className="button button-primary login-submit w-100" type="submit" disabled={submitting}>
+                    {submitting ? 'Ingresando...' : 'Ingresar'}
                   </button>
                 </form>
-
-                {/* Caja Informativa con Datos de Demostración */}
-                <div className="alert alert-light border mt-4 small text-start">
-                  <strong>Administrador:</strong> admin@duoc.cl / admin123<br />
-                  <strong>Recepción:</strong> recepcion@duoc.cl / recep123<br />
-                  <strong>Cliente:</strong> cliente@gmail.com / cliente1
-                </div>
 
                 {/* Enlace a Registro */}
                 <p className="text-center mb-0 mt-3 small">

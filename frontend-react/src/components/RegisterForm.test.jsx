@@ -22,7 +22,7 @@ describe('RegisterForm', () => {
     expect(onRegister).not.toHaveBeenCalled()
   })
 
-  it('registra una cuenta cuando los datos son válidos', async () => {
+  it('envía una cuenta al servidor cuando los datos son válidos', async () => {
   const user = userEvent.setup()
   const onRegister = vi.fn()
 
@@ -55,5 +55,32 @@ describe('RegisterForm', () => {
     })
   )
 })
+
+  it('muestra los errores devueltos por el servidor', async () => {
+    const user = userEvent.setup()
+    const onRegister = vi.fn().mockRejectedValue(
+      new Error('El correo o RUN ya está registrado.'),
+    )
+    const { container } = render(
+      <MemoryRouter>
+        <RegisterForm onRegister={onRegister} />
+      </MemoryRouter>,
+    )
+
+    const escribir = async (nombre, valor) => {
+      await user.type(container.querySelector(`[name="${nombre}"]`), valor)
+    }
+
+    await escribir('nombre', 'Camila')
+    await escribir('apellidos', 'Soto')
+    await escribir('run', '12.345.678-5')
+    await escribir('email', 'camila@gmail.com')
+    await escribir('telefono', '+56 9 1234 5678')
+    await escribir('password', 'clave1234')
+    await escribir('confirmPassword', 'clave1234')
+    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+
+    expect(await screen.findByText('El correo o RUN ya está registrado.')).toBeInTheDocument()
+  })
 
 })

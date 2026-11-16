@@ -4,21 +4,15 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import LoginForm from './LoginForm.jsx'
 
-it('impide iniciar sesión con una cuenta desactivada', async () => {
+it('muestra el error de autenticación devuelto por el servidor', async () => {
   const user = userEvent.setup()
-  const onLogin = vi.fn()
+  const onLogin = vi.fn().mockRejectedValue(
+    new Error('Credenciales incorrectas o sesión vencida.'),
+  )
 
   render(
     <MemoryRouter>
-      <LoginForm
-        users={[{
-          id: 'usuario-1',
-          email: 'cliente@gmail.com',
-          password: 'clave1234',
-          active: false,
-        }]}
-        onLogin={onLogin}
-      />
+      <LoginForm onLogin={onLogin} />
     </MemoryRouter>,
   )
 
@@ -26,27 +20,23 @@ it('impide iniciar sesión con una cuenta desactivada', async () => {
   await user.type(screen.getByLabelText('Contraseña'), 'clave1234')
   await user.click(screen.getByRole('button', { name: 'Ingresar' }))
 
-  expect(screen.getByRole('alert')).toHaveTextContent(
-    'Tu cuenta se encuentra deshabilitada.',
-  )
-  expect(onLogin).not.toHaveBeenCalled()
+  expect(screen.getByRole('alert')).toHaveTextContent('Credenciales incorrectas')
+  expect(onLogin).toHaveBeenCalledWith({
+    email: 'cliente@gmail.com',
+    password: 'clave1234',
+  })
 })
 
-it('entrega el ID de la cuenta al iniciar sesión correctamente', async () => {
+it('envía credenciales al iniciar sesión correctamente', async () => {
   const user = userEvent.setup()
-  const onLogin = vi.fn()
+  const onLogin = vi.fn().mockResolvedValue({
+    id: 'usuario-1',
+    role: 'cliente',
+  })
 
   render(
     <MemoryRouter>
-      <LoginForm
-        users={[{
-          id: 'usuario-1',
-          email: 'cliente@gmail.com',
-          password: 'clave1234',
-          active: true,
-        }]}
-        onLogin={onLogin}
-      />
+      <LoginForm onLogin={onLogin} />
     </MemoryRouter>,
   )
 
@@ -55,7 +45,10 @@ it('entrega el ID de la cuenta al iniciar sesión correctamente', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Ingresar' }))
 
-  expect(onLogin).toHaveBeenCalledWith('usuario-1')
+  expect(onLogin).toHaveBeenCalledWith({
+    email: 'cliente@gmail.com',
+    password: 'clave1234',
+  })
   expect(screen.getByRole('alert')).toHaveTextContent(
     '¡Inicio de sesión exitoso!',
   )
@@ -63,7 +56,10 @@ it('entrega el ID de la cuenta al iniciar sesión correctamente', async () => {
 
 it('muestra errores de formato y credenciales incorrectas', async () => {
   const user = userEvent.setup()
-  render(<MemoryRouter><LoginForm users={[]} /></MemoryRouter>)
+  const onLogin = vi.fn().mockRejectedValue(
+    new Error('Credenciales incorrectas o sesión vencida.'),
+  )
+  render(<MemoryRouter><LoginForm onLogin={onLogin} /></MemoryRouter>)
 
   await user.type(screen.getByLabelText('Correo'), 'persona@example.com')
   await user.type(screen.getByLabelText('Contraseña'), 'corta')
@@ -78,24 +74,9 @@ it('muestra errores de formato y credenciales incorrectas', async () => {
   await user.type(screen.getByLabelText('Contraseña'), 'clavevalida')
   await user.click(screen.getByRole('button', { name: 'Ingresar' }))
 
-  expect(screen.getByRole('alert')).toHaveTextContent('Credenciales incorrectas.')
-})
-
-it('usa los usuarios de localStorage si no recibe usuarios por props', async () => {
-  localStorage.setItem('users', JSON.stringify([{
-    id: 'usuario-local',
-    email: 'local@gmail.com',
-    password: 'clave1234',
-    active: true,
-  }]))
-
-  const user = userEvent.setup()
-  render(<MemoryRouter><LoginForm /></MemoryRouter>)
-
-  await user.type(screen.getByLabelText('Correo'), 'local@gmail.com')
-  await user.type(screen.getByLabelText('Contraseña'), 'clave1234')
-  await user.click(screen.getByRole('button', { name: 'Ingresar' }))
-
-  expect(localStorage.getItem('currentUserId')).toBe('usuario-local')
-  expect(screen.getByRole('alert')).toHaveTextContent('¡Inicio de sesión exitoso!')
+  expect(onLogin).toHaveBeenCalledWith({
+    email: 'persona@gmail.com',
+    password: 'clavevalida',
+  })
+  expect(screen.getByRole('alert')).toHaveTextContent('Credenciales incorrectas')
 })

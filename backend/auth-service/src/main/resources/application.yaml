@@ -14,6 +14,8 @@ server:
   port: 8081
 
 app:
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
   auth:
     refresh-cookie-secure: ${AUTH_REFRESH_COOKIE_SECURE:true}
   jwt:

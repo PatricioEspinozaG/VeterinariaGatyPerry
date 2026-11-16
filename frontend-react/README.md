@@ -1,5 +1,15 @@
 # React + Vite
 
+## Conexión local de autenticación
+
+El frontend se conecta por defecto a `http://localhost:8081` (auth-service).
+Puedes cambiar esa dirección definiendo `VITE_AUTH_API_URL` en un archivo
+`.env.local` de este directorio. Para que las cookies de sesión funcionen,
+abre frontend y backend usando `localhost`; auth-service permite por defecto
+el origen de Vite `http://localhost:5173`. Cambia `FRONTEND_ORIGIN` en
+`backend/.env` si usas otro origen. Consulta `backend/POSTGRES_LOCAL.md` para
+levantar los servicios locales.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

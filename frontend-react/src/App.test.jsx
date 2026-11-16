@@ -1,8 +1,23 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import App from './App.jsx'
+
+vi.mock('./services/auth.js', () => ({
+  loginUser: vi.fn(async () => ({
+    id: 'usuario-backend',
+    nombre: 'Camila',
+    name: 'Camila',
+    apellidos: 'Soto',
+    email: 'camila@gmail.com',
+    role: 'cliente',
+    active: true,
+  })),
+  logoutUser: vi.fn(async () => {}),
+  registerUser: vi.fn(async () => ({})),
+  restoreSession: vi.fn(async () => null),
+}))
 
 it('permite agregar un producto y verlo en el carrito', async () => {
   const user = userEvent.setup()

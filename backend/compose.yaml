@@ -42,6 +42,7 @@ services:
       JWT_PRIVATE_KEY: "file:/keys/auth-private.pem"
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
       AUTH_REFRESH_COOKIE_SECURE: "false"
+      FRONTEND_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:5173}"
     volumes:
       - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"

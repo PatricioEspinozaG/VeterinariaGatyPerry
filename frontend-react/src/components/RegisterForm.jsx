@@ -29,7 +29,7 @@ export function RegisterForm({ users = [], onRegister }) {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setGeneralError('')
     const newErrors = validateUser(formData, users)
@@ -39,12 +39,17 @@ export function RegisterForm({ users = [], onRegister }) {
       return
     }
 
-    // Guardar usuario
-    if (onRegister) {
-      onRegister(formData)
+    if (!onRegister) {
+      setGeneralError('El registro no está disponible.')
+      return
     }
 
-    navigate('/')
+    try {
+      await onRegister(formData)
+      navigate('/')
+    } catch (error) {
+      setGeneralError(error.message || 'No se pudo crear la cuenta.')
+    }
   }
 
   return (

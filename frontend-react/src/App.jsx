@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import useLocalStorage from './hooks/useLocalStorage.js'
 import { readCartBuckets, STORAGE_KEYS } from './services/storage.js'
 import { products as initialProducts } from './data/products.js'
 import { users as initialUsers } from './data/users.js'
+import { loginUser, logoutUser, registerUser, restoreSession } from './services/auth.js'
 import { addToCart, changeQuantity, normalizeCart, removeFromCart } from './utils/cartLogic.js'
 import { preparePurchase } from './utils/purchaseLogic.js'
 import Header from './components/Header.jsx'
@@ -45,9 +46,30 @@ function App() {
   const [products, setProducts, productsError] = useLocalStorage(STORAGE_KEYS.products, initialProducts)
   const [orders, setOrders, ordersError] = useLocalStorage(STORAGE_KEYS.orders, [])
   const [users, setUsers, usersError] = useLocalStorage('users', initialUsers)
-  const [currentUserId, setCurrentUserId, sessionError] = useLocalStorage('currentUserId', '')
+  const [currentUser, setCurrentUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const authTouched = useRef(false)
 
-  const currentUser = users.find((user) => user.id === currentUserId && user.active) || null
+  useEffect(() => {
+    let active = true
+    restoreSession()
+      .then((user) => {
+        if (active && !authTouched.current) setCurrentUser(user)
+      })
+      .catch((error) => {
+        if (active && !authTouched.current) setAuthError(error.message)
+      })
+      .finally(() => {
+        if (active) setAuthReady(true)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const currentUserId = currentUser?.id || ''
   const cartOwnerId = currentUser?.id || 'anonymous'
   const [cartBuckets, setCartBuckets, cartError] = useLocalStorage(
     STORAGE_KEYS.carts,
@@ -56,7 +78,7 @@ function App() {
   const cart = cartBuckets[cartOwnerId] || []
   const validCart = normalizeCart(cart, products)
   const cartQuantity = validCart.reduce((total, item) => total + item.quantity, 0)
-  const storageError = productsError || cartError || ordersError || usersError || sessionError
+  const storageError = productsError || cartError || ordersError || usersError
   const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
   const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta') ? requestedReturnTo : '/'
 
@@ -98,23 +120,54 @@ function App() {
     return { ok: true, orderId }
   }
 
-  function handleRegister(newUser) {
-    const userWithId = {
-      ...newUser,
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-      role: 'cliente',
-      active: true,
+  async function handleLogin(credentials) {
+    const user = await loginUser(credentials)
+    setAuthenticatedUser(user)
+    return user
+  }
+
+  async function handleRegister(newUser) {
+    await registerUser(newUser)
+    try {
+      const user = await loginUser(newUser)
+      setAuthenticatedUser(user)
+      return user
+    } catch (error) {
+      throw new Error(
+        `La cuenta se creó, pero no se pudo iniciar sesión: ${error.message} Intenta ingresar desde la página de acceso.`,
+        { cause: error },
+      )
     }
-    setUsers((previous) => [...previous, userWithId])
-    setCurrentUserId(userWithId.id)
-    return { ok: true }
+  }
+
+  function setAuthenticatedUser(user) {
+    authTouched.current = true
+    setCurrentUser(user)
+    setAuthError('')
+  }
+
+  async function handleLogout() {
+    try {
+      await logoutUser()
+      authTouched.current = true
+      setCurrentUser(null)
+      setAuthError('')
+    } catch (error) {
+      setAuthError(error.message)
+    }
+  }
+
+  function requireUser(element) {
+    if (!authReady) return <p className="container" role="status">Verificando sesión...</p>
+    return currentUser ? element : <Navigate to="/login" replace />
   }
 
   return (
     <div className="app-shell">
       <ScrollToTop />
-      <Header currentUser={currentUser} cartQuantity={cartQuantity} onLogout={() => setCurrentUserId('')} />
+      <Header currentUser={currentUser} cartQuantity={cartQuantity} onLogout={handleLogout} />
       {storageError && <p className="container" role="alert">No pudimos guardar los cambios en este navegador.</p>}
+      {authError && <p className="container alert alert-warning" role="alert">{authError}</p>}
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -130,33 +183,33 @@ function App() {
           <Route path="/compra/:id" element={<ResultadoCompra orders={orders} />} />
           <Route
             path="/registro"
-            element={<RegisterForm users={users} onRegister={handleRegister} />}
+            element={<RegisterForm onRegister={handleRegister} />}
           />
           <Route
             path="/login"
-            element={<LoginForm users={users} onLogin={(userId) => setCurrentUserId(userId)} />}
+            element={<LoginForm onLogin={handleLogin} />}
           />
           <Route
             path="/mascotas/nueva"
-            element={currentUser ? <PetForm currentUserId={currentUserId} returnTo={accountReturnTo} /> : <Navigate to="/login" replace />}
+            element={requireUser(<PetForm currentUserId={currentUserId} returnTo={accountReturnTo} />)}
           />
           <Route
             path="/citas/nueva"
-            element={currentUser ? <AppointmentForm currentUserId={currentUserId} returnTo={accountReturnTo} /> : <Navigate to="/login" replace />}
+            element={requireUser(<AppointmentForm currentUserId={currentUserId} returnTo={accountReturnTo} />)}
           />
           <Route
             path="/citas"
-            element={currentUser ? <AppointmentsList userRole={currentUser.role} currentUserId={currentUserId} /> : <Navigate to="/login" replace />}
+            element={requireUser(<AppointmentsList userRole={currentUser?.role} currentUserId={currentUserId} />)}
           />
-          <Route path="/mi-cuenta" element={<UserPanel currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/mi-cuenta/compras" element={<UserPanel section="compras" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/mi-cuenta/mascotas" element={<UserPanel section="mascotas" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/mi-cuenta/citas" element={<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />} />
-          <Route path="/recepcion" element={<ReceptionPanel currentUser={currentUser} users={users} />} />
+          <Route path="/mi-cuenta" element={requireUser(<UserPanel currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
+          <Route path="/mi-cuenta/compras" element={requireUser(<UserPanel section="compras" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
+          <Route path="/mi-cuenta/mascotas" element={requireUser(<UserPanel section="mascotas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
+          <Route path="/mi-cuenta/citas" element={requireUser(<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
+          <Route path="/recepcion" element={requireUser(<ReceptionPanel currentUser={currentUser} users={users} />)} />
           <Route path="*" element={<NoEncontrado />} />
-          <Route path="/admin" element={<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
-          <Route path="/admin/usuarios" element={<AdminPanel section="usuarios" products={products} setProducts={setProducts} users={users} setUsers={setUsers} currentUser={currentUser} />} />
-          <Route path="/admin/citas" element={<AdminPanel key={location.key} section="citas" products={products} setProducts={setProducts} users={users} currentUser={currentUser} />} />
+          <Route path="/admin" element={requireUser(<AdminPanel products={products} setProducts={setProducts} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={products} setProducts={setProducts} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
+          <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={products} setProducts={setProducts} users={users} currentUser={currentUser} />)} />
         </Routes>
       </main>
       <Footer />
