@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { readStorage } from '../services/storage.js';
+import { listPets } from '../services/mascotas.js';
 
 export default function AppointmentForm({ currentUserId, onAddAppointment, returnTo = '/' }) {
   const navigate = useNavigate();
 
-  const [mascotas] = useState(() => {
-    const userId = currentUserId || localStorage.getItem('currentUserId');
-    return readStorage('pets', []).filter((pet) => pet.userId === userId);
-  });
+  const [mascotas, setMascotas] = useState([]);
+  const [petsLoading, setPetsLoading] = useState(true);
+  const [petsError, setPetsError] = useState('');
   const [formData, setFormData] = useState({
     petId: '',
     servicio: 'Consulta General',
@@ -20,7 +19,25 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
   const [errors, setErrors] = useState({});
   const [mensaje, setMensaje] = useState(null);
 
-  const selectedPetId = formData.petId || mascotas[0]?.id || '';
+  useEffect(() => {
+    let active = true
+    listPets()
+      .then((items) => {
+        if (active) setMascotas(items)
+      })
+      .catch((error) => {
+        if (active) setPetsError(error.message)
+      })
+      .finally(() => {
+        if (active) setPetsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const selectedPetId = formData.petId || (mascotas[0] ? String(mascotas[0].id) : '');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,7 +86,7 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
     if (!validate()) return;
 
     const userId = currentUserId || localStorage.getItem('currentUserId');
-    const mascotaSeleccionada = mascotas.find((m) => m.id === selectedPetId);
+    const mascotaSeleccionada = mascotas.find((m) => String(m.id) === String(selectedPetId));
 
     const nuevaCita = {
       id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
@@ -121,7 +138,11 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
               )}
 
               {/* Advertencia si no hay mascotas registradas */}
-              {mascotas.length === 0 ? (
+              {petsLoading ? (
+                <p className="text-center py-4" role="status">Cargando tus mascotas...</p>
+              ) : petsError ? (
+                <p className="alert alert-danger" role="alert">{petsError}</p>
+              ) : mascotas.length === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-muted">Aún no tienes mascotas registradas para agendar una cita.</p>
                   <button
@@ -146,7 +167,7 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
                         onChange={handleChange}
                       >
                         {mascotas.map((m) => (
-                          <option key={m.id} value={m.id}>
+                          <option key={m.id} value={String(m.id)}>
                             {m.nombre} ({m.especie})
                           </option>
                         ))}

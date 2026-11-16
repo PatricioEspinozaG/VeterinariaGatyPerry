@@ -12,7 +12,7 @@ services:
       CLINICA_DB_PASSWORD: "${CLINICA_DB_PASSWORD:?Falta CLINICA_DB_PASSWORD}"
       CITAS_DB_PASSWORD: "${CITAS_DB_PASSWORD:?Falta CITAS_DB_PASSWORD}"
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-databases.sh:ro
@@ -65,6 +65,7 @@ services:
       DB_USER: "gp_pacientes"
       DB_PASSWORD: "${DB_PASSWORD:?Falta DB_PASSWORD}"
       JWT_PUBLIC_KEY: "file:/keys/auth-public.pem"
+      FRONTEND_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:5173}"
     volumes:
       - type: bind
         source: "${KEYS_DIR:?Falta KEYS_DIR}"

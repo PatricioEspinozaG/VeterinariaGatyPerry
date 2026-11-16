@@ -1,9 +1,21 @@
-import { expect, it } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
+import { deletePet, listPets } from '../services/mascotas.js'
 import UserPanel from './UserPanel.jsx'
+
+vi.mock('../services/mascotas.js', () => ({
+  deletePet: vi.fn(),
+  listPets: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  listPets.mockResolvedValue([])
+  deletePet.mockResolvedValue(null)
+})
 
 const customer = {
   id: 'cliente-1',
@@ -47,8 +59,8 @@ it('muestra los detalles de compras con etiquetas para su presentación móvil',
   expect(screen.getByRole('button', { name: 'Quitar' }).closest('td')).toHaveAttribute('data-label', 'Acciones')
 })
 
-it('muestra las mascotas con etiquetas para su presentación móvil', () => {
-  localStorage.setItem('pets', JSON.stringify([{
+it('muestra las mascotas con etiquetas para su presentación móvil', async () => {
+  listPets.mockResolvedValueOnce([{
     id: 'mascota-1',
     userId: customer.id,
     nombre: 'Luna',
@@ -56,7 +68,7 @@ it('muestra las mascotas con etiquetas para su presentación móvil', () => {
     raza: 'Mestiza',
     edad: 3,
     notas: 'Control anual',
-  }]))
+  }])
 
   render(
     <MemoryRouter>
@@ -64,28 +76,29 @@ it('muestra las mascotas con etiquetas para su presentación móvil', () => {
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('table')).toHaveClass('user-mobile-card-table')
+  expect(await screen.findByRole('table')).toHaveClass('user-mobile-card-table')
   expect(screen.getByText('Luna').closest('td')).toHaveAttribute('data-label', 'Nombre')
 })
 
-it('permite quitar una mascota después de confirmar en la página', async () => {
-  localStorage.setItem('pets', JSON.stringify([{
+it('permite quitar una mascota del backend después de confirmar', async () => {
+  listPets.mockResolvedValueOnce([{
     id: 'mascota-quitar',
     userId: customer.id,
     nombre: 'Luna',
     especie: 'Gato',
     raza: 'Mestiza',
     edad: 3,
-  }]))
+  }])
   const user = userEvent.setup()
   render(<StatefulUserPanel section="mascotas" />)
 
+  await screen.findByText('Luna')
   await user.click(screen.getByRole('button', { name: 'Quitar' }))
   expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Quitar a Luna de tus mascotas?')
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-delete'))
 
   expect(screen.queryByText('Luna')).not.toBeInTheDocument()
-  expect(JSON.parse(localStorage.getItem('pets'))).toEqual([])
+  expect(deletePet).toHaveBeenCalledWith('mascota-quitar')
 })
 
 it('permite quitar una compra del historial después de confirmar', async () => {

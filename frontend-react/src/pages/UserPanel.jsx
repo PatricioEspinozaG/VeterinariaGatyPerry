@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate } from 'react-router'
 import AppointmentsList from '../components/AppointmentsList.jsx'
-import { readStorage, writeStorage } from '../services/storage.js'
+import { deletePet, listPets } from '../services/mascotas.js'
+import { readStorage } from '../services/storage.js'
 import { money } from '../utils/format.js'
 import '../styles/app.css'
 
@@ -13,12 +14,37 @@ const sections = [
 ]
 
 function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' }) {
-  const [pets, setPets] = useState(() => (
-    readStorage('pets', []).filter((pet) => String(pet.userId) === String(currentUser?.id))
-  ))
+  const [pets, setPets] = useState([])
+  const [petsLoading, setPetsLoading] = useState(true)
+  const [petsError, setPetsError] = useState('')
   const [pendingAction, setPendingAction] = useState(null)
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
+  const currentUserId = currentUser?.id
+  const currentUserRole = currentUser?.role
+
+  useEffect(() => {
+    if (!currentUserId || currentUserRole !== 'cliente') return undefined
+
+    let active = true
+    listPets()
+      .then((items) => {
+        if (active) {
+          setPets(items)
+          setPetsError('')
+        }
+      })
+      .catch((error) => {
+        if (active) setPetsError(error.message)
+      })
+      .finally(() => {
+        if (active) setPetsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUserId, currentUserRole])
 
   if (!currentUser || currentUser.role !== 'cliente') return <Navigate to="/login" replace />
 
@@ -39,21 +65,20 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
     setActionError('')
   }
 
-  function confirmRemoval() {
+  async function confirmRemoval() {
     if (!pendingAction) return
 
     if (pendingAction.type === 'compra') {
       setOrders((previous) => previous.filter((order) => order.id !== pendingAction.item.id))
       setActionMessage('La compra se quitó del historial.')
     } else {
-      const updatedPets = readStorage('pets', []).filter((pet) => (
-        String(pet.userId) !== userId || String(pet.id) !== String(pendingAction.item.id)
-      ))
-      if (!writeStorage('pets', updatedPets)) {
-        setActionError('No se pudo quitar la mascota en este navegador.')
+      try {
+        await deletePet(pendingAction.item.id)
+      } catch (error) {
+        setActionError(error.message)
         return
       }
-      setPets(updatedPets.filter((pet) => String(pet.userId) === userId))
+      setPets((previous) => previous.filter((pet) => String(pet.id) !== String(pendingAction.item.id)))
       setActionMessage('La mascota se quitó de tu cuenta.')
     }
 
@@ -92,9 +117,10 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               <h2 className="h3 fw-bold text-dark">Resumen de tu cuenta</h2>
               <div className="admin-badges user-summary-stats">
                 <div className="stat-card"><strong>Compras</strong><div className="stat-value">{userOrders.length}</div></div>
-                <div className="stat-card"><strong>Mascotas</strong><div className="stat-value">{pets.length}</div></div>
+                <div className="stat-card"><strong>Mascotas</strong><div className="stat-value">{petsLoading ? '...' : pets.length}</div></div>
                 <div className="stat-card"><strong>Citas</strong><div className="stat-value">{appointments.length}</div></div>
               </div>
+              {petsError && <p className="admin-form-message error" role="alert">{petsError}</p>}
               <div className="user-panel-shortcuts">
                 <Link className="button button-primary" to="/mi-cuenta/compras">Ver historial de compras</Link>
                 <Link className="button button-secondary" to="/mi-cuenta/mascotas">Administrar mascotas</Link>
@@ -151,7 +177,10 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               </div>
               {actionMessage && <p className="admin-form-message success" role="status">{actionMessage}</p>}
               {actionError && <p className="admin-form-message error" role="alert">{actionError}</p>}
-              {pets.length === 0 ? (
+              {petsError && <p className="admin-form-message error" role="alert">{petsError}</p>}
+              {petsLoading ? (
+                <p className="text-center py-5" role="status">Cargando tus mascotas...</p>
+              ) : petsError ? null : pets.length === 0 ? (
                 <div className="text-center py-5"><p className="text-muted">Aún no registras mascotas.</p></div>
               ) : (
                 <div className="table-responsive">

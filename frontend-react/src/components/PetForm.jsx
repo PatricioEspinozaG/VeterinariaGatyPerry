@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { createPet } from '../services/mascotas.js';
 
-export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
+export default function PetForm({ returnTo = '/' }) {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
 
   const [errors, setErrors] = useState({});
   const [mensaje, setMensaje] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,7 +29,7 @@ export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.nombre.trim() || formData.nombre.length > 30) {
+    if (!formData.nombre.trim() || formData.nombre.trim().length > 30) {
       newErrors.nombre = 'Nombre obligatorio (máximo 30 caracteres).';
     }
 
@@ -35,7 +37,7 @@ export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
       newErrors.especie = 'Selecciona una especie.';
     }
 
-    if (!formData.raza.trim() || formData.raza.length > 30) {
+    if (!formData.raza.trim() || formData.raza.trim().length > 30) {
       newErrors.raza = 'Raza obligatoria (máximo 30 caracteres).';
     }
 
@@ -47,38 +49,30 @@ export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje(null);
 
     if (!validate()) return;
 
-    // Obtener ID del usuario activo si no viene por prop
-    const userId = currentUserId || localStorage.getItem('currentUserId');
+    setIsSubmitting(true);
+    try {
+      await createPet({
+        nombre: formData.nombre.trim(),
+        especie: formData.especie,
+        raza: formData.raza.trim(),
+        edad: Number(formData.edad),
+        sexo: formData.sexo || null,
+        notas: formData.notas.trim() || null,
+      });
 
-    const nuevaMascota = {
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-      userId: userId || 'invitado',
-      nombre: formData.nombre.trim(),
-      especie: formData.especie,
-      raza: formData.raza.trim(),
-      edad: Number(formData.edad),
-      notas: formData.notas.trim()
-    };
-
-    if (onAddPet) {
-      onAddPet(nuevaMascota);
-    } else {
-      const mascotasGuardadas = JSON.parse(localStorage.getItem('pets')) || [];
-      localStorage.setItem('pets', JSON.stringify([...mascotasGuardadas, nuevaMascota]));
+      setMensaje({ tipo: 'success', texto: '¡Mascota registrada exitosamente!' });
+      setTimeout(() => navigate(returnTo), 1200);
+    } catch (error) {
+      setMensaje({ tipo: 'danger', texto: error.message });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setMensaje({ tipo: 'success', texto: '¡Mascota registrada exitosamente!' });
-
-    setTimeout(() => {
-      // Si tienes ruta para ver las mascotas o agendar cita
-      navigate(returnTo);
-    }, 1200);
   };
 
   return (
@@ -174,17 +168,19 @@ export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
                   </div>
 
                   <div className="col-md-6 text-start">
-                <label className="form-label fw-medium text-dark small">Sexo</label>
-                <select
-                name="sexo"
-                className="form-select rounded-3"
-                value={formData.sexo}
-                onChange={handleChange}
-                >
-                 <option value="Macho">Macho</option>
+                  <label htmlFor="sexo" className="form-label fw-medium text-dark small">Sexo</label>
+                  <select
+                    id="sexo"
+                    name="sexo"
+                    className="form-select rounded-3"
+                    value={formData.sexo}
+                    onChange={handleChange}
+                  >
+                  <option value="">Sin especificar</option>
+                  <option value="Macho">Macho</option>
                     <option value="Hembra">Hembra</option>
-                </select>
-                    </div>
+                  </select>
+                  </div>
 
                   {/* Observaciones / Notas */}
                   <div className="col-12 text-start">
@@ -193,6 +189,7 @@ export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
                       id="notas"
                       name="notas"
                       rows="2"
+                      maxLength="500"
                       className="form-control rounded-3"
                       placeholder="Ej. Alérgico a la penicilina, agresivo con otros animales..."
                       value={formData.notas}
@@ -202,8 +199,8 @@ export default function PetForm({ currentUserId, onAddPet, returnTo = '/' }) {
 
                   {/* Botón Guardar */}
                   <div className="col-12 text-center mt-4">
-                    <button className="btn btn-registro-custom btn-lg px-5 py-2 rounded-pill fw-semibold shadow-sm fs-6" type="submit">
-                      Guardar Mascota
+                    <button className="btn btn-registro-custom btn-lg px-5 py-2 rounded-pill fw-semibold shadow-sm fs-6" type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? 'Guardando...' : 'Guardar Mascota'}
                     </button>
                   </div>
 

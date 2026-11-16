@@ -191,7 +191,7 @@ function App() {
           />
           <Route
             path="/mascotas/nueva"
-            element={requireUser(<PetForm currentUserId={currentUserId} returnTo={accountReturnTo} />)}
+            element={requireUser(<PetForm returnTo={accountReturnTo} />)}
           />
           <Route
             path="/citas/nueva"

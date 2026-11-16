@@ -1,17 +1,23 @@
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { listPets } from '../services/mascotas.js'
 import AppointmentForm from './AppointmentForm.jsx'
 
-it('rechaza una cita con fecha pasada sin guardarla', () => {
-  localStorage.setItem('pets', JSON.stringify([
-    {
-      id: 'mascota-1',
-      userId: 'usuario-1',
-      nombre: 'Michi',
-      especie: 'Gato',
-    },
-  ]))
+vi.mock('../services/mascotas.js', () => ({
+  listPets: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  listPets.mockResolvedValue([{
+    id: 'mascota-1',
+    nombre: 'Michi',
+    especie: 'Gato',
+  }])
+})
+
+it('rechaza una cita con fecha pasada sin guardarla', async () => {
   const onAddAppointment = vi.fn()
 
   render(
@@ -23,6 +29,7 @@ it('rechaza una cita con fecha pasada sin guardarla', () => {
     </MemoryRouter>,
   )
 
+  await screen.findByLabelText('Fecha')
   fireEvent.change(screen.getByLabelText('Fecha'), {
     target: { value: '2000-01-01' },
   })
@@ -34,15 +41,7 @@ it('rechaza una cita con fecha pasada sin guardarla', () => {
   expect(onAddAppointment).not.toHaveBeenCalled()
 })
 
-it('entrega una cita pendiente con los datos de la mascota', () => {
-  localStorage.setItem('pets', JSON.stringify([
-    {
-      id: 'mascota-1',
-      userId: 'usuario-1',
-      nombre: 'Michi',
-      especie: 'Gato',
-    },
-  ]))
+it('entrega una cita pendiente con los datos de la mascota', async () => {
   const onAddAppointment = vi.fn()
   const manana = new Date(Date.now() + 86_400_000)
     .toISOString()
@@ -57,6 +56,7 @@ it('entrega una cita pendiente con los datos de la mascota', () => {
     </MemoryRouter>,
   )
 
+  await screen.findByLabelText('Fecha')
   fireEvent.change(screen.getByLabelText('Fecha'), {
     target: { value: manana },
   })
