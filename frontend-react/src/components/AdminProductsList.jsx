@@ -26,7 +26,14 @@ export default function AdminProductsList({ products = [], onEdit, onDelete }) {
               <td className="action-cell" data-label="Acciones">
                 <div className="action-buttons">
                   <button className="btn btn-edit" type="button" onClick={() => onEdit && onEdit(p)}>Editar</button>
-                  <button className="btn btn-delete" type="button" onClick={() => onDelete && onDelete(p.code)}>Eliminar</button>
+                  <button
+                    className="btn btn-delete"
+                    type="button"
+                    disabled={p.status === 'Descontinuado'}
+                    onClick={() => onDelete && onDelete(p.code)}
+                  >
+                    Descontinuar
+                  </button>
                 </div>
               </td>
             </tr>

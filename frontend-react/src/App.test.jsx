@@ -6,7 +6,13 @@ import { products as catalogProducts } from './data/products.js'
 import { listAppointments } from './services/citas.js'
 import { listPets } from './services/mascotas.js'
 import { createOrder, listOrders } from './services/pedidos.js'
-import { listProducts } from './services/productos.js'
+import {
+  createProduct,
+  discontinueProduct,
+  listManagedProducts,
+  listProducts,
+  updateProduct,
+} from './services/productos.js'
 import App from './App.jsx'
 
 vi.mock('./services/citas.js', () => ({
@@ -20,7 +26,11 @@ vi.mock('./services/mascotas.js', () => ({
   listPets: vi.fn(),
 }))
 vi.mock('./services/productos.js', () => ({
+  createProduct: vi.fn(),
+  discontinueProduct: vi.fn(),
+  listManagedProducts: vi.fn(),
   listProducts: vi.fn(),
+  updateProduct: vi.fn(),
 }))
 vi.mock('./services/pedidos.js', () => ({
   createOrder: vi.fn(),
@@ -43,6 +53,10 @@ vi.mock('./services/auth.js', () => ({
 
 beforeEach(() => {
   listProducts.mockResolvedValue(catalogProducts)
+  listManagedProducts.mockResolvedValue(catalogProducts)
+  createProduct.mockResolvedValue(catalogProducts[0])
+  updateProduct.mockResolvedValue(catalogProducts[0])
+  discontinueProduct.mockResolvedValue(null)
   listPets.mockResolvedValue([])
   listAppointments.mockResolvedValue([])
   createOrder.mockResolvedValue({

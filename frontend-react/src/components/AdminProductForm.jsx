@@ -23,60 +23,74 @@ export default function AdminProductForm({ product, onCreate, onUpdate, onCancel
       status: 'Disponible',
     }
   )
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   function handleChange(e) {
     const { name, value } = e.target
     setForm((s) => ({ ...s, [name]: name === 'stock' ? Number(value) : value }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
+    if (isSubmitting) return
+    setError('')
     const payload = {
       ...form,
       price: Number(form.price),
       stock: Number(form.stock),
     }
-    if (product) {
-      onUpdate && onUpdate(product.code, payload)
-    } else {
-      onCreate && onCreate(payload)
-      setForm((s) => ({ ...s, code: generateCode(), name: '', category: '', price: '', stock: 0 }))
+
+    setIsSubmitting(true)
+    try {
+      if (product) {
+        await onUpdate?.(product.code, payload)
+      } else {
+        await onCreate?.(payload)
+      }
+    } catch (submitError) {
+      setError(submitError.message || 'No se pudo guardar el producto.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
       <label>Codigo
-        <input name="code" value={form.code} onChange={handleChange} disabled />
+        <input name="code" value={form.code} onChange={handleChange} disabled={isSubmitting} />
       </label>
 
       <label>Nombre
-        <input name="name" value={form.name} onChange={handleChange} required />
+        <input name="name" value={form.name} onChange={handleChange} required disabled={isSubmitting} />
       </label>
 
       <label>Categoria
-        <input name="category" value={form.category} onChange={handleChange} />
+        <input name="category" value={form.category} onChange={handleChange} disabled={isSubmitting} />
       </label>
 
       <label>Precio
-        <input type="number" name="price" min="0" step="1" required value={form.price} onChange={handleChange} />
+        <input type="number" name="price" min="0" step="1" required value={form.price} onChange={handleChange} disabled={isSubmitting} />
       </label>
 
       <label>Stock
-        <input type="number" name="stock" min="0" step="1" required value={form.stock} onChange={handleChange} />
+        <input type="number" name="stock" min="0" step="1" required value={form.stock} onChange={handleChange} disabled={isSubmitting} />
       </label>
 
       <label>Estado
-        <select name="status" value={form.status} onChange={handleChange}>
+        <select name="status" value={form.status} onChange={handleChange} disabled={isSubmitting}>
           <option>Disponible</option>
           <option>Agotado</option>
           <option>Descontinuado</option>
         </select>
       </label>
 
+      {error && <p className="admin-form-message error" role="alert">{error}</p>}
       <div className="form-actions">
-        <button type="submit" className="btn btn-registro-custom">{product ? 'Guardar' : 'Crear'}</button>
-        {product ? <button type="button" className="btn" onClick={onCancel}>Cancelar</button> : null}
+        <button type="submit" className="btn btn-registro-custom" disabled={isSubmitting}>
+          {isSubmitting ? 'Guardando...' : product ? 'Guardar' : 'Crear'}
+        </button>
+        {product ? <button type="button" className="btn" onClick={onCancel} disabled={isSubmitting}>Cancelar</button> : null}
       </div>
     </form>
   )

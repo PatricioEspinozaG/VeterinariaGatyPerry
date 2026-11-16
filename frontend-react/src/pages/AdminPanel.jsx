@@ -5,13 +5,31 @@ import { ensureDemoAppointment } from '../utils/appointments.js'
 import AdminProductsList from '../components/AdminProductsList.jsx'
 import AdminProductForm from '../components/AdminProductForm.jsx'
 import AppointmentsList from '../components/AppointmentsList.jsx'
+import {
+  createProduct,
+  discontinueProduct,
+  listManagedProducts,
+  updateProduct,
+} from '../services/productos.js'
 import { validateEmail } from '../utils/userValidation.js'
 import { NavLink } from 'react-router'
 import '../styles/app.css'
 
-export default function AdminPanel({ products, setProducts, users, setUsers, currentUser, section = 'productos' }) {
+export default function AdminPanel({
+  products,
+  setProducts,
+  onCatalogRefresh,
+  users,
+  setUsers,
+  currentUser,
+  section = 'productos',
+}) {
   const [editing, setEditing] = useState(null)
   const [overlayOpen, setOverlayOpen] = useState(false)
+  const [productsLoading, setProductsLoading] = useState(section === 'productos')
+  const [productsLoadError, setProductsLoadError] = useState('')
+  const [productActionError, setProductActionError] = useState('')
+  const [productDeleteLoading, setProductDeleteLoading] = useState(false)
   const [showUserForm, setShowUserForm] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [pendingDeletion, setPendingDeletion] = useState(null)
@@ -42,6 +60,29 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
     }
   }, [])
 
+  useEffect(() => {
+    if (section !== 'productos' || currentUser?.role !== 'admin') return undefined
+
+    let active = true
+    listManagedProducts()
+      .then((items) => {
+        if (active) {
+          setProducts(items)
+          setProductsLoadError('')
+        }
+      })
+      .catch((error) => {
+        if (active) setProductsLoadError(error.message)
+      })
+      .finally(() => {
+        if (active) setProductsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUser?.role, section, setProducts])
+
   if (!currentUser || currentUser.role !== 'admin') return <Navigate to="/login" replace />
 
   const unidades = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0)
@@ -53,17 +94,41 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
     }).length
     : 0
 
-  function handleCreate(product) {
-    setProducts((prev) => [product, ...prev])
+  async function refreshCatalog() {
+    if (!onCatalogRefresh) return
+    try {
+      await onCatalogRefresh()
+    } catch (error) {
+      setProductActionError(
+        `El cambio se guardó, pero no se pudo actualizar la tienda: ${error.message}`,
+      )
+    }
   }
 
-  function handleUpdate(code, updated) {
-    setProducts((prev) => prev.map((p) => (p.code === code ? { ...p, ...updated } : p)))
+  async function handleCreate(product) {
+    setProductActionError('')
+    const created = await createProduct(product)
+    setProducts((previous) => [
+      created,
+      ...previous.filter((item) => item.code !== created.code),
+    ])
+    setOverlayOpen(false)
+    await refreshCatalog()
+  }
+
+  async function handleUpdate(code, updated) {
+    setProductActionError('')
+    const saved = await updateProduct(code, updated)
+    setProducts((previous) => previous.map((product) => (
+      product.code === code ? saved : product
+    )))
     setEditing(null)
     setOverlayOpen(false)
+    await refreshCatalog()
   }
 
   function handleDelete(code) {
+    setProductActionError('')
     const product = products.find((item) => item.code === code)
     setPendingDeletion({ type: 'producto', item: product || { code } })
   }
@@ -148,18 +213,34 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
     setPendingDeletion({ type: 'usuario', item: user })
   }
 
-  function confirmDeletion() {
+  async function confirmDeletion() {
     if (!pendingDeletion) return
     if (pendingDeletion.type === 'producto') {
-      setProducts((previous) => previous.filter((product) => product.code !== pendingDeletion.item.code))
-    } else {
-      setUsers((previous) => previous.filter((user) => user.id !== pendingDeletion.item.id))
-      if (editingUser?.id === pendingDeletion.item.id) {
-        setEditingUser(null)
-        setShowUserForm(false)
+      setProductActionError('')
+      setProductDeleteLoading(true)
+      try {
+        await discontinueProduct(pendingDeletion.item.code)
+        setProducts((previous) => previous.map((product) => (
+          product.code === pendingDeletion.item.code
+            ? { ...product, status: 'Descontinuado' }
+            : product
+        )))
+        setPendingDeletion(null)
+        await refreshCatalog()
+      } catch (error) {
+        setProductActionError(error.message)
+      } finally {
+        setProductDeleteLoading(false)
       }
-      setUserFormSuccess('Usuario eliminado correctamente.')
+      return
     }
+
+    setUsers((previous) => previous.filter((user) => user.id !== pendingDeletion.item.id))
+    if (editingUser?.id === pendingDeletion.item.id) {
+      setEditingUser(null)
+      setShowUserForm(false)
+    }
+    setUserFormSuccess('Usuario eliminado correctamente.')
     setPendingDeletion(null)
   }
 
@@ -256,13 +337,24 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
                   <button
                     className="fab-pill"
                     aria-label="Nuevo Producto"
+                    disabled={productsLoading || Boolean(productsLoadError)}
                     onClick={() => { setEditing(null); setOverlayOpen(true) }}
                   >
                     <span className="fab-plus" aria-hidden="true">+</span>
                     <span className="fab-label">Nuevo Producto</span>
                   </button>
                 </div>
-                <AdminProductsList products={products} onEdit={(p) => { setEditing(p); setOverlayOpen(true) }} onDelete={handleDelete} />
+                {productsLoadError && <p className="admin-form-message error" role="alert">{productsLoadError}</p>}
+                {productActionError && !pendingDeletion && <p className="admin-form-message error" role="alert">{productActionError}</p>}
+                {productsLoading ? (
+                  <p className="text-center py-5" role="status">Cargando productos de administración...</p>
+                ) : !productsLoadError ? (
+                  <AdminProductsList
+                    products={products}
+                    onEdit={(product) => { setEditing(product); setOverlayOpen(true) }}
+                    onDelete={handleDelete}
+                  />
+                ) : null}
               </div>
             </>
           )}
@@ -355,8 +447,8 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
             <AdminProductForm
               key={editing?.code || 'new'}
               product={editing}
-              onCreate={(p) => { handleCreate(p); setOverlayOpen(false) }}
-              onUpdate={(code, upd) => { handleUpdate(code, upd); setOverlayOpen(false) }}
+              onCreate={handleCreate}
+              onUpdate={handleUpdate}
               onCancel={() => { setOverlayOpen(false); setEditing(null) }}
             />
           </div>
@@ -366,16 +458,24 @@ export default function AdminPanel({ products, setProducts, users, setUsers, cur
       {pendingDeletion && (
         <div className="overlay" role="presentation">
           <section className="overlay-panel admin-confirm-panel" role="alertdialog" aria-modal="true" aria-labelledby="delete-confirm-title" aria-describedby="delete-confirm-description">
-            <h2 id="delete-confirm-title" className="h4 fw-bold">Confirmar eliminación</h2>
+            <h2 id="delete-confirm-title" className="h4 fw-bold">
+              {pendingDeletion.type === 'producto' ? 'Confirmar descontinuación' : 'Confirmar eliminación'}
+            </h2>
             <p id="delete-confirm-description">
-              ¿Eliminar {pendingDeletion.type === 'producto'
-                ? `el producto “${pendingDeletion.item.name || pendingDeletion.item.code}”`
-                : `al usuario “${[pendingDeletion.item.name, pendingDeletion.item.lastName].filter(Boolean).join(' ')}”`}?
-              {' '}Esta acción no se puede deshacer.
+              {pendingDeletion.type === 'producto'
+                ? `¿Descontinuar el producto “${pendingDeletion.item.name || pendingDeletion.item.code}”? Dejará de aparecer en la tienda, pero permanecerá en el registro.`
+                : `¿Eliminar al usuario “${[pendingDeletion.item.name, pendingDeletion.item.lastName].filter(Boolean).join(' ')}”? Esta acción no se puede deshacer.`}
             </p>
+            {pendingDeletion.type === 'producto' && productActionError && (
+              <p className="admin-form-message error" role="alert">{productActionError}</p>
+            )}
             <div className="form-actions">
-              <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" onClick={() => setPendingDeletion(null)}>Cancelar</button>
-              <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" onClick={confirmDeletion}>Eliminar</button>
+              <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" disabled={productDeleteLoading} onClick={() => setPendingDeletion(null)}>Cancelar</button>
+              <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" disabled={productDeleteLoading} onClick={confirmDeletion}>
+                {productDeleteLoading
+                  ? 'Descontinuando...'
+                  : pendingDeletion.type === 'producto' ? 'Descontinuar' : 'Eliminar'}
+              </button>
             </div>
           </section>
         </div>

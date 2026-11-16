@@ -59,7 +59,10 @@ function App() {
     let active = true
     listProducts()
       .then((catalog) => {
-        if (active) setProducts(catalog)
+        if (active) {
+          setProducts(catalog)
+          setProductsError('')
+        }
       })
       .catch((error) => {
         if (active) setProductsError(error.message)
@@ -185,6 +188,17 @@ function App() {
     }
   }
 
+  async function refreshProductCatalog() {
+    try {
+      const catalog = await listProducts()
+      setProducts(catalog)
+      setProductsError('')
+    } catch (error) {
+      setProductsError(error.message)
+      throw error
+    }
+  }
+
   function requireUser(element) {
     if (!authReady) return <p className="container" role="status">Verificando sesión...</p>
     return currentUser ? element : <Navigate to="/login" replace />
@@ -241,9 +255,9 @@ function App() {
           <Route path="/mi-cuenta/citas" element={requireUser(<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/recepcion" element={requireUser(<ReceptionPanel currentUser={currentUser} users={users} />)} />
           <Route path="*" element={<NoEncontrado />} />
-          <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} users={users} currentUser={currentUser} />)} />
-          <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={adminProducts} setProducts={setAdminProducts} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
-          <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={adminProducts} setProducts={setAdminProducts} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
+          <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} users={users} currentUser={currentUser} />)} />
         </Routes>
       </main>
       <Footer />
