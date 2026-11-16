@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { listAppointments } from '../services/citas.js'
 import { deletePet, listPets } from '../services/mascotas.js'
+import { listOrders } from '../services/pedidos.js'
 import UserPanel from './UserPanel.jsx'
 
 vi.mock('../services/citas.js', () => ({
@@ -14,11 +15,15 @@ vi.mock('../services/mascotas.js', () => ({
   deletePet: vi.fn(),
   listPets: vi.fn(),
 }))
+vi.mock('../services/pedidos.js', () => ({
+  listOrders: vi.fn(),
+}))
 
 beforeEach(() => {
   vi.clearAllMocks()
   listAppointments.mockResolvedValue([])
   listPets.mockResolvedValue([])
+  listOrders.mockResolvedValue([])
   deletePet.mockResolvedValue(null)
 })
 
@@ -40,7 +45,7 @@ function StatefulUserPanel({ section, initialOrders = [] }) {
   )
 }
 
-it('muestra los detalles de compras con etiquetas para su presentación móvil', () => {
+it('muestra los detalles de compras con etiquetas para su presentación móvil', async () => {
   render(
     <MemoryRouter>
       <UserPanel
@@ -59,13 +64,14 @@ it('muestra los detalles de compras con etiquetas para su presentación móvil',
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('table')).toHaveClass('user-mobile-card-table')
+  expect(await screen.findByRole('table')).toHaveClass('user-mobile-card-table')
   expect(screen.getByText('Alimento × 2').closest('td')).toHaveAttribute('data-label', 'Productos')
   expect(screen.getByRole('button', { name: 'Quitar' }).closest('td')).toHaveAttribute('data-label', 'Acciones')
 })
 
 it('muestra en el resumen la cantidad de citas obtenida del backend', async () => {
   listAppointments.mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
+  listOrders.mockResolvedValueOnce([{ id: 'pedido-1' }])
 
   render(
     <MemoryRouter>
@@ -73,8 +79,43 @@ it('muestra en el resumen la cantidad de citas obtenida del backend', async () =
     </MemoryRouter>,
   )
 
-  const count = await screen.findByText('2')
+  const count = await screen.findByText('1')
   expect(count).toHaveClass('stat-value')
+})
+
+it('muestra pedidos guardados en el backend sin opción para quitarlos localmente', async () => {
+  listOrders.mockResolvedValueOnce([{
+    id: 'pedido-backend',
+    items: [{ code: 'ME001', name: 'Amoxibay', quantity: 2 }],
+    total: 8400,
+    deliveryMethod: 'retiro',
+    createdAt: '2026-11-16T10:00:00.000Z',
+  }])
+
+  render(
+    <MemoryRouter>
+      <UserPanel currentUser={customer} setOrders={() => {}} section="compras" orders={[]} />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByText('Amoxibay × 2')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: '#pedido-backend' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Quitar' })).not.toBeInTheDocument()
+  expect(listOrders).toHaveBeenCalledOnce()
+})
+
+it('muestra el error cuando no puede cargar el historial del backend', async () => {
+  listOrders.mockRejectedValueOnce(new Error('Historial de compras no disponible.'))
+
+  render(
+    <MemoryRouter>
+      <UserPanel currentUser={customer} setOrders={() => {}} section="compras" orders={[]} />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Historial de compras no disponible.',
+  )
 })
 
 it('muestra las mascotas con etiquetas para su presentación móvil', async () => {
@@ -131,7 +172,7 @@ it('permite quitar una compra del historial después de confirmar', async () => 
     }]}
   />)
 
-  await user.click(screen.getByRole('button', { name: 'Quitar' }))
+  await user.click(await screen.findByRole('button', { name: 'Quitar' }))
   expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Quitar el pedido #pedido-quitar de tu historial?')
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-delete'))
 

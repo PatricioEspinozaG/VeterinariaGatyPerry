@@ -3,6 +3,7 @@ import { Link, NavLink, Navigate } from 'react-router'
 import AppointmentsList from '../components/AppointmentsList.jsx'
 import { listAppointments } from '../services/citas.js'
 import { deletePet, listPets } from '../services/mascotas.js'
+import { listOrders } from '../services/pedidos.js'
 import { money } from '../utils/format.js'
 import '../styles/app.css'
 
@@ -20,11 +21,22 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
   const [appointmentsCount, setAppointmentsCount] = useState(0)
   const [appointmentsLoading, setAppointmentsLoading] = useState(true)
   const [appointmentsError, setAppointmentsError] = useState('')
+  const [ordersQuery, setOrdersQuery] = useState({
+    key: '',
+    items: [],
+    error: '',
+    loading: true,
+  })
   const [pendingAction, setPendingAction] = useState(null)
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
   const currentUserId = currentUser?.id
   const currentUserRole = currentUser?.role
+  const ordersQueryKey = `${currentUserId || ''}:${section}`
+  const currentOrdersQuery = ordersQuery.key === ordersQueryKey ? ordersQuery : null
+  const backendOrders = currentOrdersQuery?.items || []
+  const ordersLoading = !currentOrdersQuery || currentOrdersQuery.loading
+  const ordersError = currentOrdersQuery?.error || ''
 
   useEffect(() => {
     if (!currentUserId || currentUserRole !== 'cliente') return undefined
@@ -48,6 +60,43 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
       active = false
     }
   }, [currentUserId, currentUserRole])
+
+  useEffect(() => {
+    if (
+      !currentUserId
+      || currentUserRole !== 'cliente'
+      || (section !== 'resumen' && section !== 'compras')
+    ) {
+      return undefined
+    }
+
+    let active = true
+    listOrders()
+      .then((items) => {
+        if (active) {
+          setOrdersQuery({
+            key: ordersQueryKey,
+            items,
+            error: '',
+            loading: false,
+          })
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setOrdersQuery({
+            key: ordersQueryKey,
+            items: [],
+            error: error.message,
+            loading: false,
+          })
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUserId, currentUserRole, ordersQueryKey, section])
 
   useEffect(() => {
     if (!currentUserId || currentUserRole !== 'cliente' || section !== 'resumen') {
@@ -81,10 +130,19 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
   const customerName = [currentUser.nombre || currentUser.name, currentUser.apellidos || currentUser.lastName]
     .filter(Boolean)
     .join(' ')
-  const userOrders = orders.filter((order) => (
+  const localOrders = orders.filter((order) => (
     String(order.userId || '') === userId ||
     (!order.userId && order.delivery?.email?.toLowerCase() === email)
   ))
+  const backendOrderIds = new Set(backendOrders.map((order) => String(order.id)))
+  const userOrders = [
+    ...backendOrders.map((order) => ({
+      ...order,
+      persisted: true,
+      delivery: { method: order.deliveryMethod },
+    })),
+    ...localOrders.filter((order) => !backendOrderIds.has(String(order.id))),
+  ]
   function requestRemoval(type, item) {
     setPendingAction({ type, item })
     setActionMessage('')
@@ -142,12 +200,13 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               </span>
               <h2 className="h3 fw-bold text-dark">Resumen de tu cuenta</h2>
               <div className="admin-badges user-summary-stats">
-                <div className="stat-card"><strong>Compras</strong><div className="stat-value">{userOrders.length}</div></div>
+                <div className="stat-card"><strong>Compras</strong><div className="stat-value">{ordersLoading ? '...' : userOrders.length}</div></div>
                 <div className="stat-card"><strong>Mascotas</strong><div className="stat-value">{petsLoading ? '...' : pets.length}</div></div>
                 <div className="stat-card"><strong>Citas</strong><div className="stat-value">{appointmentsLoading ? '...' : appointmentsCount}</div></div>
               </div>
               {petsError && <p className="admin-form-message error" role="alert">{petsError}</p>}
               {appointmentsError && <p className="admin-form-message error" role="alert">{appointmentsError}</p>}
+              {ordersError && <p className="admin-form-message error" role="alert">{ordersError}</p>}
               <div className="user-panel-shortcuts">
                 <Link className="button button-primary" to="/mi-cuenta/compras">Ver historial de compras</Link>
                 <Link className="button button-secondary" to="/mi-cuenta/mascotas">Administrar mascotas</Link>
@@ -163,7 +222,10 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               </span>
               <h2 className="h3 fw-bold text-dark">Mis compras</h2>
               {actionMessage && <p className="admin-form-message success" role="status">{actionMessage}</p>}
-              {userOrders.length === 0 ? (
+              {ordersError && <p className="admin-form-message error" role="alert">{ordersError}</p>}
+              {ordersLoading ? (
+                <p className="text-center py-5" role="status">Cargando tus compras...</p>
+              ) : userOrders.length === 0 ? (
                 <div className="text-center py-5">
                   <p className="text-muted">Todavía no tienes compras registradas.</p>
                   <Link className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold" to="/productos">Ver productos</Link>
@@ -179,7 +241,7 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
                           <td data-label="Pedido"><Link to={`/compra/${order.id}`}>#{order.id}</Link></td>
                           <td data-label="Fecha">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-CL') : 'Sin fecha'}</td>
                           <td data-label="Productos">{(order.items || []).map((item) => `${item.name} × ${item.quantity}`).join(', ') || 'Detalle no disponible'}</td>
-                          <td data-label="Entrega">{order.delivery?.method === 'envio' ? 'Envío' : 'Retiro en clínica'}</td>
+                          <td data-label="Entrega">{(order.delivery?.method ?? order.deliveryMethod) === 'envio' ? 'Envío' : 'Retiro en clínica'}</td>
                           <td className="fw-semibold" data-label="Total">{money(order.total || 0)}</td>
                           <td className="user-card-actions" data-label="Acciones">
                             {!order.persisted && (

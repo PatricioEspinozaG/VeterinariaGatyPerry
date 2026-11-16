@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router'
 import { products as catalogProducts } from './data/products.js'
 import { listAppointments } from './services/citas.js'
 import { listPets } from './services/mascotas.js'
-import { createOrder } from './services/pedidos.js'
+import { createOrder, listOrders } from './services/pedidos.js'
 import { listProducts } from './services/productos.js'
 import App from './App.jsx'
 
@@ -24,6 +24,7 @@ vi.mock('./services/productos.js', () => ({
 }))
 vi.mock('./services/pedidos.js', () => ({
   createOrder: vi.fn(),
+  listOrders: vi.fn(),
 }))
 vi.mock('./services/auth.js', () => ({
   loginUser: vi.fn(async () => ({
@@ -54,6 +55,7 @@ beforeEach(() => {
     status: 'PENDIENTE',
     createdAt: '2026-11-16T18:00:00Z',
   })
+  listOrders.mockResolvedValue([])
 })
 
 it('permite agregar un producto y verlo en el carrito', async () => {

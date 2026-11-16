@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAccessToken } from './auth.js'
-import { createOrder } from './pedidos.js'
+import { createOrder, listOrders } from './pedidos.js'
 
 vi.mock('./auth.js', () => ({
   getAccessToken: vi.fn(),
@@ -82,5 +82,35 @@ describe('pedidos service', () => {
     await expect(
       createOrder({ items: [], delivery: {} }, 'idempotency-uuid'),
     ).rejects.toThrow('Stock insuficiente.')
+  })
+
+  it('lista las compras de la cuenta autenticada', async () => {
+    const orders = [{ id: 'pedido-1', items: [], total: 0 }]
+    fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify(orders)),
+    })
+
+    await expect(listOrders()).resolves.toEqual(orders)
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8085/api/v1/pedidos/mis-pedidos',
+      expect.objectContaining({
+        method: 'GET',
+        headers: { Authorization: 'Bearer access-token' },
+      }),
+    )
+  })
+
+  it('rechaza una respuesta de historial con formato inválido', async () => {
+    fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify({ items: [] })),
+    })
+
+    await expect(listOrders()).rejects.toThrow(
+      'El servidor de pedidos devolvió una lista inválida.',
+    )
   })
 })

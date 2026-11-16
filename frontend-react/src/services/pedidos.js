@@ -25,7 +25,7 @@ async function request(path, { method = 'GET', body, idempotencyKey } = {}) {
     throw new Error('Tu sesión expiró. Inicia sesión nuevamente.')
   }
   if (response.status === 403) {
-    throw new Error('No tienes permiso para registrar este pedido.')
+    throw new Error('No tienes permiso para realizar esta acción.')
   }
 
   const responseText = response.status === 204 ? '' : await response.text()
@@ -60,5 +60,13 @@ export async function createOrder(order, idempotencyKey) {
     throw new Error('El servidor de pedidos devolvió un pedido inválido.')
   }
 
+  return response
+}
+
+export async function listOrders() {
+  const response = await request('/api/v1/pedidos/mis-pedidos')
+  if (!Array.isArray(response)) {
+    throw new Error('El servidor de pedidos devolvió una lista inválida.')
+  }
   return response
 }
