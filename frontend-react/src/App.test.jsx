@@ -153,7 +153,7 @@ it('completa una compra y deja el carrito vacío', async () => {
       address: '',
       method: 'retiro',
     },
-  })
+  }, expect.any(String))
 })
 
 it('envía al login si se intenta abrir citas sin sesión', async () => {

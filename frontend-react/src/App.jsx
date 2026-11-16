@@ -55,10 +55,6 @@ function App() {
   const [products, setProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [productsError, setProductsError] = useState('')
-  const [orders, setOrders, ordersError] = useLocalStorage(
-    STORAGE_KEYS.orders,
-    [],
-  )
 
   useEffect(() => {
     let active = true
@@ -129,7 +125,7 @@ function App() {
     (total, item) => total + item.quantity,
     0,
   )
-  const storageError = cartError || ordersError
+  const storageError = cartError
 
   const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
   const accountReturnTo = requestedReturnTo?.startsWith('/mi-cuenta')
@@ -158,7 +154,7 @@ function App() {
     return result
   }
 
-  async function handleCompletePurchase(delivery) {
+  async function handleCompletePurchase(delivery, idempotencyKey) {
     const items = validCart.map((item) => ({
       code: item.code,
       quantity: item.quantity,
@@ -172,7 +168,7 @@ function App() {
       const order = await createOrder({
         items,
         delivery,
-      })
+      }, idempotencyKey)
 
       // Refresca el catálogo para mostrar el stock actualizado.
       try {
@@ -182,21 +178,6 @@ function App() {
         // El pedido ya se guardó; un fallo al refrescar el catálogo
         // no debe mostrarse como un fallo de compra.
       }
-
-      setOrders((previous) => [
-        ...previous,
-        {
-          id: order.id,
-          items: order.items,
-          total: order.total,
-          subtotal: order.subtotal,
-          shipping: order.shipping,
-          delivery: { ...delivery, method: order.deliveryMethod },
-          userId: currentUser?.id || null,
-          createdAt: order.createdAt,
-          status: order.status,
-        },
-      ])
 
       saveCart([])
       return { ok: true, orderId: order.id }
@@ -322,7 +303,7 @@ function App() {
           />
           <Route
             path="/compra/:id"
-            element={<ResultadoCompra orders={orders} />}
+            element={<ResultadoCompra />}
           />
 
           <Route
@@ -384,8 +365,6 @@ function App() {
             element={protectedPage(
               <UserPanel
                 currentUser={currentUser}
-                orders={orders}
-                setOrders={setOrders}
               />,
             )}
           />
@@ -395,8 +374,6 @@ function App() {
               <UserPanel
                 section="compras"
                 currentUser={currentUser}
-                orders={orders}
-                setOrders={setOrders}
               />,
             )}
           />
@@ -406,8 +383,6 @@ function App() {
               <UserPanel
                 section="mascotas"
                 currentUser={currentUser}
-                orders={orders}
-                setOrders={setOrders}
               />,
             )}
           />
@@ -417,8 +392,6 @@ function App() {
               <UserPanel
                 section="citas"
                 currentUser={currentUser}
-                orders={orders}
-                setOrders={setOrders}
               />,
             )}
           />

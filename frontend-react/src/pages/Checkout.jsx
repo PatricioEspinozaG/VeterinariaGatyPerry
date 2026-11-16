@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { regions } from '../data/regions.js'
 import { getCartLines, getCartTotal } from '../utils/cartLogic.js'
 import { money } from '../utils/format.js'
+import { useRef, useState } from 'react'
 
 const SHIPPING_COST = 3990
 
@@ -16,6 +16,7 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   const [method, setMethod] = useState('envio')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const pendingAttempt = useRef(null)
 
   const lines = getCartLines(cart, products)
   const subtotal = getCartTotal(cart, products)
@@ -38,15 +39,28 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
       address: method === 'envio' ? address : '',
       method,
     }
+    const purchaseData = JSON.stringify({
+      userId: currentUser?.id ?? null,
+      items: cart.map(({ code, quantity }) => ({ code, quantity })),
+      delivery,
+    })
+
+    if (pendingAttempt.current?.data !== purchaseData) {
+      pendingAttempt.current = {
+        data: purchaseData,
+        key: crypto.randomUUID(),
+      }
+    }
 
     try {
-      const result = await onCompletePurchase(delivery)
+      const result = await onCompletePurchase(delivery, pendingAttempt.current.key)
 
       if (!result.ok) {
         setError(result.error ?? 'No se pudo completar la compra.')
         setSubmitting(false)
         return
       }
+      pendingAttempt.current = null
 
       navigate(`/compra/${result.orderId}`)
     } catch (cause) {
