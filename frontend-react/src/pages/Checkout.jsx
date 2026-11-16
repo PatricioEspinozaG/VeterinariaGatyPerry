@@ -45,11 +45,28 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
       delivery,
     })
 
+    let savedAttempt = null
+
+    try {
+      savedAttempt = JSON.parse(sessionStorage.getItem('gaty-pending-order'))
+    } catch {
+      // Si sessionStorage no está disponible, usamos la clave en memoria.
+    }
+
     if (pendingAttempt.current?.data !== purchaseData) {
-      pendingAttempt.current = {
-        data: purchaseData,
-        key: crypto.randomUUID(),
-      }
+      pendingAttempt.current =
+        savedAttempt?.data === purchaseData && typeof savedAttempt.key === 'string'
+          ? savedAttempt
+          : { data: purchaseData, key: crypto.randomUUID() }
+    }
+
+    try {
+      sessionStorage.setItem(
+        'gaty-pending-order',
+        JSON.stringify(pendingAttempt.current),
+      )
+    } catch {
+      // El reintento en esta misma pantalla sigue funcionando en memoria.
     }
 
     try {
@@ -61,6 +78,11 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
         return
       }
       pendingAttempt.current = null
+      try {
+        sessionStorage.removeItem('gaty-pending-order')
+      } catch {
+        // La compra ya fue confirmada.
+      }
 
       navigate(`/compra/${result.orderId}`)
     } catch (cause) {
