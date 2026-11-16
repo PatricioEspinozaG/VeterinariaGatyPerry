@@ -3,7 +3,7 @@ import { getAccessToken } from './auth.js'
 const apiUrl = (import.meta.env.VITE_CLINICA_API_URL || 'http://localhost:8086')
   .replace(/\/+$/, '')
 
-async function request(path) {
+async function request(path, { method = 'GET', body } = {}) {
   const accessToken = getAccessToken()
   if (!accessToken) {
     throw new Error('Tu sesión expiró. Inicia sesión nuevamente.')
@@ -12,7 +12,12 @@ async function request(path) {
   let response
   try {
     response = await fetch(`${apiUrl}${path}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      ...(method === 'GET' ? {} : { method }),
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     })
   } catch {
     throw new Error('No fue posible conectar con el servicio clínico.')
@@ -22,7 +27,7 @@ async function request(path) {
     throw new Error('Tu sesión expiró. Inicia sesión nuevamente.')
   }
   if (response.status === 403) {
-    throw new Error('No tienes permiso para consultar este historial.')
+    throw new Error('No tienes permiso para realizar esta acción.')
   }
 
   const responseText = response.status === 204 ? '' : await response.text()
@@ -63,4 +68,85 @@ export async function listPetClinicalHistory(petId, limit = 50) {
   }
 
   return result
+}
+
+function requireRecord(record, entity) {
+  if (!record || record.id == null) {
+    throw new Error(`El servicio clínico devolvió una ${entity} inválida.`)
+  }
+  return record
+}
+
+export async function getClinicalAttention(id) {
+  return requireRecord(
+    await request(`/api/v1/clinica/atenciones/${encodeURIComponent(id)}`),
+    'atención',
+  )
+}
+
+export async function createClinicalAttention(attention) {
+  return requireRecord(
+    await request('/api/v1/clinica/gestion/atenciones', {
+      method: 'POST',
+      body: attention,
+    }),
+    'atención',
+  )
+}
+
+export async function updateClinicalAttention(id, attention) {
+  return requireRecord(
+    await request(
+      `/api/v1/clinica/gestion/atenciones/${encodeURIComponent(id)}`,
+      { method: 'PUT', body: attention },
+    ),
+    'atención',
+  )
+}
+
+export async function annulClinicalAttention(id, annulment) {
+  return requireRecord(
+    await request(
+      `/api/v1/clinica/gestion/atenciones/${encodeURIComponent(id)}/anulacion`,
+      { method: 'PATCH', body: annulment },
+    ),
+    'atención',
+  )
+}
+
+export async function getClinicalVaccine(id) {
+  return requireRecord(
+    await request(`/api/v1/clinica/vacunas/${encodeURIComponent(id)}`),
+    'vacuna',
+  )
+}
+
+export async function createClinicalVaccine(vaccine) {
+  return requireRecord(
+    await request('/api/v1/clinica/gestion/vacunas', {
+      method: 'POST',
+      body: vaccine,
+    }),
+    'vacuna',
+  )
+}
+
+export async function updateClinicalVaccine(id, vaccine) {
+  return requireRecord(
+    await request(
+      `/api/v1/clinica/gestion/vacunas/${encodeURIComponent(id)}`,
+      { method: 'PUT', body: vaccine },
+    ),
+    'vacuna',
+  )
+}
+
+export async function annulClinicalVaccine(id, annulment) {
+  return requireRecord(
+    await request(
+      `/api/v1/clinica/gestion/vacunas/${encodeURIComponent(id)}/anulacion`,
+      { method: 'PATCH', body: annulment },
+    ),
+    'vacuna',
+  )
 }

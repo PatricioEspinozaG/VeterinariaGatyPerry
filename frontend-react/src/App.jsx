@@ -28,6 +28,7 @@ import AppointmentForm from './components/AppointmentForm.jsx'
 import AppointmentsList from './components/AppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
+import AdminClinicalPanel from './pages/AdminClinicalPanel.jsx'
 import UserPanel from './pages/UserPanel.jsx'
 import ReceptionPanel from './pages/ReceptionPanel.jsx'
 import './styles/app.css'
@@ -259,6 +260,7 @@ function App() {
           <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} currentUser={currentUser} />)} />
           <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
           <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin/clinica" element={requireUser(<AdminClinicalPanel currentUser={currentUser} />)} />
         </Routes>
       </main>
       <Footer />
