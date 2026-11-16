@@ -35,6 +35,12 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").permitAll()
+                .requestMatchers(
+                    HttpMethod.GET, "/api/v1/pedidos/gestion"
+                ).hasAnyRole("RECEPCION", "ADMIN")
+                .requestMatchers(
+                    HttpMethod.PATCH, "/api/v1/pedidos/gestion/**"
+                ).hasAnyRole("RECEPCION", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/mis-pedidos")
                     .hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/*")
@@ -53,7 +59,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(frontendOrigin));
-        configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        configuration.setAllowedMethods(
+            List.of("GET", "POST", "PATCH", "OPTIONS")
+        );
         configuration.setAllowedHeaders(List.of(
             "Authorization",
             "Content-Type",

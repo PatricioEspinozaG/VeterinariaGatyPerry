@@ -385,6 +385,7 @@ export default function AdminClinicalPanel({ currentUser }) {
         <NavLink to="/admin/usuarios" className={({ isActive }) => `admin-nav-link${isActive ? ' active' : ''}`}>Usuarios</NavLink>
         <NavLink to="/admin/citas" className={({ isActive }) => `admin-nav-link${isActive ? ' active' : ''}`}>Citas</NavLink>
         <NavLink to="/admin/clinica" className={({ isActive }) => `admin-nav-link${isActive ? ' active' : ''}`}>Clínica</NavLink>
+        <NavLink to="/admin/pedidos" className={({ isActive }) => `admin-nav-link${isActive ? ' active' : ''}`}>Pedidos</NavLink>
       </nav>
 
       <main className="admin-main admin-main-background bg-vet-doodle">

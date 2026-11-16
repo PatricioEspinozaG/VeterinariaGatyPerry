@@ -70,3 +70,37 @@ export async function listOrders() {
   }
   return response
 }
+
+function isManagedOrder(order) {
+  return order
+    && typeof order.id === 'string'
+    && typeof order.customerName === 'string'
+    && typeof order.customerEmail === 'string'
+    && Array.isArray(order.items)
+    && ['envio', 'retiro'].includes(order.deliveryMethod)
+    && typeof order.status === 'string'
+    && Number.isInteger(order.version)
+    && order.version >= 0
+}
+
+export async function listManagedOrders() {
+  const response = await request('/api/v1/pedidos/gestion')
+  if (!Array.isArray(response) || !response.every(isManagedOrder)) {
+    throw new Error('El servidor de pedidos devolvió una lista de gestión inválida.')
+  }
+  return response
+}
+
+export async function updateManagedOrderStatus(id, estado, version) {
+  const response = await request(
+    `/api/v1/pedidos/gestion/${encodeURIComponent(id)}/estado`,
+    {
+      method: 'PATCH',
+      body: { estado, version },
+    },
+  )
+  if (!isManagedOrder(response)) {
+    throw new Error('El servidor de pedidos devolvió un pedido inválido.')
+  }
+  return response
+}

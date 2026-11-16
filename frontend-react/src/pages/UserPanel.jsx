@@ -16,6 +16,14 @@ const sections = [
   { id: 'historial', label: 'Historial clínico', path: '/mi-cuenta/historial' },
 ]
 
+const orderStatusLabels = {
+  REGISTRADO: 'Registrado',
+  EN_PREPARACION: 'En preparación',
+  LISTO_PARA_RETIRO: 'Listo para retiro',
+  EN_CAMINO: 'En camino',
+  ENTREGADO: 'Entregado',
+}
+
 function formatClinicalDate(value) {
   const date = new Date(value)
   return Number.isNaN(date.getTime())
@@ -296,15 +304,16 @@ function UserPanel({ currentUser, orders = [], setOrders, section = 'resumen' })
               ) : (
                 <div className="table-responsive">
                   <table className="table table-hover align-middle mb-0 user-mobile-card-table">
-                    <thead className="table-light"><tr><th>Pedido</th><th>Fecha</th><th>Productos</th><th>Entrega</th><th>Total</th><th>Acciones</th></tr></thead>
+                    <thead className="table-light"><tr><th>Pedido</th><th>Fecha</th><th>Productos</th><th>Entrega</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead>
                     <tbody>
-                      {userOrders.length === 0 && <tr><td colSpan="6" className="text-center text-secondary py-4">No hay compras registradas.</td></tr>}
+                      {userOrders.length === 0 && <tr><td colSpan="7" className="text-center text-secondary py-4">No hay compras registradas.</td></tr>}
                       {userOrders.map((order) => (
                         <tr key={order.id}>
                           <td data-label="Pedido"><Link to={`/compra/${order.id}`}>#{order.id}</Link></td>
                           <td data-label="Fecha">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-CL') : 'Sin fecha'}</td>
                           <td data-label="Productos">{(order.items || []).map((item) => `${item.name} × ${item.quantity}`).join(', ') || 'Detalle no disponible'}</td>
                           <td data-label="Entrega">{(order.delivery?.method ?? order.deliveryMethod) === 'envio' ? 'Envío' : 'Retiro en clínica'}</td>
+                          <td data-label="Estado">{orderStatusLabels[order.status] || order.status || 'Registrado'}</td>
                           <td className="fw-semibold" data-label="Total">{money(order.total || 0)}</td>
                           <td className="user-card-actions" data-label="Acciones">
                             {!order.persisted && (

@@ -31,6 +31,7 @@ import AdminPanel from './pages/AdminPanel.jsx'
 import AdminClinicalPanel from './pages/AdminClinicalPanel.jsx'
 import UserPanel from './pages/UserPanel.jsx'
 import ReceptionPanel from './pages/ReceptionPanel.jsx'
+import OrdersManagementPanel from './pages/OrdersManagementPanel.jsx'
 import './styles/app.css'
 
 function ScrollToTop() {
@@ -256,11 +257,13 @@ function App() {
           <Route path="/mi-cuenta/citas" element={requireUser(<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/mi-cuenta/historial" element={requireUser(<UserPanel section="historial" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/recepcion" element={requireUser(<ReceptionPanel currentUser={currentUser} users={users} />)} />
+          <Route path="/recepcion/pedidos" element={requireUser(<OrdersManagementPanel currentUser={currentUser} />)} />
           <Route path="*" element={<NoEncontrado />} />
           <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} currentUser={currentUser} />)} />
           <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
           <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} currentUser={currentUser} />)} />
           <Route path="/admin/clinica" element={requireUser(<AdminClinicalPanel currentUser={currentUser} />)} />
+          <Route path="/admin/pedidos" element={requireUser(<OrdersManagementPanel currentUser={currentUser} />)} />
         </Routes>
       </main>
       <Footer />

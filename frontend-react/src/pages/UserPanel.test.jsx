@@ -94,6 +94,7 @@ it('muestra pedidos guardados en el backend sin opción para quitarlos localment
     items: [{ code: 'ME001', name: 'Amoxibay', quantity: 2 }],
     total: 8400,
     deliveryMethod: 'retiro',
+    status: 'EN_CAMINO',
     createdAt: '2026-11-16T10:00:00.000Z',
   }])
 
@@ -104,6 +105,7 @@ it('muestra pedidos guardados en el backend sin opción para quitarlos localment
   )
 
   expect(await screen.findByText('Amoxibay × 2')).toBeInTheDocument()
+  expect(screen.getByText('En camino')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: '#pedido-backend' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Quitar' })).not.toBeInTheDocument()
   expect(listOrders).toHaveBeenCalledOnce()

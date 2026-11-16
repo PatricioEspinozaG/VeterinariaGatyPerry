@@ -1,7 +1,9 @@
 package cl.gatyperry.pedidos.pedidos.service;
 
 import cl.gatyperry.pedidos.pedidos.dto.PedidoRequest;
+import cl.gatyperry.pedidos.pedidos.dto.PedidoGestionResponse;
 import cl.gatyperry.pedidos.pedidos.dto.PedidoResponse;
+import cl.gatyperry.pedidos.pedidos.model.EstadoPedido;
 import cl.gatyperry.pedidos.pedidos.model.Pedido;
 import cl.gatyperry.pedidos.pedidos.repository.PedidoRepository;
 import java.util.HashMap;
@@ -13,6 +15,7 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -127,6 +130,67 @@ public class PedidosService {
             .stream()
             .map(PedidoResponse::from)
             .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PedidoGestionResponse> listarGestion() {
+        return repository.findAllByOrderByCreadoEnDesc()
+            .stream()
+            .map(PedidoGestionResponse::from)
+            .toList();
+    }
+
+    @Transactional
+    public PedidoGestionResponse cambiarEstado(
+        String id,
+        EstadoPedido siguiente,
+        Long version
+    ) {
+        Pedido pedido = repository.buscarConItems(id)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Pedido no encontrado"
+            ));
+
+        if (!Objects.equals(pedido.getVersion(), version)) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "El pedido fue modificado; vuelve a consultarlo"
+            );
+        }
+        if (!transicionPermitida(pedido, siguiente)) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "La transición de estado no está permitida"
+            );
+        }
+
+        pedido.setEstado(siguiente.name());
+        try {
+            return PedidoGestionResponse.from(
+                repository.saveAndFlush(pedido)
+            );
+        } catch (OptimisticLockingFailureException ex) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "El pedido fue modificado; vuelve a consultarlo",
+                ex
+            );
+        }
+    }
+
+    private boolean transicionPermitida(
+        Pedido pedido,
+        EstadoPedido siguiente
+    ) {
+        return switch (pedido.getEstado()) {
+            case "REGISTRADO" -> siguiente == EstadoPedido.EN_PREPARACION;
+            case "EN_PREPARACION" -> "retiro".equals(pedido.getMetodoEntrega())
+                ? siguiente == EstadoPedido.LISTO_PARA_RETIRO
+                : siguiente == EstadoPedido.EN_CAMINO;
+            case "LISTO_PARA_RETIRO", "EN_CAMINO" ->
+                siguiente == EstadoPedido.ENTREGADO;
+            default -> false;
+        };
     }
 
     private String idempotencyKey(String key) {

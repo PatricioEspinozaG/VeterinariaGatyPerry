@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,10 @@ public class Pedido {
 
     @Column(name = "ESTADO", nullable = false, length = 20)
     private String estado = "REGISTRADO";
+
+    @Version
+    @Column(name = "VERSION", nullable = false)
+    private Long version = 0L;
 
     @Column(name = "CREADO_EN", nullable = false)
     private Instant creadoEn;
@@ -151,6 +156,14 @@ public class Pedido {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     public Instant getCreadoEn() {

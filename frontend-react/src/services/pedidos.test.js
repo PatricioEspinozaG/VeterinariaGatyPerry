@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAccessToken } from './auth.js'
-import { createOrder, listOrders } from './pedidos.js'
+import {
+  createOrder,
+  listManagedOrders,
+  listOrders,
+  updateManagedOrderStatus,
+} from './pedidos.js'
 
 vi.mock('./auth.js', () => ({
   getAccessToken: vi.fn(),
@@ -111,6 +116,64 @@ describe('pedidos service', () => {
 
     await expect(listOrders()).rejects.toThrow(
       'El servidor de pedidos devolvió una lista inválida.',
+    )
+  })
+
+  it('lista todos los pedidos con datos de entrega para el personal', async () => {
+    const orders = [{
+      id: 'pedido-1',
+      customerName: 'Ana Soto',
+      customerEmail: 'ana@example.com',
+      items: [],
+      deliveryMethod: 'retiro',
+      status: 'REGISTRADO',
+      version: 0,
+    }]
+    fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify(orders)),
+    })
+
+    await expect(listManagedOrders()).resolves.toEqual(orders)
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8085/api/v1/pedidos/gestion',
+      expect.objectContaining({
+        method: 'GET',
+        headers: { Authorization: 'Bearer access-token' },
+      }),
+    )
+  })
+
+  it('cambia el estado del pedido con control de versión', async () => {
+    const order = {
+      id: 'pedido-1',
+      customerName: 'Ana Soto',
+      customerEmail: 'ana@example.com',
+      items: [],
+      deliveryMethod: 'envio',
+      status: 'EN_PREPARACION',
+      version: 1,
+    }
+    fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify(order)),
+    })
+
+    await expect(
+      updateManagedOrderStatus('pedido-1', 'EN_PREPARACION', 0),
+    ).resolves.toEqual(order)
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8085/api/v1/pedidos/gestion/pedido-1/estado',
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Bearer access-token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ estado: 'EN_PREPARACION', version: 0 }),
+      }),
     )
   })
 })

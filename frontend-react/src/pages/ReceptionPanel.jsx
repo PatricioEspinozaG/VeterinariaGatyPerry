@@ -18,6 +18,9 @@ export default function ReceptionPanel({ currentUser, users = [] }) {
         <NavLink to="/recepcion" end className={({ isActive }) => `admin-nav-link${isActive ? ' active' : ''}`}>
           Citas
         </NavLink>
+        <NavLink to="/recepcion/pedidos" className={({ isActive }) => `admin-nav-link${isActive ? ' active' : ''}`}>
+          Pedidos
+        </NavLink>
       </nav>
 
       <div className="admin-main admin-main-background bg-vet-doodle">
