@@ -3,6 +3,7 @@ package cl.gatyperry.auth.usuarios.service;
 import cl.gatyperry.auth.usuarios.dto.ClienteParaCitaResponse;
 import cl.gatyperry.auth.usuarios.model.Rol;
 import cl.gatyperry.auth.usuarios.repository.UsuarioRepository;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,15 @@ public class ClienteConsultaService {
 
     public ClienteConsultaService(UsuarioRepository repository) {
         this.repository = repository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClienteParaCitaResponse> listarClientesActivos() {
+        return repository
+            .findAllByRolAndActivoTrueOrderByApellidosAscNombreAsc(Rol.CLIENTE)
+            .stream()
+            .map(ClienteParaCitaResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)

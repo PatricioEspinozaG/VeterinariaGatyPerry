@@ -1,8 +1,48 @@
-import { expect, it } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
+import { changeManagedAppointmentStatus, listManagedAppointments } from '../services/citas.js'
+import { listAppointmentClients } from '../services/clientes.js'
+import { listManagedPets } from '../services/mascotas.js'
 import ReceptionPanel from './ReceptionPanel.jsx'
+
+vi.mock('../services/citas.js', () => ({
+  changeManagedAppointmentStatus: vi.fn(),
+  listManagedAppointments: vi.fn(),
+}))
+vi.mock('../services/clientes.js', () => ({
+  listAppointmentClients: vi.fn(),
+}))
+vi.mock('../services/mascotas.js', () => ({
+  listManagedPets: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  listManagedAppointments.mockResolvedValue([{
+    id: 1,
+    userId: 7,
+    mascotaId: 10,
+    servicio: 'Consulta General',
+    fecha: '2099-05-20',
+    hora: '10:00:00',
+    estado: 'PENDIENTE',
+    motivo: 'Control general',
+    version: 0,
+  }])
+  listAppointmentClients.mockResolvedValue([{
+    id: 7,
+    nombre: 'Cliente',
+    apellidos: 'Demo',
+  }])
+  listManagedPets.mockResolvedValue([{ id: 10, nombre: 'Michi', userId: '7' }])
+  changeManagedAppointmentStatus.mockResolvedValue({
+    id: 1,
+    estado: 'CONFIRMADA',
+    version: 1,
+  })
+})
 
 it('no muestra el panel a una cuenta que no es de recepción', () => {
   render(
@@ -16,21 +56,7 @@ it('no muestra el panel a una cuenta que no es de recepción', () => {
   ).not.toBeInTheDocument()
 })
 
-it('permite a recepción cambiar el estado de una cita', async () => {
-  localStorage.setItem(
-    'appointments',
-    JSON.stringify([{
-      id: 'cita-1',
-      userId: 'c1',
-      petName: 'Michi',
-      servicio: 'Consulta General',
-      fecha: '2099-05-20',
-      hora: '10:00',
-      estado: 'Pendiente',
-      motivo: 'Control general',
-    }]),
-  )
-
+it('permite a recepción cambiar el estado de una cita mediante el backend', async () => {
   const user = userEvent.setup()
   render(
     <MemoryRouter initialEntries={['/recepcion']}>
@@ -46,10 +72,13 @@ it('permite a recepción cambiar el estado de una cita', async () => {
     </MemoryRouter>,
   )
 
-  await user.click(screen.getByRole('button', { name: 'Editar' }))
-  await user.selectOptions(screen.getByLabelText('Estado'), 'Confirmada')
-  await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+  expect(await screen.findByText('Michi')).toBeInTheDocument()
+  await user.selectOptions(
+    screen.getByRole('combobox', { name: 'Cambiar estado de cita de Michi' }),
+    'CONFIRMADA',
+  )
 
-  expect(JSON.parse(localStorage.getItem('appointments'))[0].estado)
-    .toBe('Confirmada')
+  expect(await screen.findByText('Confirmada', { selector: 'span.badge' }))
+    .toBeInTheDocument()
+  expect(changeManagedAppointmentStatus).toHaveBeenCalledWith(1, 'CONFIRMADA')
 })

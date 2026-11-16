@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAccessToken } from './auth.js'
-import { createPet, deletePet, listPets } from './mascotas.js'
+import { createPet, deletePet, listManagedPets, listPets } from './mascotas.js'
 
 vi.mock('./auth.js', () => ({
   getAccessToken: vi.fn(),
@@ -28,6 +28,24 @@ describe('mascotas service', () => {
     await expect(listPets()).resolves.toEqual(pets)
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:8082/api/v1/mascotas',
+      expect.objectContaining({
+        method: 'GET',
+        headers: { Authorization: 'Bearer access-token' },
+      }),
+    )
+  })
+
+  it('lista las mascotas del cliente seleccionado para gestión de citas', async () => {
+    const pets = [{ id: 10, nombre: 'Luna' }]
+    fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify(pets)),
+    })
+
+    await expect(listManagedPets(7)).resolves.toEqual(pets)
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8082/api/v1/mascotas/gestion?clienteId=7',
       expect.objectContaining({
         method: 'GET',
         headers: { Authorization: 'Bearer access-token' },

@@ -1,7 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import {
   createProduct,
@@ -9,6 +8,15 @@ import {
   listManagedProducts,
   updateProduct,
 } from '../services/productos.js'
+import { listManagedAppointments } from '../services/citas.js'
+import { listAppointmentClients } from '../services/clientes.js'
+import { listManagedPets } from '../services/mascotas.js'
+import {
+  createAdminUser,
+  deactivateAdminUser,
+  listAdminUsers,
+  updateAdminUser,
+} from '../services/adminUsuarios.js'
 import AdminPanel from './AdminPanel.jsx'
 
 vi.mock('../services/productos.js', () => ({
@@ -17,6 +25,21 @@ vi.mock('../services/productos.js', () => ({
   listManagedProducts: vi.fn(),
   updateProduct: vi.fn(),
 }))
+vi.mock('../services/citas.js', () => ({
+  listManagedAppointments: vi.fn(),
+}))
+vi.mock('../services/clientes.js', () => ({
+  listAppointmentClients: vi.fn(),
+}))
+vi.mock('../services/mascotas.js', () => ({
+  listManagedPets: vi.fn(),
+}))
+vi.mock('../services/adminUsuarios.js', () => ({
+  createAdminUser: vi.fn(),
+  deactivateAdminUser: vi.fn(),
+  listAdminUsers: vi.fn(),
+  updateAdminUser: vi.fn(),
+}))
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -24,26 +47,52 @@ beforeEach(() => {
   createProduct.mockResolvedValue({ code: 'ME099', name: 'Producto demo' })
   updateProduct.mockResolvedValue({ code: 'ME001', name: 'Producto demo' })
   discontinueProduct.mockResolvedValue(null)
+  listManagedAppointments.mockResolvedValue([])
+  listAppointmentClients.mockResolvedValue([])
+  listManagedPets.mockResolvedValue([])
+  listAdminUsers.mockResolvedValue(initialUsers)
+  createAdminUser.mockImplementation(async (user) => ({
+    id: '3',
+    name: user.nombre,
+    lastName: user.apellidos,
+    run: user.run,
+    email: user.email,
+    telefono: user.telefono,
+    region: user.region,
+    comuna: user.comuna,
+    direccion: user.direccion,
+    role: user.rol.toLowerCase(),
+    active: user.activo,
+  }))
+  updateAdminUser.mockImplementation(async (id, user) => ({
+    ...initialUsers.find((item) => item.id === id),
+    name: user.nombre,
+    lastName: user.apellidos,
+    email: user.email,
+    telefono: user.telefono,
+    region: user.region,
+    comuna: user.comuna,
+    direccion: user.direccion,
+    role: user.rol.toLowerCase(),
+    active: user.activo,
+  }))
+  deactivateAdminUser.mockResolvedValue(null)
 })
 
 const initialUsers = [
-  { id: 'admin-1', name: 'Administradora', lastName: 'Demo', email: 'admin@duoc.cl', password: 'admin12345', role: 'admin', active: true },
-  { id: 'client-1', name: 'Cliente', lastName: 'Demo', email: 'cliente@gmail.com', password: 'cliente12345', role: 'cliente', active: true },
+  { id: '1', name: 'Administradora', lastName: 'Demo', run: '11111111-1', email: 'admin@duoc.cl', telefono: '+56912345678', region: 'Valparaíso', comuna: 'Valparaíso', direccion: '', role: 'admin', active: true },
+  { id: '2', name: 'Cliente', lastName: 'Demo', run: '22222222-2', email: 'cliente@gmail.com', telefono: '+56912345678', region: 'Valparaíso', comuna: 'Valparaíso', direccion: '', role: 'cliente', active: true },
 ]
 
-function StatefulAdminPanel() {
-  const [users, setUsers] = useState(initialUsers)
-  const currentUser = users.find((user) => user.id === 'admin-1')
-
+function StatefulAdminPanel({ onCurrentUserUpdate } = {}) {
   return (
     <MemoryRouter initialEntries={['/admin/usuarios']}>
       <AdminPanel
         section="usuarios"
         products={[]}
         setProducts={vi.fn()}
-        users={users}
-        setUsers={setUsers}
-        currentUser={currentUser}
+        onCurrentUserUpdate={onCurrentUserUpdate}
+        currentUser={initialUsers[0]}
       />
     </MemoryRouter>
   )
@@ -51,15 +100,24 @@ function StatefulAdminPanel() {
 
 it('permite editar los datos de un usuario', async () => {
   const user = userEvent.setup()
-  render(<StatefulAdminPanel />)
+  const onCurrentUserUpdate = vi.fn()
+  render(<StatefulAdminPanel onCurrentUserUpdate={onCurrentUserUpdate} />)
 
-  await user.click(screen.getAllByRole('button', { name: 'Editar' })[0])
+  await user.click((await screen.findAllByRole('button', { name: 'Editar' }))[0])
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   await user.clear(screen.getByLabelText('Nombre'))
   await user.type(screen.getByLabelText('Nombre'), 'Nuevo nombre')
   await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
   expect(screen.getByText('Nuevo nombre Demo')).toBeInTheDocument()
+  expect(updateAdminUser).toHaveBeenCalledWith('1', expect.objectContaining({
+    nombre: 'Nuevo nombre',
+    email: 'admin@duoc.cl',
+  }))
+  expect(onCurrentUserUpdate).toHaveBeenCalledWith(expect.objectContaining({
+    name: 'Nuevo nombre',
+    id: '1',
+  }))
   expect(screen.getByRole('status')).toHaveTextContent('Usuario actualizado correctamente.')
 })
 
@@ -85,17 +143,19 @@ it('abre la edición del producto como overlay', async () => {
   expect(screen.getByLabelText('Nombre')).toHaveValue('Producto demo')
 })
 
-it('permite eliminar un usuario después de confirmar', async () => {
+it('permite desactivar un usuario después de confirmar', async () => {
   const user = userEvent.setup()
   render(<StatefulAdminPanel />)
 
-  await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[1])
-  expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Eliminar al usuario “Cliente Demo”?')
+  await user.click((await screen.findAllByRole('button', { name: 'Desactivar' }))[1])
+  expect(screen.getByRole('alertdialog')).toHaveTextContent('¿Desactivar al usuario “Cliente Demo”?')
   expect(screen.getByText('Cliente Demo')).toBeInTheDocument()
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-delete'))
 
-  expect(screen.queryByText('Cliente Demo')).not.toBeInTheDocument()
-  expect(screen.getByRole('status')).toHaveTextContent('Usuario eliminado correctamente.')
+  expect(deactivateAdminUser).toHaveBeenCalledWith('2')
+  expect(screen.getByText('Cliente Demo')).toBeInTheDocument()
+  expect(screen.getByText('Inactivo')).toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('Usuario desactivado correctamente.')
 })
 
 it('elimina un producto al confirmar desde el diálogo de la página', async () => {
@@ -127,11 +187,11 @@ it('elimina un producto al confirmar desde el diálogo de la página', async () 
   expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
 })
 
-it('conserva el usuario cuando se cancela la confirmación de eliminación', async () => {
+it('conserva el usuario cuando se cancela la confirmación de desactivación', async () => {
   const user = userEvent.setup()
   render(<StatefulAdminPanel />)
 
-  await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[1])
+  await user.click((await screen.findAllByRole('button', { name: 'Desactivar' }))[1])
   expect(screen.getByRole('alertdialog')).toBeInTheDocument()
   await user.click(screen.getByRole('alertdialog').querySelector('button.btn-outline-secondary'))
 
@@ -169,7 +229,7 @@ it('impide eliminar la cuenta del administrador que inició sesión', async () =
   const user = userEvent.setup()
   render(<StatefulAdminPanel />)
 
-  const deleteButtons = screen.getAllByRole('button', { name: 'Eliminar' })
+  const deleteButtons = await screen.findAllByRole('button', { name: 'Desactivar' })
   expect(deleteButtons[0]).toBeDisabled()
   await user.click(deleteButtons[0])
 
@@ -177,7 +237,7 @@ it('impide eliminar la cuenta del administrador que inició sesión', async () =
   expect(screen.getByText('Administradora Demo')).toBeInTheDocument()
 })
 
-it('crea y muestra una cita de ejemplo al abrir la sección de citas vacía', async () => {
+it('muestra las citas de backend sin crear registros de demostración', async () => {
   render(
     <MemoryRouter initialEntries={['/admin/citas']}>
       <AdminPanel
@@ -191,17 +251,11 @@ it('crea y muestra una cita de ejemplo al abrir la sección de citas vacía', as
     </MemoryRouter>,
   )
 
-  expect(await screen.findByText('Luna')).toBeInTheDocument()
-  expect(screen.getByText('Consulta general')).toBeInTheDocument()
+  expect(await screen.findByText('No hay citas registradas en esta categoría.'))
+    .toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Agregar cita' })).toHaveClass('fab-pill')
-  expect(JSON.parse(localStorage.getItem('appointments'))).toEqual([
-    expect.objectContaining({
-      id: 'cita-demo-admin',
-      userId: 'client-1',
-      petName: 'Luna',
-      estado: 'Pendiente',
-    }),
-  ])
+  expect(listManagedAppointments).toHaveBeenCalled()
+  expect(localStorage.getItem('appointments')).toBeNull()
 })
 
 it('usa el mismo botón flotante de creación en la sección de usuarios', () => {
@@ -244,12 +298,20 @@ it('crea un usuario de recepción', async () => {
   await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
   await user.type(screen.getByLabelText('Nombre'), 'Camila')
   await user.type(screen.getByLabelText('Apellidos'), 'Soto')
+  await user.type(screen.getByLabelText('RUN'), '12.345.678-5')
   await user.type(screen.getByLabelText('Correo electrónico'), 'camila@gmail.com')
+  await user.type(screen.getByLabelText('Teléfono de contacto'), '+56912345678')
   await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
+  await user.type(screen.getByLabelText('Confirmar contraseña'), 'clave12345')
   await user.selectOptions(screen.getByLabelText('Rol'), 'recepcion')
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
 
   expect(screen.getByText('Camila Soto')).toBeInTheDocument()
+  expect(createAdminUser).toHaveBeenCalledWith(expect.objectContaining({
+    run: '12.345.678-5',
+    rol: 'RECEPCION',
+    activo: true,
+  }))
   expect(screen.getAllByText('Recepción')).toHaveLength(2)
   expect(screen.getByRole('status'))
     .toHaveTextContent('Usuario agregado correctamente.')
@@ -262,8 +324,11 @@ it('rechaza crear un usuario con un correo ya registrado', async () => {
   await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
   await user.type(screen.getByLabelText('Nombre'), 'Otro')
   await user.type(screen.getByLabelText('Apellidos'), 'Cliente')
+  await user.type(screen.getByLabelText('RUN'), '12.345.678-5')
   await user.type(screen.getByLabelText('Correo electrónico'), 'cliente@gmail.com')
+  await user.type(screen.getByLabelText('Teléfono de contacto'), '+56912345678')
   await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
+  await user.type(screen.getByLabelText('Confirmar contraseña'), 'clave12345')
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
 
   expect(screen.getAllByText('Ya existe un usuario con ese correo.'))

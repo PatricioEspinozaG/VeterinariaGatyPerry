@@ -255,9 +255,9 @@ function App() {
           <Route path="/mi-cuenta/citas" element={requireUser(<UserPanel section="citas" currentUser={currentUser} orders={orders} setOrders={setOrders} />)} />
           <Route path="/recepcion" element={requireUser(<ReceptionPanel currentUser={currentUser} users={users} />)} />
           <Route path="*" element={<NoEncontrado />} />
-          <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} users={users} currentUser={currentUser} />)} />
-          <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
-          <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin" element={requireUser(<AdminPanel products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} currentUser={currentUser} />)} />
+          <Route path="/admin/usuarios" element={requireUser(<AdminPanel section="usuarios" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} setUsers={setUsers} currentUser={currentUser} />)} />
+          <Route path="/admin/citas" element={requireUser(<AdminPanel key={location.key} section="citas" products={adminProducts} setProducts={setAdminProducts} onCatalogRefresh={refreshProductCatalog} onCurrentUserUpdate={setCurrentUser} users={users} currentUser={currentUser} />)} />
         </Routes>
       </main>
       <Footer />

@@ -4,7 +4,7 @@ const authApiUrl = (import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8081'
 let accessToken = null
 let refreshRequest = null
 
-function normalizeUser(user) {
+export function normalizeUser(user) {
   if (
     !user
     || user.id == null

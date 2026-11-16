@@ -56,6 +56,16 @@ export function listPets() {
   return request('/api/v1/mascotas')
 }
 
+export async function listManagedPets(clientId) {
+  const pets = await request(
+    `/api/v1/mascotas/gestion?clienteId=${encodeURIComponent(clientId)}`,
+  )
+  if (!Array.isArray(pets)) {
+    throw new Error('El servidor de mascotas devolvió una lista inválida.')
+  }
+  return pets
+}
+
 export function createPet(pet) {
   return request('/api/v1/mascotas', { method: 'POST', body: pet })
 }

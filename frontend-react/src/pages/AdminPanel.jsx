@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate } from 'react-router'
-import { readStorage } from '../services/storage.js'
-import { ensureDemoAppointment } from '../utils/appointments.js'
 import AdminProductsList from '../components/AdminProductsList.jsx'
 import AdminProductForm from '../components/AdminProductForm.jsx'
 import AppointmentsList from '../components/AppointmentsList.jsx'
@@ -11,7 +9,14 @@ import {
   listManagedProducts,
   updateProduct,
 } from '../services/productos.js'
-import { validateEmail } from '../utils/userValidation.js'
+import { listManagedAppointments } from '../services/citas.js'
+import {
+  createAdminUser,
+  deactivateAdminUser,
+  listAdminUsers,
+  updateAdminUser,
+} from '../services/adminUsuarios.js'
+import { validateEmail, validateUser } from '../utils/userValidation.js'
 import { NavLink } from 'react-router'
 import '../styles/app.css'
 
@@ -19,8 +24,7 @@ export default function AdminPanel({
   products,
   setProducts,
   onCatalogRefresh,
-  users,
-  setUsers,
+  onCurrentUserUpdate,
   currentUser,
   section = 'productos',
 }) {
@@ -33,12 +37,32 @@ export default function AdminPanel({
   const [showUserForm, setShowUserForm] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [pendingDeletion, setPendingDeletion] = useState(null)
-  const [userForm, setUserForm] = useState({ name: '', lastName: '', email: '', password: '', role: 'cliente', active: true })
+  const [adminUsers, setAdminUsers] = useState([])
+  const [adminUsersLoading, setAdminUsersLoading] = useState(true)
+  const [adminUsersLoadError, setAdminUsersLoadError] = useState('')
+  const [userActionLoading, setUserActionLoading] = useState(false)
+  const [userForm, setUserForm] = useState({
+    name: '',
+    lastName: '',
+    run: '',
+    email: '',
+    telefono: '',
+    password: '',
+    confirmPassword: '',
+    region: 'Valparaíso',
+    comuna: 'Valparaíso',
+    direccion: '',
+    role: 'cliente',
+    active: true,
+  })
   const [userFormError, setUserFormError] = useState('')
   const [userFormSuccess, setUserFormSuccess] = useState('')
-  const [appointmentInitialization] = useState(() => (
-    section === 'citas' && currentUser?.role === 'admin' ? ensureDemoAppointment(users) : null
-  ))
+  const [appointments, setAppointments] = useState([])
+  const [appointmentsLoadError, setAppointmentsLoadError] = useState('')
+  const handleAppointmentsChange = useCallback((items) => {
+    setAppointments(items)
+    setAppointmentsLoadError('')
+  }, [])
 
   useEffect(() => {
     const updateFloatingButtonPosition = () => {
@@ -83,14 +107,56 @@ export default function AdminPanel({
     }
   }, [currentUser?.role, section, setProducts])
 
+  useEffect(() => {
+    if (currentUser?.role !== 'admin') return undefined
+
+    let active = true
+    listManagedAppointments()
+      .then((items) => {
+        if (active) {
+          setAppointments(items)
+          setAppointmentsLoadError('')
+        }
+      })
+      .catch((error) => {
+        if (active) setAppointmentsLoadError(error.message)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUser?.role])
+
+  useEffect(() => {
+    if (currentUser?.role !== 'admin') return undefined
+
+    let active = true
+    listAdminUsers()
+      .then((items) => {
+        if (active) {
+          setAdminUsers(items)
+          setAdminUsersLoadError('')
+        }
+      })
+      .catch((error) => {
+        if (active) setAdminUsersLoadError(error.message)
+      })
+      .finally(() => {
+        if (active) setAdminUsersLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [currentUser?.role])
+
   if (!currentUser || currentUser.role !== 'admin') return <Navigate to="/login" replace />
 
   const unidades = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0)
-  const appointments = appointmentInitialization?.appointments || readStorage('appointments', []) || []
   const pendientes = Array.isArray(appointments)
     ? appointments.filter((a) => {
       const s = (a.status || a.estado || '').toString().toLowerCase()
-      return s === 'pendiente' || s === 'pending' || s === 'pending' || s === ''
+    return s === 'pendiente' || s === 'pending' || s === ''
     }).length
     : 0
 
@@ -133,7 +199,7 @@ export default function AdminPanel({
     setPendingDeletion({ type: 'producto', item: product || { code } })
   }
 
-  function handleUserFormSubmit(event) {
+  async function handleUserFormSubmit(event) {
     event.preventDefault()
     setUserFormError('')
     setUserFormSuccess('')
@@ -144,7 +210,7 @@ export default function AdminPanel({
       setUserFormError(emailError)
       return
     }
-    if (users.some((user) => user.id !== editingUser?.id && user.email?.toLowerCase() === email)) {
+    if (adminUsers.some((user) => user.id !== editingUser?.id && user.email?.toLowerCase() === email)) {
       setUserFormError('Ya existe un usuario con ese correo.')
       return
     }
@@ -154,7 +220,7 @@ export default function AdminPanel({
       const isRemovingActiveAdmin = editingUser.role === 'admin'
         && editingUser.active
         && (userForm.role !== 'admin' || !userForm.active)
-      const activeAdmins = users.filter((user) => user.role === 'admin' && user.active).length
+      const activeAdmins = adminUsers.filter((user) => user.role === 'admin' && user.active).length
 
       if (isEditingCurrentUser && (userForm.role !== 'admin' || !userForm.active)) {
         setUserFormError('No puedes cambiar el rol ni desactivar tu propia cuenta de administrador.')
@@ -165,34 +231,91 @@ export default function AdminPanel({
         return
       }
 
-      const updatedUser = {
-        ...editingUser,
-        name: userForm.name.trim(),
-        lastName: userForm.lastName.trim(),
-        email,
-        role: userForm.role,
-        active: userForm.active,
-        ...(userForm.password ? { password: userForm.password } : {}),
+      setUserActionLoading(true)
+      try {
+        const updatedUser = await updateAdminUser(editingUser.id, {
+          nombre: userForm.name.trim(),
+          apellidos: userForm.lastName.trim(),
+          email,
+          telefono: userForm.telefono.trim(),
+          region: userForm.region,
+          comuna: userForm.comuna,
+          direccion: userForm.direccion.trim() || null,
+          rol: userForm.role.toUpperCase(),
+          activo: userForm.active,
+        })
+        setAdminUsers((previous) => previous.map((user) => (
+          user.id === editingUser.id ? updatedUser : user
+        )))
+        if (editingUser.id === currentUser.id) {
+          onCurrentUserUpdate?.(updatedUser)
+        }
+        setUserFormSuccess('Usuario actualizado correctamente.')
+        setEditingUser(null)
+        setShowUserForm(false)
+      } catch (error) {
+        setUserFormError(error.message)
+      } finally {
+        setUserActionLoading(false)
       }
-      setUsers((previous) => previous.map((user) => (user.id === editingUser.id ? updatedUser : user)))
-      setUserFormSuccess('Usuario actualizado correctamente.')
-      setEditingUser(null)
-      setShowUserForm(false)
       return
     }
 
-    const newUser = {
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-      name: userForm.name.trim(),
-      lastName: userForm.lastName.trim(),
+    const validationErrors = validateUser({
+      nombre: userForm.name,
+      apellidos: userForm.lastName,
+      run: userForm.run,
       email,
+      telefono: userForm.telefono,
       password: userForm.password,
-      role: userForm.role,
-      active: userForm.active,
+      confirmPassword: userForm.confirmPassword,
+      region: userForm.region,
+      comuna: userForm.comuna,
+    }, adminUsers)
+    if (Object.keys(validationErrors).length > 0) {
+      setUserFormError(
+        validationErrors.general || Object.values(validationErrors)[0],
+      )
+      return
     }
-    setUsers((previous) => [newUser, ...previous])
-    setUserForm({ name: '', lastName: '', email: '', password: '', role: 'cliente', active: true })
-    setUserFormSuccess('Usuario agregado correctamente.')
+
+    setUserActionLoading(true)
+    try {
+      const createdUser = await createAdminUser({
+        nombre: userForm.name.trim(),
+        apellidos: userForm.lastName.trim(),
+        run: userForm.run.trim(),
+        email,
+        telefono: userForm.telefono.trim(),
+        password: userForm.password,
+        confirmPassword: userForm.confirmPassword,
+        region: userForm.region,
+        comuna: userForm.comuna,
+        direccion: userForm.direccion.trim() || null,
+        rol: userForm.role.toUpperCase(),
+        activo: userForm.active,
+      })
+      setAdminUsers((previous) => [createdUser, ...previous])
+      setUserForm({
+        name: '',
+        lastName: '',
+        run: '',
+        email: '',
+        telefono: '',
+        password: '',
+        confirmPassword: '',
+        region: 'Valparaíso',
+        comuna: 'Valparaíso',
+        direccion: '',
+        role: 'cliente',
+        active: true,
+      })
+      setUserFormSuccess('Usuario agregado correctamente.')
+    } catch (error) {
+      setUserFormError(error.message)
+    } finally {
+      setUserActionLoading(false)
+    }
   }
 
   function handleDeleteUser(user) {
@@ -200,11 +323,11 @@ export default function AdminPanel({
     setUserFormSuccess('')
 
     if (user.id === currentUser.id) {
-      setUserFormError('No puedes eliminar tu propia cuenta de administrador.')
+      setUserFormError('No puedes desactivar tu propia cuenta de administrador.')
       return
     }
 
-    const activeAdmins = users.filter((item) => item.role === 'admin' && item.active).length
+    const activeAdmins = adminUsers.filter((item) => item.role === 'admin' && item.active).length
     if (user.role === 'admin' && user.active && activeAdmins <= 1) {
       setUserFormError('Debe permanecer al menos un administrador activo.')
       return
@@ -235,13 +358,23 @@ export default function AdminPanel({
       return
     }
 
-    setUsers((previous) => previous.filter((user) => user.id !== pendingDeletion.item.id))
-    if (editingUser?.id === pendingDeletion.item.id) {
-      setEditingUser(null)
-      setShowUserForm(false)
+    setUserActionLoading(true)
+    try {
+      await deactivateAdminUser(pendingDeletion.item.id)
+      setAdminUsers((previous) => previous.map((user) => (
+        user.id === pendingDeletion.item.id ? { ...user, active: false, activo: false } : user
+      )))
+      if (editingUser?.id === pendingDeletion.item.id) {
+        setEditingUser(null)
+        setShowUserForm(false)
+      }
+      setUserFormSuccess('Usuario desactivado correctamente.')
+      setPendingDeletion(null)
+    } catch (error) {
+      setUserFormError(error.message)
+    } finally {
+      setUserActionLoading(false)
     }
-    setUserFormSuccess('Usuario eliminado correctamente.')
-    setPendingDeletion(null)
   }
 
   function closeUserForm() {
@@ -260,12 +393,43 @@ export default function AdminPanel({
       <label>Apellidos
         <input name="lastName" value={userForm.lastName} onChange={(event) => setUserForm({ ...userForm, lastName: event.target.value })} required />
       </label>
+      <label>RUN
+        <input name="run" value={userForm.run} onChange={(event) => setUserForm({ ...userForm, run: event.target.value })} required={!editingUser} readOnly={Boolean(editingUser)} />
+      </label>
       <label>Correo electrónico
         <input type="email" name="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} required />
       </label>
-      <label>Contraseña
-        <input type="password" name="password" minLength="8" value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} required={!editingUser} autoComplete="new-password" />
-        {editingUser && <small className="text-secondary">Déjala en blanco para conservar la contraseña actual.</small>}
+      <label>Teléfono de contacto
+        <input type="tel" name="telefono" value={userForm.telefono} onChange={(event) => setUserForm({ ...userForm, telefono: event.target.value })} required />
+      </label>
+      {!editingUser && (
+        <>
+          <label>Contraseña
+            <input type="password" name="password" minLength="8" maxLength="64" value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} required autoComplete="new-password" />
+          </label>
+          <label>Confirmar contraseña
+            <input type="password" name="confirmPassword" minLength="8" maxLength="64" value={userForm.confirmPassword} onChange={(event) => setUserForm({ ...userForm, confirmPassword: event.target.value })} required autoComplete="new-password" />
+          </label>
+        </>
+      )}
+      <label>Región
+        <select name="region" value={userForm.region} onChange={(event) => setUserForm({ ...userForm, region: event.target.value })} required>
+          <option value="Valparaíso">Valparaíso</option>
+          <option value="Metropolitana">Metropolitana</option>
+          <option value="O'Higgins">O'Higgins</option>
+        </select>
+      </label>
+      <label>Comuna
+        <select name="comuna" value={userForm.comuna} onChange={(event) => setUserForm({ ...userForm, comuna: event.target.value })} required>
+          <option value="Valparaíso">Valparaíso</option>
+          <option value="Viña del Mar">Viña del Mar</option>
+          <option value="Quilpué">Quilpué</option>
+          <option value="Rancagua">Rancagua</option>
+          <option value="Santiago">Santiago</option>
+        </select>
+      </label>
+      <label>Dirección
+        <input name="direccion" value={userForm.direccion} onChange={(event) => setUserForm({ ...userForm, direccion: event.target.value })} />
       </label>
       <label>Rol
         <select name="role" value={userForm.role} disabled={editingUser?.id === currentUser?.id} onChange={(event) => setUserForm({ ...userForm, role: event.target.value })}>
@@ -282,8 +446,8 @@ export default function AdminPanel({
       </label>
       {userFormError && <p className="admin-form-message error" role="alert">{userFormError}</p>}
       <div className="form-actions">
-        <button className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" type="submit">{editingUser ? 'Guardar cambios' : 'Crear usuario'}</button>
-        <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" onClick={closeUserForm}>Cancelar</button>
+        <button className="btn btn-registro-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" type="submit" disabled={userActionLoading}>{userActionLoading ? 'Guardando...' : editingUser ? 'Guardar cambios' : 'Crear usuario'}</button>
+        <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" onClick={closeUserForm} disabled={userActionLoading}>Cancelar</button>
       </div>
     </form>
   )
@@ -295,6 +459,9 @@ export default function AdminPanel({
           <h1>Panel de administración</h1>
           <p className="muted">Administrador {currentUser.name} · {currentUser.role}</p>
         </div>
+        {appointmentsLoadError && (
+          <p className="admin-form-message error" role="alert">{appointmentsLoadError}</p>
+        )}
       </div>
 
       <nav className="admin-nav" aria-label="Secciones de administración">
@@ -315,7 +482,7 @@ export default function AdminPanel({
           </div>
           <div className="stat-card">
             <strong>Usuarios</strong>
-            <div className="stat-value">{users.length}</div>
+            <div className="stat-value">{adminUsers.length}</div>
           </div>
           <div className="stat-card">
             <strong>Citas pendientes</strong>
@@ -365,10 +532,23 @@ export default function AdminPanel({
                   <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">INFORMACIÓN DE USUARIOS</span>
                   <h2 className="h3 fw-bold text-dark">Usuarios registrados</h2>
                 </div>
-                <button className="fab-pill" type="button" aria-label={showUserForm && !editingUser ? 'Cancelar creación de usuario' : 'Agregar usuario'} onClick={() => {
+                <button className="fab-pill" type="button" aria-label={showUserForm && !editingUser ? 'Cancelar creación de usuario' : 'Agregar usuario'} disabled={adminUsersLoading || Boolean(adminUsersLoadError)} onClick={() => {
                   setShowUserForm((shown) => !shown)
                   setEditingUser(null)
-                  setUserForm({ name: '', lastName: '', email: '', password: '', role: 'cliente', active: true })
+                  setUserForm({
+                    name: '',
+                    lastName: '',
+                    run: '',
+                    email: '',
+                    telefono: '',
+                    password: '',
+                    confirmPassword: '',
+                    region: 'Valparaíso',
+                    comuna: 'Valparaíso',
+                    direccion: '',
+                    role: 'cliente',
+                    active: true,
+                  })
                   setUserFormError('')
                   setUserFormSuccess('')
                 }}>
@@ -376,6 +556,7 @@ export default function AdminPanel({
                   <span className="fab-label">{showUserForm && !editingUser ? 'Cancelar' : 'Agregar usuario'}</span>
                 </button>
               </div>
+              {adminUsersLoadError && <p className="admin-form-message error" role="alert">{adminUsersLoadError}</p>}
               {showUserForm && !editingUser && userFormContent}
               {userFormError && !editingUser && <p className="admin-form-message error" role="alert">{userFormError}</p>}
               {userFormSuccess && <p className="admin-form-message success" role="status">{userFormSuccess}</p>}
@@ -386,8 +567,9 @@ export default function AdminPanel({
                       <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
                     </thead>
                     <tbody>
-                      {users.length === 0 && <tr><td colSpan="5" className="text-center text-secondary py-4">No hay usuarios registrados.</td></tr>}
-                      {users.map((user) => (
+                      {adminUsersLoading && <tr><td colSpan="5" className="text-center text-secondary py-4" role="status">Cargando usuarios...</td></tr>}
+                      {!adminUsersLoading && !adminUsersLoadError && adminUsers.length === 0 && <tr><td colSpan="5" className="text-center text-secondary py-4">No hay usuarios registrados.</td></tr>}
+                      {adminUsers.map((user) => (
                         <tr key={user.id}>
                           <td data-label="Nombre">{[user.name, user.lastName].filter(Boolean).join(' ') || '-'}</td>
                           <td data-label="Correo">{user.email || '-'}</td>
@@ -400,8 +582,14 @@ export default function AdminPanel({
                                 setUserForm({
                                   name: user.name || '',
                                   lastName: user.lastName || '',
+                                  run: user.run || '',
                                   email: user.email || '',
+                                  telefono: user.telefono || '',
+                                  region: user.region || 'Valparaíso',
+                                  comuna: user.comuna || 'Valparaíso',
+                                  direccion: user.direccion || '',
                                   password: '',
+                                  confirmPassword: '',
                                   role: user.role || 'cliente',
                                   active: user.active !== false,
                                 })
@@ -409,7 +597,7 @@ export default function AdminPanel({
                                 setUserFormError('')
                                 setUserFormSuccess('')
                               }}>Editar</button>
-                              <button className="btn btn-delete" type="button" disabled={user.id === currentUser.id} onClick={() => handleDeleteUser(user)}>Eliminar</button>
+                              <button className="btn btn-delete" type="button" disabled={user.id === currentUser.id || userActionLoading} onClick={() => handleDeleteUser(user)}>Desactivar</button>
                             </div>
                           </td>
                         </tr>
@@ -421,10 +609,12 @@ export default function AdminPanel({
             </section>
           )}
           {section === 'citas' && (
-            <>
-              {appointmentInitialization?.error && <p className="admin-form-message error" role="alert">{appointmentInitialization.error}</p>}
-              <AppointmentsList userRole="admin" adminMode users={users} initialAppointments={appointments} />
-            </>
+            <AppointmentsList
+              userRole="admin"
+              adminMode
+              users={adminUsers}
+              onAppointmentsChange={handleAppointmentsChange}
+            />
           )}
         </div>
       </div>
@@ -459,22 +649,25 @@ export default function AdminPanel({
         <div className="overlay" role="presentation">
           <section className="overlay-panel admin-confirm-panel" role="alertdialog" aria-modal="true" aria-labelledby="delete-confirm-title" aria-describedby="delete-confirm-description">
             <h2 id="delete-confirm-title" className="h4 fw-bold">
-              {pendingDeletion.type === 'producto' ? 'Confirmar descontinuación' : 'Confirmar eliminación'}
+              {pendingDeletion.type === 'producto' ? 'Confirmar descontinuación' : 'Confirmar desactivación'}
             </h2>
             <p id="delete-confirm-description">
               {pendingDeletion.type === 'producto'
                 ? `¿Descontinuar el producto “${pendingDeletion.item.name || pendingDeletion.item.code}”? Dejará de aparecer en la tienda, pero permanecerá en el registro.`
-                : `¿Eliminar al usuario “${[pendingDeletion.item.name, pendingDeletion.item.lastName].filter(Boolean).join(' ')}”? Esta acción no se puede deshacer.`}
+                : `¿Desactivar al usuario “${[pendingDeletion.item.name, pendingDeletion.item.lastName].filter(Boolean).join(' ')}”? No podrá iniciar sesión, pero su registro se conservará.`}
             </p>
             {pendingDeletion.type === 'producto' && productActionError && (
               <p className="admin-form-message error" role="alert">{productActionError}</p>
             )}
+            {pendingDeletion.type === 'usuario' && userFormError && (
+              <p className="admin-form-message error" role="alert">{userFormError}</p>
+            )}
             <div className="form-actions">
-              <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" disabled={productDeleteLoading} onClick={() => setPendingDeletion(null)}>Cancelar</button>
-              <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" disabled={productDeleteLoading} onClick={confirmDeletion}>
-                {productDeleteLoading
-                  ? 'Descontinuando...'
-                  : pendingDeletion.type === 'producto' ? 'Descontinuar' : 'Eliminar'}
+              <button className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold" type="button" disabled={productDeleteLoading || userActionLoading} onClick={() => { setPendingDeletion(null); setUserFormError('') }}>Cancelar</button>
+              <button className="btn btn-delete px-4 py-2 rounded-pill fw-semibold" type="button" disabled={productDeleteLoading || userActionLoading} onClick={confirmDeletion}>
+                {productDeleteLoading || userActionLoading
+                  ? pendingDeletion.type === 'producto' ? 'Descontinuando...' : 'Desactivando...'
+                  : pendingDeletion.type === 'producto' ? 'Descontinuar' : 'Desactivar'}
               </button>
             </div>
           </section>

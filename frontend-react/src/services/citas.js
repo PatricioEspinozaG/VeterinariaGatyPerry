@@ -60,8 +60,37 @@ export async function listAppointments() {
   return appointments
 }
 
+export async function listManagedAppointments() {
+  const appointments = await request('/api/v1/citas/gestion')
+  if (!Array.isArray(appointments)) {
+    throw new Error('El servidor de citas devolvió una lista inválida.')
+  }
+  return appointments
+}
+
 export function createAppointment(appointment) {
   return request('/api/v1/citas', { method: 'POST', body: appointment })
+}
+
+export function createManagedAppointment(userId, appointment) {
+  return request('/api/v1/citas/gestion', {
+    method: 'POST',
+    body: { userId, cita: appointment },
+  })
+}
+
+export function rescheduleManagedAppointment(id, version, appointment) {
+  return request(`/api/v1/citas/gestion/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: { version, cita: appointment },
+  })
+}
+
+export function changeManagedAppointmentStatus(id, estado) {
+  return request(`/api/v1/citas/gestion/${encodeURIComponent(id)}/estado`, {
+    method: 'PATCH',
+    body: { estado },
+  })
 }
 
 export function cancelAppointment(id) {
