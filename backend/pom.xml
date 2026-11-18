@@ -15,5 +15,6 @@
         <module>productos-service</module>
         <module>pedidos-service</module>
         <module>clinica-service</module>
+        <module>gateway-service</module>
     </modules>
 </project>

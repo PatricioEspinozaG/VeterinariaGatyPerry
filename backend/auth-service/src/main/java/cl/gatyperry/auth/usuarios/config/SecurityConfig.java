@@ -26,6 +26,13 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(
+                    "/v3/api-docs",
+                    "/v3/api-docs/**",
+                    "/v3/api-docs.yaml",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                ).permitAll()
+                .requestMatchers(
                     "/api/v1/auth/registro",
                     "/api/v1/auth/login",
                     "/api/v1/auth/refresh",

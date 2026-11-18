@@ -1,86 +1,62 @@
-import { expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { beforeEach, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { getMyPets } from '../services/petsApi.js'
+import { createMyAppointment, getAvailableHours } from '../services/appointmentsApi.js'
 import AppointmentForm from './AppointmentForm.jsx'
 
-it('rechaza una cita con fecha pasada sin guardarla', () => {
-  localStorage.setItem('pets', JSON.stringify([
-    {
-      id: 'mascota-1',
-      userId: 'usuario-1',
-      nombre: 'Michi',
-      especie: 'Gato',
-    },
-  ]))
-  const onAddAppointment = vi.fn()
+vi.mock('../services/petsApi.js', () => ({ getMyPets: vi.fn() }))
+vi.mock('../services/appointmentsApi.js', () => ({
+  createMyAppointment: vi.fn(),
+  getAvailableHours: vi.fn(),
+}))
 
-  render(
-    <MemoryRouter>
-      <AppointmentForm
-        currentUserId="usuario-1"
-        onAddAppointment={onAddAppointment}
-      />
-    </MemoryRouter>,
-  )
-
-  fireEvent.change(screen.getByLabelText('Fecha'), {
-    target: { value: '2000-01-01' },
-  })
-  fireEvent.click(screen.getByRole('button', { name: 'Confirmar Cita' }))
-
-  expect(
-    screen.getByText('La fecha no puede ser anterior a hoy.'),
-  ).toBeInTheDocument()
-  expect(onAddAppointment).not.toHaveBeenCalled()
+beforeEach(() => {
+  vi.mocked(getMyPets).mockReset()
+  vi.mocked(getAvailableHours).mockReset()
+  vi.mocked(createMyAppointment).mockReset()
+  vi.mocked(getMyPets).mockResolvedValue([{ id: 21, nombre: 'Michi', especie: 'Gato' }])
+  vi.mocked(getAvailableHours).mockResolvedValue(['10:00:00'])
+  vi.mocked(createMyAppointment).mockResolvedValue({ id: 42, estado: 'PENDIENTE' })
 })
 
-it('entrega una cita pendiente con los datos de la mascota', () => {
-  localStorage.setItem('pets', JSON.stringify([
-    {
-      id: 'mascota-1',
-      userId: 'usuario-1',
-      nombre: 'Michi',
-      especie: 'Gato',
-    },
-  ]))
-  const onAddAppointment = vi.fn()
-  const manana = new Date(Date.now() + 86_400_000)
-    .toISOString()
-    .slice(0, 10)
+function renderForm() {
+  render(<MemoryRouter><AppointmentForm /></MemoryRouter>)
+}
 
-  render(
-    <MemoryRouter>
-      <AppointmentForm
-        currentUserId="usuario-1"
-        onAddAppointment={onAddAppointment}
-      />
-    </MemoryRouter>,
-  )
+it('rechaza una fecha pasada sin enviar la cita a la API', async () => {
+  renderForm()
+  await screen.findByRole('option', { name: 'Michi (Gato)' })
 
-  fireEvent.change(screen.getByLabelText('Fecha'), {
-    target: { value: manana },
-  })
-  fireEvent.change(screen.getByLabelText('Hora'), {
-    target: { value: '10:00' },
-  })
+  fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2000-01-01' } })
+  await screen.findByRole('option', { name: '10:00' })
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar Cita' }))
+
+  expect(await screen.findByText('La fecha no puede ser anterior a hoy.')).toBeInTheDocument()
+  expect(createMyAppointment).not.toHaveBeenCalled()
+})
+
+it('consulta disponibilidad y envía la cita pendiente a la API', async () => {
+  renderForm()
+  await screen.findByRole('option', { name: 'Michi (Gato)' })
+
+  const fecha = '2099-11-16'
+  fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: fecha } })
+  await waitFor(() => expect(getAvailableHours).toHaveBeenCalledWith(fecha))
+  await screen.findByRole('option', { name: '10:00' })
+
+  fireEvent.change(screen.getByLabelText('Hora'), { target: { value: '10:00' } })
   fireEvent.change(screen.getByLabelText('Motivo de la consulta'), {
     target: { value: 'Control preventivo' },
   })
-
-  // Evita esperar el redireccionamiento de 1,2 segundos.
-  vi.spyOn(globalThis, 'setTimeout').mockImplementation(() => 0)
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar Cita' }))
 
-  expect(onAddAppointment).toHaveBeenCalledWith(
-    expect.objectContaining({
-      userId: 'usuario-1',
-      petId: 'mascota-1',
-      petName: 'Michi',
-      fecha: manana,
-      hora: '10:00',
-      motivo: 'Control preventivo',
-      estado: 'Pendiente',
-    }),
-  )
+  await waitFor(() => expect(createMyAppointment).toHaveBeenCalledWith({
+    mascotaId: 21,
+    servicio: 'Consulta General',
+    fecha,
+    hora: '10:00',
+    motivo: 'Control preventivo',
+  }))
+  expect(await screen.findByText(/Cita agendada exitosamente/)).toBeInTheDocument()
 })
-

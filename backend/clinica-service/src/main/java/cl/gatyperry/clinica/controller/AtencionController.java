@@ -74,6 +74,12 @@ public class AtencionController {
         );
     }
 
+    @GetMapping("/gestion/atenciones/cita/{citaId}/registrada")
+    @Operation(summary = "Comprobar si una cita tiene atención clínica activa")
+    public boolean tieneAtencion(@PathVariable Long citaId) {
+        return service.tieneAtencionActiva(citaId);
+    }
+
     @PostMapping("/gestion/atenciones")
     @Operation(summary = "Registrar una atención")
     public ResponseEntity<AtencionResponse> crearAtencion(

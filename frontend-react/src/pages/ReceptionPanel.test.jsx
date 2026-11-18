@@ -1,8 +1,17 @@
-import { expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
+import { expect, it, vi } from 'vitest'
 import ReceptionPanel from './ReceptionPanel.jsx'
+import {
+  changeManagedAppointmentStatus,
+  getManagedAppointments,
+} from '../services/appointmentsApi.js'
+
+vi.mock('../services/appointmentsApi.js', () => ({
+  getManagedAppointments: vi.fn(),
+  changeManagedAppointmentStatus: vi.fn(),
+}))
 
 it('no muestra el panel a una cuenta que no es de recepción', () => {
   render(
@@ -17,21 +26,26 @@ it('no muestra el panel a una cuenta que no es de recepción', () => {
 })
 
 it('permite a recepción cambiar el estado de una cita', async () => {
-  localStorage.setItem(
-    'appointments',
-    JSON.stringify([{
-      id: 'cita-1',
-      userId: 'c1',
-      petName: 'Michi',
-      servicio: 'Consulta General',
-      fecha: '2099-05-20',
-      hora: '10:00',
-      estado: 'Pendiente',
-      motivo: 'Control general',
-    }]),
-  )
+  const cita = {
+    id: 21,
+    userId: 'c1',
+    mascotaId: 77,
+    servicio: 'Consulta General',
+    fecha: '2099-05-20',
+    hora: '10:00:00',
+    estado: 'PENDIENTE',
+    motivo: 'Control general',
+    version: 0,
+  }
+
+  getManagedAppointments.mockResolvedValue([cita])
+  changeManagedAppointmentStatus.mockResolvedValue({
+    ...cita,
+    estado: 'CONFIRMADA',
+  })
 
   const user = userEvent.setup()
+
   render(
     <MemoryRouter initialEntries={['/recepcion']}>
       <ReceptionPanel
@@ -46,10 +60,12 @@ it('permite a recepción cambiar el estado de una cita', async () => {
     </MemoryRouter>,
   )
 
-  await user.click(screen.getByRole('button', { name: 'Editar' }))
-  await user.selectOptions(screen.getByLabelText('Estado'), 'Confirmada')
-  await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+  const selector = await screen.findByRole('combobox', {
+    name: 'Estado de cita 21',
+  })
 
-  expect(JSON.parse(localStorage.getItem('appointments'))[0].estado)
-    .toBe('Confirmada')
+  await user.selectOptions(selector, 'CONFIRMADA')
+
+  expect(changeManagedAppointmentStatus)
+    .toHaveBeenCalledWith(21, 'CONFIRMADA')
 })

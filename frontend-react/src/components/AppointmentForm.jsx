@@ -1,101 +1,148 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { readStorage } from '../services/storage.js';
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { getMyPets } from '../services/petsApi.js'
+import {
+  createMyAppointment,
+  getAvailableHours,
+} from '../services/appointmentsApi.js'
 
-export default function AppointmentForm({ currentUserId, onAddAppointment, returnTo = '/' }) {
-  const navigate = useNavigate();
+const todayInClinic = () => new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'America/Santiago',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date())
 
-  const [mascotas] = useState(() => {
-    const userId = currentUserId || localStorage.getItem('currentUserId');
-    return readStorage('pets', []).filter((pet) => pet.userId === userId);
-  });
+export default function AppointmentForm({ returnTo = '/' }) {
+  const navigate = useNavigate()
+  const [mascotas, setMascotas] = useState([])
+  const [petsLoading, setPetsLoading] = useState(true)
+  const [petsError, setPetsError] = useState('')
+  const [availableHours, setAvailableHours] = useState([])
+  const [hoursLoading, setHoursLoading] = useState(false)
+  const [hoursError, setHoursError] = useState('')
+  const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
-    petId: '',
+    mascotaId: '',
     servicio: 'Consulta General',
     fecha: '',
     hora: '',
-    motivo: ''
-  });
+    motivo: '',
+  })
+  const [errors, setErrors] = useState({})
+  const [mensaje, setMensaje] = useState(null)
 
-  const [errors, setErrors] = useState({});
-  const [mensaje, setMensaje] = useState(null);
+  useEffect(() => {
+    let active = true
 
-  const selectedPetId = formData.petId || mascotas[0]?.id || '';
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const validate = () => {
-    const newErrors = {};
-
-    if (!selectedPetId) {
-      newErrors.petId = 'Debes seleccionar una mascota.';
-    }
-
-    if (!formData.servicio) {
-      newErrors.servicio = 'Selecciona un servicio.';
-    }
-
-    if (!formData.fecha) {
-      newErrors.fecha = 'Selecciona una fecha.';
-    } else {
-      const hoy = new Date().toISOString().split('T')[0];
-      if (formData.fecha < hoy) {
-        newErrors.fecha = 'La fecha no puede ser anterior a hoy.';
+    async function loadPets() {
+      try {
+        const result = await getMyPets()
+        if (active) setMascotas(result)
+      } catch (error) {
+        if (active) setPetsError(error.message || 'No pudimos cargar tus mascotas.')
+      } finally {
+        if (active) setPetsLoading(false)
       }
     }
 
-    if (!formData.hora) {
-      newErrors.hora = 'Selecciona una hora.';
+    loadPets()
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (!formData.fecha) return
+
+    let active = true
+
+    async function loadHours() {
+      setHoursLoading(true)
+      setHoursError('')
+
+      try {
+        const result = await getAvailableHours(formData.fecha)
+        if (active) setAvailableHours(result.map((hour) => hour.slice(0, 5)))
+      } catch (error) {
+        if (active) {
+          setAvailableHours([])
+          setHoursError(error.message || 'No pudimos consultar los horarios.')
+        }
+      } finally {
+        if (active) setHoursLoading(false)
+      }
     }
 
-    if (!formData.motivo.trim() || formData.motivo.length > 200) {
-      newErrors.motivo = 'Motivo obligatorio (máximo 200 caracteres).';
+    loadHours()
+    return () => { active = false }
+  }, [formData.fecha])
+
+  const selectedPetId = formData.mascotaId || String(mascotas[0]?.id ?? '')
+
+  function handleChange(event) {
+    const { name, value } = event.target
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+      ...(name === 'fecha' ? { hora: '' } : {}),
+    }))
+    setErrors((previous) => ({ ...previous, [name]: '' }))
+
+    if (name === 'fecha') {
+      setAvailableHours([])
+      setHoursError('')
+    }
+  }
+
+  function validate() {
+    const nextErrors = {}
+
+    if (!selectedPetId) nextErrors.mascotaId = 'Debes seleccionar una mascota.'
+    if (!formData.servicio) nextErrors.servicio = 'Selecciona un servicio.'
+
+    if (!formData.fecha) {
+      nextErrors.fecha = 'Selecciona una fecha.'
+    } else if (formData.fecha < todayInClinic()) {
+      nextErrors.fecha = 'La fecha no puede ser anterior a hoy.'
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setMensaje(null);
-
-    if (!validate()) return;
-
-    const userId = currentUserId || localStorage.getItem('currentUserId');
-    const mascotaSeleccionada = mascotas.find((m) => m.id === selectedPetId);
-
-    const nuevaCita = {
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-      userId: userId || 'invitado',
-      petId: selectedPetId,
-      petName: mascotaSeleccionada ? mascotaSeleccionada.nombre : 'Mascota',
-      servicio: formData.servicio,
-      fecha: formData.fecha,
-      hora: formData.hora,
-      motivo: formData.motivo.trim(),
-      estado: 'Pendiente'
-    };
-
-    if (onAddAppointment) {
-      onAddAppointment(nuevaCita);
-    } else {
-      const citasGuardadas = JSON.parse(localStorage.getItem('appointments')) || [];
-      localStorage.setItem('appointments', JSON.stringify([...citasGuardadas, nuevaCita]));
+    if (!formData.hora || !availableHours.includes(formData.hora)) {
+      nextErrors.hora = 'Selecciona una hora disponible.'
     }
 
-    setMensaje({ tipo: 'success', texto: '¡Cita agendada exitosamente!' });
+    if (!formData.motivo.trim() || formData.motivo.trim().length > 200) {
+      nextErrors.motivo = 'Motivo obligatorio (máximo 200 caracteres).'
+    }
 
-    setTimeout(() => {
-      navigate(returnTo);
-    }, 1200);
-  };
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setMensaje(null)
+    if (saving || hoursLoading || !validate()) return
+
+    setSaving(true)
+
+    try {
+      await createMyAppointment({
+        mascotaId: Number(selectedPetId),
+        servicio: formData.servicio,
+        fecha: formData.fecha,
+        hora: formData.hora,
+        motivo: formData.motivo.trim(),
+      })
+
+      setMensaje({ tipo: 'success', texto: '¡Cita agendada exitosamente!' })
+      window.setTimeout(() => navigate(returnTo), 1200)
+    } catch (error) {
+      setMensaje({
+        tipo: 'danger',
+        texto: error.message || 'No pudimos agendar la cita.',
+      })
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="bg-vet-doodle min-vh-100 py-5 d-flex align-items-center">
@@ -103,8 +150,6 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
         <div className="row justify-content-center">
           <div className="col-12 col-md-8 col-lg-6">
             <div className="card shadow border-0 rounded-4 p-3 p-md-4 bg-white">
-              
-              {/* Encabezado */}
               <div className="text-center mb-4">
                 <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7">
                   📅 AGENDAR CITA
@@ -113,20 +158,23 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
                 <p className="text-muted small">Selecciona los datos para programar la atención de tu mascota.</p>
               </div>
 
-              {/* Alerta de mensaje */}
               {mensaje && (
                 <div className={`alert alert-${mensaje.tipo} rounded-3 text-center`} role="alert">
                   {mensaje.texto}
                 </div>
               )}
 
-              {/* Advertencia si no hay mascotas registradas */}
-              {mascotas.length === 0 ? (
+              {petsLoading ? (
+                <p role="status">Cargando mascotas...</p>
+              ) : petsError ? (
+                <p className="text-danger" role="alert">{petsError}</p>
+              ) : mascotas.length === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-muted">Aún no tienes mascotas registradas para agendar una cita.</p>
                   <button
                     className="btn btn-outline-dark rounded-pill fw-semibold px-4 py-2"
-                    onClick={() => navigate('/mascotas/nueva')}
+                    type="button"
+                    onClick={() => navigate('/mascotas/nueva?returnTo=%2Fcitas%2Fnueva')}
                   >
                     🐾 Registrar Mascota Primero
                   </button>
@@ -134,27 +182,24 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
               ) : (
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="row g-3">
-                    
-                    {/* Seleccionar Mascota */}
                     <div className="col-12 col-md-6 text-start">
-                      <label htmlFor="petId" className="form-label fw-medium text-dark small">Mascota</label>
+                      <label htmlFor="mascotaId" className="form-label fw-medium text-dark small">Mascota</label>
                       <select
-                        id="petId"
-                        name="petId"
-                        className={`form-select rounded-3 ${errors.petId ? 'is-invalid' : ''}`}
+                        id="mascotaId"
+                        name="mascotaId"
+                        className={`form-select rounded-3 ${errors.mascotaId ? 'is-invalid' : ''}`}
                         value={selectedPetId}
                         onChange={handleChange}
                       >
-                        {mascotas.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.nombre} ({m.especie})
+                        {mascotas.map((pet) => (
+                          <option key={pet.id} value={pet.id}>
+                            {pet.nombre} ({pet.especie})
                           </option>
                         ))}
                       </select>
-                      {errors.petId && <div className="invalid-feedback d-block">{errors.petId}</div>}
+                      {errors.mascotaId && <div className="invalid-feedback d-block">{errors.mascotaId}</div>}
                     </div>
 
-                    {/* Servicio */}
                     <div className="col-12 col-md-6 text-start">
                       <label htmlFor="servicio" className="form-label fw-medium text-dark small">Servicio</label>
                       <select
@@ -173,13 +218,13 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
                       {errors.servicio && <div className="invalid-feedback d-block">{errors.servicio}</div>}
                     </div>
 
-                    {/* Fecha */}
                     <div className="col-12 col-md-6 text-start">
                       <label htmlFor="fecha" className="form-label fw-medium text-dark small">Fecha</label>
                       <input
                         type="date"
                         id="fecha"
                         name="fecha"
+                        min={todayInClinic()}
                         className={`form-control rounded-3 ${errors.fecha ? 'is-invalid' : ''}`}
                         value={formData.fecha}
                         onChange={handleChange}
@@ -187,7 +232,6 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
                       {errors.fecha && <div className="invalid-feedback d-block">{errors.fecha}</div>}
                     </div>
 
-                    {/* Hora */}
                     <div className="col-12 col-md-6 text-start">
                       <label htmlFor="hora" className="form-label fw-medium text-dark small">Hora</label>
                       <select
@@ -196,20 +240,22 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
                         className={`form-select rounded-3 ${errors.hora ? 'is-invalid' : ''}`}
                         value={formData.hora}
                         onChange={handleChange}
+                        disabled={!formData.fecha || hoursLoading || Boolean(hoursError)}
                       >
-                        <option value="">Selecciona Hora</option>
-                        <option value="09:00">09:00 AM</option>
-                        <option value="10:00">10:00 AM</option>
-                        <option value="11:00">11:00 AM</option>
-                        <option value="12:00">12:00 PM</option>
-                        <option value="15:00">03:00 PM</option>
-                        <option value="16:00">04:00 PM</option>
-                        <option value="17:00">05:00 PM</option>
+                        <option value="">
+                          {hoursLoading ? 'Consultando horarios...' : 'Selecciona una hora'}
+                        </option>
+                        {availableHours.map((hour) => (
+                          <option key={hour} value={hour}>{hour}</option>
+                        ))}
                       </select>
                       {errors.hora && <div className="invalid-feedback d-block">{errors.hora}</div>}
+                      {hoursError && <p className="text-danger small mt-2" role="alert">{hoursError}</p>}
+                      {formData.fecha && !hoursLoading && !hoursError && availableHours.length === 0 && (
+                        <p className="text-muted small mt-2">No hay horarios disponibles para esta fecha.</p>
+                      )}
                     </div>
 
-                    {/* Motivo */}
                     <div className="col-12 text-start">
                       <label htmlFor="motivo" className="form-label fw-medium text-dark small">Motivo de la consulta</label>
                       <textarea
@@ -220,25 +266,26 @@ export default function AppointmentForm({ currentUserId, onAddAppointment, retur
                         placeholder="Describe brevemente el motivo de la atención..."
                         value={formData.motivo}
                         onChange={handleChange}
-                      ></textarea>
+                      />
                       {errors.motivo && <div className="invalid-feedback d-block">{errors.motivo}</div>}
                     </div>
 
-                    {/* Botón Agendar */}
                     <div className="col-12 text-center mt-4">
-                      <button className="btn btn-registro-custom btn-lg px-5 py-2 rounded-pill fw-semibold shadow-sm fs-6" type="submit">
-                        Confirmar Cita
+                      <button
+                        className="btn btn-registro-custom btn-lg px-5 py-2 rounded-pill fw-semibold shadow-sm fs-6"
+                        type="submit"
+                        disabled={saving || hoursLoading}
+                      >
+                        {saving ? 'Agendando...' : 'Confirmar Cita'}
                       </button>
                     </div>
-
                   </div>
                 </form>
               )}
-
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -25,6 +25,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers(
+                    "/v3/api-docs",
+                    "/v3/api-docs/**",
+                    "/v3/api-docs.yaml",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/mis-pedidos")
                     .hasRole("CLIENTE")

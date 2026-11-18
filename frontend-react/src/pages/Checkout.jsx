@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { regions } from '../data/regions.js'
 import { getCartLines, getCartTotal } from '../utils/cartLogic.js'
 import { money } from '../utils/format.js'
+import { useRef, useState } from 'react'
 
 const SHIPPING_COST = 3990
 
@@ -15,6 +15,8 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   const [address, setAddress] = useState('')
   const [method, setMethod] = useState('envio')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const pendingAttempt = useRef(null)
 
   const lines = getCartLines(cart, products)
   const subtotal = getCartTotal(cart, products)
@@ -22,9 +24,12 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
   const total = subtotal + shipping
   const communes = regions[region] ?? []
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (submitting) return
+
     setError('')
+    setSubmitting(true)
 
     const delivery = {
       name,
@@ -34,15 +39,58 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
       address: method === 'envio' ? address : '',
       method,
     }
+    const purchaseData = JSON.stringify({
+      userId: currentUser?.id ?? null,
+      items: cart.map(({ code, quantity }) => ({ code, quantity })),
+      delivery,
+    })
 
-    const result = onCompletePurchase(delivery)
+    let savedAttempt = null
 
-    if (!result.ok) {
-      setError(result.error ?? 'No se pudo completar la compra simulada.')
-      return
+    try {
+      savedAttempt = JSON.parse(sessionStorage.getItem('gaty-pending-order'))
+    } catch {
+      // Si sessionStorage no está disponible, usamos la clave en memoria.
     }
 
-    navigate(`/compra/${result.orderId}`)
+    if (pendingAttempt.current?.data !== purchaseData) {
+      pendingAttempt.current =
+        savedAttempt?.data === purchaseData && typeof savedAttempt.key === 'string'
+          ? savedAttempt
+          : { data: purchaseData, key: crypto.randomUUID() }
+    }
+
+    try {
+      sessionStorage.setItem(
+        'gaty-pending-order',
+        JSON.stringify(pendingAttempt.current),
+      )
+    } catch {
+      // El reintento en esta misma pantalla sigue funcionando en memoria.
+    }
+
+    try {
+      const result = await onCompletePurchase(delivery, pendingAttempt.current.key)
+
+      if (!result.ok) {
+        setError(result.error ?? 'No se pudo completar la compra.')
+        setSubmitting(false)
+        return
+      }
+      pendingAttempt.current = null
+      try {
+        sessionStorage.removeItem('gaty-pending-order')
+      } catch {
+        // La compra ya fue confirmada.
+      }
+
+      navigate(`/compra/${result.orderId}`, {
+        state: { guestOrder: currentUser ? null : result.order },
+      })
+    } catch (cause) {
+      setError(cause.message || 'No pudimos completar el pedido. Inténtalo nuevamente.')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -110,8 +158,8 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
                     }}
                     required
                   >
-                    <option value="envio">Envío simulado — $3.990</option>
-                    <option value="retiro">Retiro en clínica — $0</option>
+                    <option value="envio">Envío simulado - $3.990</option>
+                    <option value="retiro">Retiro en clínica - $0</option>
                   </select>
                 </div>
 
@@ -174,8 +222,12 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
 
                 {error && <p role="alert">{error}</p>}
 
-                <button className="button button-primary" type="submit">
-                  Confirmar compra simulada
+                <button
+                  className="button button-primary"
+                  type="submit"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Procesando pedido...' : 'Confirmar compra simulada'}
                 </button>
               </form>
 
@@ -192,15 +244,13 @@ function Checkout({ products, cart, currentUser, onCompletePurchase }) {
 
                   <p>Subtotal: {money(subtotal)}</p>
                   <p>
-                    {method === 'envio'
-                      ? 'Envío simulado'
-                      : 'Retiro en clínica'}
+                    {method === 'envio' ? 'Envío simulado' : 'Retiro en clínica'}
                     : {money(shipping)}
                   </p>
                   <p>
                     <strong>Total: {money(total)}</strong>
                   </p>
-                  <p>El pago y la entrega son solo una simulación local.</p>
+                  <p>El pago y la entrega son solo una simulación.</p>
 
                   <Link className="button button-outline" to="/carrito">
                     Volver al carrito
