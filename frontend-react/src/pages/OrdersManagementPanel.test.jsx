@@ -62,3 +62,18 @@ it('muestra el pedido y avanza solo al siguiente estado permitido', async () => 
   expect(await screen.findByRole('button', { name: 'Marcar: En camino' }))
     .toBeInTheDocument()
 })
+
+it('mantiene el encabezado y el contenedor centrado del panel de recepción', async () => {
+  const { container } = render(
+    <MemoryRouter initialEntries={['/recepcion/pedidos']}>
+      <OrdersManagementPanel
+        currentUser={{ id: '2', name: 'Recepción', role: 'recepcion' }}
+      />
+    </MemoryRouter>,
+  )
+
+  expect(screen.getByRole('heading', { name: 'Panel de recepción' })).toBeInTheDocument()
+  expect(container.querySelector('.admin-main-content.wide .orders-view-card'))
+    .toBeInTheDocument()
+  expect(await screen.findByText('Ana Soto')).toBeInTheDocument()
+})

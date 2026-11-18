@@ -115,9 +115,11 @@ export default function OrdersManagementPanel({ currentUser }) {
     <div className="admin-panel container">
       <div className="admin-header">
         <div className="admin-title">
-          <h1>Gestión de pedidos</h1>
+          <h1>{isReception ? 'Panel de recepción' : 'Gestión de pedidos'}</h1>
           <p className="muted">
-            {isAdmin ? 'Administración' : 'Recepción'} · revisa y actualiza la preparación y entrega.
+            {isAdmin
+              ? 'Administración · revisa y actualiza la preparación y entrega.'
+              : 'Recepción · revisa y actualiza la preparación y entrega de pedidos.'}
           </p>
         </div>
       </div>
@@ -140,110 +142,118 @@ export default function OrdersManagementPanel({ currentUser }) {
       </nav>
 
       <main className="admin-main admin-main-background bg-vet-doodle">
-        <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
-          <div className="admin-section-heading">
-            <div>
-              <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">
-                PEDIDOS DE LA TIENDA
-              </span>
-              <h2 className="h3 fw-bold text-dark">Pedidos registrados</h2>
+        <div className="admin-main-content wide">
+          <section className="admin-view-card orders-view-card card shadow border-0 rounded-4 p-4 bg-white full">
+            <div className="admin-section-heading">
+              <div>
+                <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">
+                  PEDIDOS DE LA TIENDA
+                </span>
+                <h2 className="h3 fw-bold text-dark">Pedidos registrados</h2>
+              </div>
+              <button
+                className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold"
+                type="button"
+                disabled={ordersLoading || Boolean(updatingOrderId)}
+                onClick={() => {
+                  setOrdersLoading(true)
+                  setRefreshKey((previous) => previous + 1)
+                }}
+              >
+                Actualizar
+              </button>
             </div>
-            <button
-              className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold"
-              type="button"
-              disabled={ordersLoading || Boolean(updatingOrderId)}
-              onClick={() => {
-                setOrdersLoading(true)
-                setRefreshKey((previous) => previous + 1)
-              }}
-            >
-              Actualizar
-            </button>
-          </div>
 
-          {ordersError && <p className="admin-form-message error" role="alert">{ordersError}</p>}
-          {actionError && <p className="admin-form-message error" role="alert">{actionError}</p>}
-          {actionMessage && <p className="admin-form-message success" role="status">{actionMessage}</p>}
+            {ordersError && <p className="admin-form-message error" role="alert">{ordersError}</p>}
+            {actionError && <p className="admin-form-message error" role="alert">{actionError}</p>}
+            {actionMessage && <p className="admin-form-message success" role="status">{actionMessage}</p>}
 
-          <div className="admin-form admin-order-filters">
-            <label>Buscar pedido o cliente
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="ID, nombre, correo o producto"
-              />
-            </label>
-            <label>Estado
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                <option value="">Todos los estados</option>
-                {Object.entries(statusLabels).map(([status, label]) => (
-                  <option key={status} value={status}>{label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {ordersLoading ? (
-            <p className="text-center py-5" role="status">Cargando pedidos...</p>
-          ) : !ordersError && filteredOrders.length === 0 ? (
-            <p className="text-center py-5 text-muted">
-              {orders.length === 0 ? 'Todavía no hay pedidos registrados.' : 'No hay pedidos que coincidan con los filtros.'}
-            </p>
-          ) : !ordersError && (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0 user-mobile-card-table">
-                <thead className="table-light">
-                  <tr><th>Pedido</th><th>Cliente</th><th>Fecha</th><th>Entrega</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acción</th></tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.map((order) => {
-                    const next = nextStatus(order)
-                    return (
-                      <tr key={order.id}>
-                        <td data-label="Pedido">#{order.id}</td>
-                        <td data-label="Cliente">
-                          <strong>{order.customerName}</strong>
-                          <div>{order.customerEmail}</div>
-                        </td>
-                        <td data-label="Fecha">{orderDate(order.createdAt)}</td>
-                        <td data-label="Entrega">
-                          {order.deliveryMethod === 'envio' ? 'Envío' : 'Retiro'}
-                          <div>{deliveryDetails(order)}</div>
-                        </td>
-                        <td data-label="Productos">
-                          {order.items.map((item) => (
-                            <div key={item.code}>{item.name} × {item.quantity}</div>
-                          ))}
-                        </td>
-                        <td data-label="Total" className="fw-semibold">{money(order.total || 0)}</td>
-                        <td data-label="Estado">
-                          <span className="badge rounded-pill admin-user-role">
-                            {statusLabels[order.status] || order.status}
-                          </span>
-                        </td>
-                        <td className="action-cell" data-label="Acción">
-                          {next ? (
-                            <button
-                              className="btn btn-edit"
-                              type="button"
-                              disabled={Boolean(updatingOrderId)}
-                              onClick={() => handleStatusChange(order, next)}
-                            >
-                              {updatingOrderId === order.id
-                                ? 'Guardando...'
-                                : `Marcar: ${statusLabels[next]}`}
-                            </button>
-                          ) : <span className="text-secondary">Proceso finalizado</span>}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div className="admin-form admin-order-filters">
+              <label>Buscar pedido o cliente
+                <input
+                  type="search"
+                  name="orderSearch"
+                  autoComplete="off"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="ID, nombre, correo o producto…"
+                />
+              </label>
+              <label>Estado
+                <select
+                  name="orderStatus"
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                >
+                  <option value="">Todos los estados</option>
+                  {Object.entries(statusLabels).map(([status, label]) => (
+                    <option key={status} value={status}>{label}</option>
+                  ))}
+                </select>
+              </label>
             </div>
-          )}
-        </section>
+
+            {ordersLoading ? (
+              <p className="text-center py-5" role="status">Cargando pedidos…</p>
+            ) : !ordersError && filteredOrders.length === 0 ? (
+              <p className="text-center py-5 text-muted">
+                {orders.length === 0 ? 'Todavía no hay pedidos registrados.' : 'No hay pedidos que coincidan con los filtros.'}
+              </p>
+            ) : !ordersError && (
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0 user-mobile-card-table">
+                  <thead className="table-light">
+                    <tr><th>Pedido</th><th>Cliente</th><th>Fecha</th><th>Entrega</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acción</th></tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.map((order) => {
+                      const next = nextStatus(order)
+                      return (
+                        <tr key={order.id}>
+                          <td data-label="Pedido">#{order.id}</td>
+                          <td data-label="Cliente">
+                            <strong>{order.customerName}</strong>
+                            <div>{order.customerEmail}</div>
+                          </td>
+                          <td data-label="Fecha">{orderDate(order.createdAt)}</td>
+                          <td data-label="Entrega">
+                            {order.deliveryMethod === 'envio' ? 'Envío' : 'Retiro'}
+                            <div>{deliveryDetails(order)}</div>
+                          </td>
+                          <td data-label="Productos">
+                            {order.items.map((item) => (
+                              <div key={item.code}>{item.name} × {item.quantity}</div>
+                            ))}
+                          </td>
+                          <td data-label="Total" className="fw-semibold">{money(order.total || 0)}</td>
+                          <td data-label="Estado">
+                            <span className="badge rounded-pill admin-user-role">
+                              {statusLabels[order.status] || order.status}
+                            </span>
+                          </td>
+                          <td className="action-cell" data-label="Acción">
+                            {next ? (
+                              <button
+                                className="btn btn-edit"
+                                type="button"
+                                disabled={Boolean(updatingOrderId)}
+                                onClick={() => handleStatusChange(order, next)}
+                              >
+                                {updatingOrderId === order.id
+                                  ? 'Guardando…'
+                                  : `Marcar: ${statusLabels[next]}`}
+                              </button>
+                            ) : <span className="text-secondary">Proceso finalizado</span>}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   )
