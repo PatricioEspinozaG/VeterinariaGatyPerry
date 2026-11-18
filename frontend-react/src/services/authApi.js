@@ -1,8 +1,13 @@
 const AUTH_URL = '/api/v1/auth'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
 const REFRESH_LOCK_NAME = 'gatyperry-refresh-session'
 
 let accessToken = null
 let refreshPending = null
+
+export function apiUrl(path) {
+  return `${API_BASE_URL}${path}`
+}
 
 export class AuthApiError extends Error {
   constructor(message, status) {
@@ -25,7 +30,8 @@ async function readResponse(response) {
 
   if (!response.ok) {
     const message =
-      (typeof data === 'object' && data !== null &&
+      (typeof data === 'object' &&
+        data !== null &&
         (data.detail || data.message || data.title)) ||
       `La solicitud falló (${response.status}).`
 
@@ -40,9 +46,9 @@ export function getAccessToken() {
 }
 
 export async function register(userData) {
-  const response = await fetch(`${AUTH_URL}/registro`, {
+  const response = await fetch(apiUrl(`${AUTH_URL}/registro`), {
     method: 'POST',
-    credentials: 'same-origin',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -53,9 +59,9 @@ export async function register(userData) {
 }
 
 export async function login(email, password) {
-  const response = await fetch(`${AUTH_URL}/login`, {
+  const response = await fetch(apiUrl(`${AUTH_URL}/login`), {
     method: 'POST',
-    credentials: 'same-origin',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -70,9 +76,9 @@ export async function login(email, password) {
 export async function refreshSession() {
   if (!refreshPending) {
     async function requestRefresh() {
-      const response = await fetch(`${AUTH_URL}/refresh`, {
+      const response = await fetch(apiUrl(`${AUTH_URL}/refresh`), {
         method: 'POST',
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: {
           'X-Gaty-Client': 'web',
         },
@@ -101,13 +107,14 @@ export async function refreshSession() {
 
   return refreshPending
 }
+
 export async function getMe() {
   if (!accessToken) {
     throw new AuthApiError('No hay una sesión activa.', 401)
   }
 
-  const response = await fetch(`${AUTH_URL}/me`, {
-    credentials: 'same-origin',
+  const response = await fetch(apiUrl(`${AUTH_URL}/me`), {
+    credentials: 'include',
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -118,9 +125,9 @@ export async function getMe() {
 
 export async function logout() {
   try {
-    const response = await fetch(`${AUTH_URL}/logout`, {
+    const response = await fetch(apiUrl(`${AUTH_URL}/logout`), {
       method: 'POST',
-      credentials: 'same-origin',
+      credentials: 'include',
       headers: {
         'X-Gaty-Client': 'web',
       },
@@ -144,9 +151,9 @@ export async function fetchWithAuth(url, options = {}) {
     const headers = new Headers(options.headers)
     headers.set('Authorization', `Bearer ${accessToken}`)
 
-    return fetch(url, {
+    return fetch(apiUrl(url), {
       ...options,
-      credentials: 'same-origin',
+      credentials: 'include',
       headers,
     })
   }

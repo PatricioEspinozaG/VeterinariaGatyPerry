@@ -1,4 +1,4 @@
-import { fetchWithAuth } from './authApi.js'
+import { apiUrl, fetchWithAuth } from './authApi.js'
 
 const ORDERS_URL = '/api/v1/pedidos'
 
@@ -34,7 +34,7 @@ export async function createOrder(
   }
 
   const response = guest
-    ? await fetch(ORDERS_URL, options)
+    ? await fetch(apiUrl(ORDERS_URL), options)
     : await fetchWithAuth(ORDERS_URL, options)
 
   return readResponse(response, 'No pudimos completar el pedido')

@@ -1,9 +1,9 @@
-import { fetchWithAuth } from './authApi.js'
+import { apiUrl, fetchWithAuth } from './authApi.js'
 
 const PRODUCTS_URL = '/api/v1/productos'
 
 export async function getProducts() {
-  const response = await fetch(PRODUCTS_URL)
+  const response = await fetch(apiUrl(PRODUCTS_URL))
 
   if (!response.ok) {
     throw new Error(`No pudimos cargar los productos (${response.status}).`)
