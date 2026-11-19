@@ -389,7 +389,8 @@ export default function AdminClinicalPanel({ currentUser }) {
       </nav>
 
       <main className="admin-main admin-main-background bg-vet-doodle">
-        <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
+        <div className="admin-main-content">
+          <section className="admin-view-card card shadow border-0 rounded-4 p-4 bg-white full">
           <div className="admin-section-heading">
             <div>
               <span className="badge bg-light text-secondary border rounded-pill px-3 py-2 fw-semibold fs-7 mb-2 d-inline-block">
@@ -536,8 +537,21 @@ export default function AdminClinicalPanel({ currentUser }) {
           )}
 
           {formState && (
-            <form className="admin-form admin-clinical-form mt-4" onSubmit={saveClinicalRecord}>
-              <h3 className="h5 fw-bold">
+            <div className="overlay" role="presentation">
+              <form
+                className="overlay-panel admin-form admin-clinical-form admin-clinical-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="clinical-form-title"
+                onSubmit={saveClinicalRecord}
+              >
+                {formState.mode === 'create' && (
+                  <div className="admin-clinical-tabs" aria-label="Tipo de registro clínico">
+                    <button type="button" aria-pressed={formState.type === 'ATENCION'} disabled={saving} onClick={() => startCreate('ATENCION')}>Atención</button>
+                    <button type="button" aria-pressed={formState.type === 'VACUNA'} disabled={saving} onClick={() => startCreate('VACUNA')}>Vacuna</button>
+                  </div>
+                )}
+                <h3 id="clinical-form-title" className="h5 fw-bold">
                 {formState.mode === 'create' ? 'Registrar' : 'Editar'} {formState.type === 'ATENCION' ? 'atención' : 'vacuna'}
               </h3>
               {formState.type === 'ATENCION' ? (
@@ -672,9 +686,11 @@ export default function AdminClinicalPanel({ currentUser }) {
                   Cancelar
                 </button>
               </div>
-            </form>
+              </form>
+            </div>
           )}
-        </section>
+          </section>
+        </div>
       </main>
 
       {pendingAnnulment && (

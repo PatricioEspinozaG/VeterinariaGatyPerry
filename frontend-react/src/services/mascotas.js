@@ -1,7 +1,4 @@
-import { getAccessToken } from './authApi.js'
-
-const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080')
-  .replace(/\/+$/, '')
+import { apiUrl, getAccessToken } from './authApi.js'
 
 async function request(path, { method = 'GET', body } = {}) {
   const accessToken = getAccessToken()
@@ -11,7 +8,7 @@ async function request(path, { method = 'GET', body } = {}) {
 
   let response
   try {
-    response = await fetch(`${apiUrl}${path}`, {
+    response = await fetch(apiUrl(path), {
       method,
       headers: {
         Authorization: `Bearer ${accessToken}`,

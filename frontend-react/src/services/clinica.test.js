@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getAccessToken } from './auth.js'
+import { getAccessToken } from './authApi.js'
 import {
   annulClinicalAttention,
   annulClinicalVaccine,
@@ -12,8 +12,9 @@ import {
   updateClinicalVaccine,
 } from './clinica.js'
 
-vi.mock('./auth.js', () => ({
+vi.mock('./authApi.js', () => ({
   getAccessToken: vi.fn(),
+  apiUrl: (path) => path,
 }))
 
 describe('servicio clínico', () => {
@@ -48,7 +49,7 @@ describe('servicio clínico', () => {
 
     await expect(listPetClinicalHistory('17', 25)).resolves.toEqual(history)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8086/api/v1/clinica/mascotas/17/historial?limite=25',
+      '/api/v1/clinica/mascotas/17/historial?limite=25',
       { headers: { Authorization: 'Bearer access-token' } },
     )
   })
@@ -107,10 +108,10 @@ describe('servicio clínico', () => {
 
     expect(fetch.mock.calls.map(([url, options]) => [url, options?.method || 'GET']))
       .toEqual([
-        ['http://localhost:8086/api/v1/clinica/gestion/atenciones', 'POST'],
-        ['http://localhost:8086/api/v1/clinica/atenciones/8', 'GET'],
-        ['http://localhost:8086/api/v1/clinica/gestion/atenciones/8', 'PUT'],
-        ['http://localhost:8086/api/v1/clinica/gestion/atenciones/8/anulacion', 'PATCH'],
+        ['/api/v1/clinica/gestion/atenciones', 'POST'],
+        ['/api/v1/clinica/atenciones/8', 'GET'],
+        ['/api/v1/clinica/gestion/atenciones/8', 'PUT'],
+        ['/api/v1/clinica/gestion/atenciones/8/anulacion', 'PATCH'],
       ])
   })
 
@@ -146,10 +147,10 @@ describe('servicio clínico', () => {
 
     expect(fetch.mock.calls.map(([url, options]) => [url, options?.method || 'GET']))
       .toEqual([
-        ['http://localhost:8086/api/v1/clinica/gestion/vacunas', 'POST'],
-        ['http://localhost:8086/api/v1/clinica/vacunas/5', 'GET'],
-        ['http://localhost:8086/api/v1/clinica/gestion/vacunas/5', 'PUT'],
-        ['http://localhost:8086/api/v1/clinica/gestion/vacunas/5/anulacion', 'PATCH'],
+        ['/api/v1/clinica/gestion/vacunas', 'POST'],
+        ['/api/v1/clinica/vacunas/5', 'GET'],
+        ['/api/v1/clinica/gestion/vacunas/5', 'PUT'],
+        ['/api/v1/clinica/gestion/vacunas/5/anulacion', 'PATCH'],
       ])
   })
 })

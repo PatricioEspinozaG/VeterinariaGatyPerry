@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getAccessToken } from './auth.js'
+import { getAccessToken } from './authApi.js'
 import {
   createOrder,
   listManagedOrders,
@@ -7,7 +7,7 @@ import {
   updateManagedOrderStatus,
 } from './pedidos.js'
 
-vi.mock('./auth.js', () => ({
+vi.mock('./authApi.js', () => ({
   getAccessToken: vi.fn(),
 }))
 
@@ -43,7 +43,7 @@ describe('pedidos service', () => {
 
     await expect(createOrder(request, 'idempotency-uuid')).resolves.toEqual(order)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8085/api/v1/pedidos',
+      'http://localhost:8080/api/v1/pedidos',
       expect.objectContaining({
         method: 'POST',
         headers: {
@@ -67,7 +67,7 @@ describe('pedidos service', () => {
     await createOrder({ items: [], delivery: {} }, 'idempotency-uuid')
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8085/api/v1/pedidos',
+      'http://localhost:8080/api/v1/pedidos',
       expect.objectContaining({
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ describe('pedidos service', () => {
 
     await expect(listOrders()).resolves.toEqual(orders)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8085/api/v1/pedidos/mis-pedidos',
+      'http://localhost:8080/api/v1/pedidos/mis-pedidos',
       expect.objectContaining({
         method: 'GET',
         headers: { Authorization: 'Bearer access-token' },
@@ -137,7 +137,7 @@ describe('pedidos service', () => {
 
     await expect(listManagedOrders()).resolves.toEqual(orders)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8085/api/v1/pedidos/gestion',
+      'http://localhost:8080/api/v1/pedidos/gestion',
       expect.objectContaining({
         method: 'GET',
         headers: { Authorization: 'Bearer access-token' },
@@ -165,7 +165,7 @@ describe('pedidos service', () => {
       updateManagedOrderStatus('pedido-1', 'EN_PREPARACION', 0),
     ).resolves.toEqual(order)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8085/api/v1/pedidos/gestion/pedido-1/estado',
+      'http://localhost:8080/api/v1/pedidos/gestion/pedido-1/estado',
       expect.objectContaining({
         method: 'PATCH',
         headers: {

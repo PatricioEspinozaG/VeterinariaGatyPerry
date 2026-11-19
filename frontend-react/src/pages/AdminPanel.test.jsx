@@ -308,6 +308,7 @@ it('crea un usuario de recepción', async () => {
   await user.type(screen.getByLabelText('Teléfono'), '+56912345678')
   await user.type(screen.getByLabelText('Correo electrónico'), 'camila@gmail.com')
   await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
+  await user.type(screen.getByLabelText('Confirmar contraseña'), 'clave12345')
   await user.selectOptions(screen.getByLabelText('Rol'), 'recepcion')
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
 
@@ -331,6 +332,7 @@ it('rechaza crear un usuario con un correo ya registrado', async () => {
   await user.type(screen.getByLabelText('Teléfono'), '+56912345678')
   await user.type(screen.getByLabelText('Correo electrónico'), 'cliente@gmail.com')
   await user.type(screen.getByLabelText('Contraseña'), 'clave12345')
+  await user.type(screen.getByLabelText('Confirmar contraseña'), 'clave12345')
   await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
 
   expect(screen.getAllByText('Ya existe un usuario con ese correo.'))

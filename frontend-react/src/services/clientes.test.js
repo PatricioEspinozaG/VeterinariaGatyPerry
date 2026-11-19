@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getAccessToken } from './auth.js'
+import { getAccessToken } from './authApi.js'
 import { listAppointmentClients } from './clientes.js'
 
-vi.mock('./auth.js', () => ({
+vi.mock('./authApi.js', () => ({
   getAccessToken: vi.fn(),
+  apiUrl: (path) => path,
 }))
 
 describe('clientes service', () => {
@@ -27,7 +28,7 @@ describe('clientes service', () => {
 
     await expect(listAppointmentClients()).resolves.toEqual(clients)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8081/api/v1/auth/gestion/clientes',
+      '/api/v1/auth/gestion/clientes',
       expect.objectContaining({
         method: 'GET',
         headers: { Authorization: 'Bearer access-token' },

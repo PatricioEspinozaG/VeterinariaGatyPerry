@@ -1764,3 +1764,37 @@
   .admin-appointments-table { min-width: 0; }
   .admin-appointments-table td:nth-child(4) { white-space: normal; }
 }
+
+/* Clínica: formulario accesible y centrado como los demás paneles */
+.admin-clinical-dialog {
+  width: min(760px, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 1.5rem;
+}
+.admin-clinical-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.admin-clinical-tabs button {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  background: #f7f4e9;
+  color: #103e3e;
+  font-weight: 700;
+  cursor: pointer;
+}
+.admin-clinical-tabs button[aria-pressed="true"] {
+  background: #143b39;
+  color: white;
+}
+.admin-clinical-tabs button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+@media (max-width: 720px) {
+  .admin-clinical-dialog { padding: 1rem; }
+  .admin-clinical-dialog .form-actions { flex-wrap: wrap; }
+}

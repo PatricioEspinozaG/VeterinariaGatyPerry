@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getAccessToken } from './auth.js'
+import { getAccessToken } from './authApi.js'
 import { createPet, deletePet, listManagedPets, listPets } from './mascotas.js'
 
-vi.mock('./auth.js', () => ({
+vi.mock('./authApi.js', () => ({
   getAccessToken: vi.fn(),
+  apiUrl: (path) => path,
 }))
 
 describe('mascotas service', () => {
@@ -27,7 +28,7 @@ describe('mascotas service', () => {
 
     await expect(listPets()).resolves.toEqual(pets)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8082/api/v1/mascotas',
+      '/api/v1/mascotas',
       expect.objectContaining({
         method: 'GET',
         headers: { Authorization: 'Bearer access-token' },
@@ -45,7 +46,7 @@ describe('mascotas service', () => {
 
     await expect(listManagedPets(7)).resolves.toEqual(pets)
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8082/api/v1/mascotas/gestion?clienteId=7',
+      '/api/v1/mascotas/gestion?clienteId=7',
       expect.objectContaining({
         method: 'GET',
         headers: { Authorization: 'Bearer access-token' },
@@ -68,7 +69,7 @@ describe('mascotas service', () => {
 
     expect(fetch).toHaveBeenNthCalledWith(
       1,
-      'http://localhost:8082/api/v1/mascotas',
+      '/api/v1/mascotas',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify(pet),
@@ -76,7 +77,7 @@ describe('mascotas service', () => {
     )
     expect(fetch).toHaveBeenNthCalledWith(
       2,
-      'http://localhost:8082/api/v1/mascotas/1',
+      '/api/v1/mascotas/1',
       expect.objectContaining({ method: 'DELETE' }),
     )
   })

@@ -38,12 +38,12 @@ it('envía el rol y los datos obligatorios al crear un usuario real', async () =
 
   await createAdminUser({
     name: 'Camila', lastName: 'Soto', run: '123456785', email: 'camila@example.test',
-    phone: '+56912345678', password: 'claveSegura123', region: "O'Higgins",
+    phone: '+56912345678', password: 'claveSegura123', confirmPassword: 'claveSegura123', region: "O'Higgins",
     commune: 'Rancagua', address: '', role: 'recepcion', active: true,
   })
 
   const [url, options] = vi.mocked(fetchWithAuth).mock.calls.at(-1)
   expect(url).toBe('/api/v1/admin/usuarios')
   expect(options.method).toBe('POST')
-  expect(JSON.parse(options.body)).toMatchObject({ rol: 'RECEPCION', password: 'claveSegura123', run: '123456785' })
+  expect(JSON.parse(options.body)).toMatchObject({ rol: 'RECEPCION', password: 'claveSegura123', confirmPassword: 'claveSegura123', run: '123456785' })
 })
