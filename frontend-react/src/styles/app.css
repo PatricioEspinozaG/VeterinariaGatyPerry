@@ -1046,6 +1046,14 @@
   .admin-main-content > .appointments-list-embedded { flex: 1 1 100%; width: 100%; min-width: 0; }
   .admin-appointments-content > .container { width: 100%; max-width: none; padding: 0; }
   .admin-view-card { width: 100%; max-width: 960px; flex: 1 1 auto; }
+  .admin-view-card.orders-view-card { max-width: 1280px; }
+  .admin-order-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .admin-form.admin-order-filters label { min-width: 0; margin: 0; }
   .user-panel-content { display: block; }
   .user-panel-content > .admin-view-card { max-width: none; }
   .user-summary-stats { justify-content: flex-start; margin-block: 1.5rem; }
@@ -1161,6 +1169,15 @@
   .user-mobile-card-table tbody td.user-card-actions { display: block; }
   .user-mobile-card-table tbody td.user-card-actions::before { display: block; margin-bottom: 0.5rem; }
   .user-mobile-card-table tbody td.user-card-actions .btn { width: 100%; }
+  .orders-view-card .user-mobile-card-table tbody td.action-cell { display: block; }
+  .orders-view-card .user-mobile-card-table tbody td.action-cell::before {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .orders-view-card .user-mobile-card-table tbody td.action-cell .btn {
+    width: 100%;
+    margin: 0;
+  }
   .user-mobile-card-table tbody td[colspan],
   .user-appointments-table tbody td[colspan] { display: block; text-align: center; }
   .user-mobile-card-table tbody td[colspan]::before,
@@ -1194,6 +1211,7 @@
   .action-buttons { flex-wrap: wrap; gap: 0.4rem; }
   .action-buttons .btn { flex: 1 1 auto; min-width: 5rem; margin: 0; }
   .admin-section-heading { align-items: flex-start; flex-direction: column }
+  .admin-order-filters { grid-template-columns: minmax(0, 1fr); }
   .admin-user-form { grid-template-columns: 1fr }
   .admin-table .table-responsive,
   .admin-appointments-content .table-responsive { overflow-x: visible; }
@@ -1292,7 +1310,7 @@
 }
 .fab-pill .fab-plus { font-size: 1.4rem; line-height: 1 }
 .fab-pill .fab-label { font-size: 0.95rem }
-.fab-pill:active { transform: scale(0.98) }
+.fab-pill:active { transform: translateY(calc(-1 * var(--fab-footer-offset, 0px))) scale(0.98) }
 
 .overlay {
   position: fixed;
@@ -1692,4 +1710,57 @@
   width: 100%;
   height: 260px;
   border: 0;
+}
+
+.btn.user-danger-action {
+  background: #dc3545;
+  border: 1px solid #dc3545;
+  color: #fff;
+}
+
+.btn.user-danger-action:hover {
+  background: #fff;
+  border-color: #dc3545;
+  color: #dc3545;
+}
+/* Agenda de administración y recepción */
+.managed-appointments-card { max-width: 1120px; }
+.managed-appointments-card .table-responsive { overflow-x: auto; }
+.admin-appointments-table { min-width: 850px; }
+.admin-appointments-table th,
+.admin-appointments-table td { vertical-align: middle; }
+.admin-appointments-table th:last-child,
+.admin-appointments-table td.managed-appointment-action { min-width: 160px; }
+.admin-appointments-table .managed-appointment-action .btn { white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .managed-appointments-card .table-responsive { overflow-x: visible; }
+  .admin-appointments-table { min-width: 0; }
+  .admin-appointments-table tbody td.managed-appointment-action { display: grid; }
+  .admin-appointments-table tbody td.managed-appointment-action::before { display: block; margin: 0; }
+  .admin-appointments-table .managed-appointment-action .btn { width: fit-content; max-width: 100%; white-space: normal; text-align: center; }
+}
+
+/* Espacio para la agenda y sus acciones en pantallas grandes */
+.managed-appointments-card { max-width: 1120px; margin-inline: auto; }
+.admin-appointments-table { min-width: 1020px; }
+.admin-appointments-table th:nth-child(4),
+.admin-appointments-table td:nth-child(4) { white-space: nowrap; }
+.admin-appointments-table .managed-appointment-action .btn.btn-outline-secondary {
+  border: 1px solid var(--petroleo);
+  color: var(--petroleo);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  font-weight: 600;
+}
+.admin-appointments-table .managed-appointment-action .btn.btn-outline-secondary:hover,
+.admin-appointments-table .managed-appointment-action .btn.btn-outline-secondary:focus-visible {
+  background: var(--petroleo);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .admin-appointments-table { min-width: 0; }
+  .admin-appointments-table td:nth-child(4) { white-space: normal; }
 }

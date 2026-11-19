@@ -1,6 +1,8 @@
 package cl.gatyperry.pedidos.pedidos.controller;
 
 import cl.gatyperry.pedidos.pedidos.dto.PedidoRequest;
+import cl.gatyperry.pedidos.pedidos.dto.PedidoEstadoRequest;
+import cl.gatyperry.pedidos.pedidos.dto.PedidoGestionResponse;
 import cl.gatyperry.pedidos.pedidos.dto.PedidoResponse;
 import cl.gatyperry.pedidos.pedidos.service.PedidosService;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,6 +53,21 @@ public class PedidosController {
         @AuthenticationPrincipal Jwt jwt
     ) {
         return service.listarPropios(Long.valueOf(jwt.getSubject()));
+    }
+
+    @GetMapping("/gestion")
+    public List<PedidoGestionResponse> listarGestion() {
+        return service.listarGestion();
+    }
+
+    @PatchMapping("/gestion/{id}/estado")
+    public PedidoGestionResponse cambiarEstado(
+        @PathVariable String id,
+        @Valid @RequestBody PedidoEstadoRequest request
+    ) {
+        return service.cambiarEstado(
+            id, request.estado(), request.version()
+        );
     }
 
     @GetMapping("/{id}")

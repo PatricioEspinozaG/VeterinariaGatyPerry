@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: gateway-service
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: auth
+              uri: ${AUTH_BASE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/auth,/api/v1/auth/**
+
+            - id: admin
+              uri: ${AUTH_BASE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/admin,/api/v1/admin/**
+
+            - id: pacientes
+              uri: ${PACIENTES_BASE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/mascotas,/api/v1/mascotas/**
+
+            - id: citas
+              uri: ${CITAS_BASE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/citas,/api/v1/citas/**
+
+            - id: productos
+              uri: ${PRODUCTOS_BASE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/productos,/api/v1/productos/**
+
+            - id: pedidos
+              uri: ${PEDIDOS_BASE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/pedidos,/api/v1/pedidos/**
+
+            - id: clinica
+              uri: ${CLINICA_BASE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/clinica,/api/v1/clinica/**
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

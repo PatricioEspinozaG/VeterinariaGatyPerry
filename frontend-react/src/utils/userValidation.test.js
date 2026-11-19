@@ -1,5 +1,17 @@
 import { expect, it } from 'vitest'
-import { validateUser } from './userValidation.js'
+import { validateEmail, validateUser } from './userValidation.js'
+
+it('acepta correos válidos de cualquier dominio', () => {
+  expect(validateEmail('recepcion@example.test')).toBe('')
+  expect(validateEmail('contacto@veterinaria.cl')).toBe('')
+  expect(validateEmail('  usuario@gmail.com  ')).toBe('')
+})
+
+it('rechaza correos vacíos o con formato inválido', () => {
+  expect(validateEmail('')).toBe('El correo es obligatorio.')
+  expect(validateEmail('usuario@')).toBe('Ingresa un correo electrónico válido.')
+  expect(validateEmail('usuario @ejemplo.cl')).toBe('Ingresa un correo electrónico válido.')
+})
 
 it('rechaza un correo que ya pertenece a otra cuenta', () => {
   const formulario = {

@@ -78,6 +78,13 @@ public class AtencionService {
             }
         }
 
+        if (request.citaId() != null && tieneAtencionActiva(request.citaId())) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Esta cita ya tiene una atención clínica registrada"
+            );
+        }
+
         Atencion atencion = new Atencion();
         atencion.setMascotaId(request.mascotaId());
         atencion.setCitaId(request.citaId());
@@ -91,6 +98,14 @@ public class AtencionService {
         );
         atencion.registrar(userId);
         return AtencionResponse.from(atencionRepository.saveAndFlush(atencion));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean tieneAtencionActiva(Long citaId) {
+        return atencionRepository.existsByCitaIdAndEstado(
+            citaId,
+            EstadoRegistro.ACTIVA
+        );
     }
 
     @Transactional(readOnly = true)

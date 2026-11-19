@@ -1,9 +1,11 @@
 package cl.gatyperry.auth.usuarios.controller;
 
+import cl.gatyperry.auth.usuarios.dto.AdminUsuarioCreateRequest;
 import cl.gatyperry.auth.usuarios.dto.AdminUsuarioUpdateRequest;
 import cl.gatyperry.auth.usuarios.dto.UsuarioResponse;
 import cl.gatyperry.auth.usuarios.service.AdminUsuarioService;
 import jakarta.validation.Valid;
+import java.net.URI;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,6 +13,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +28,19 @@ public class AdminUsuarioController {
 
     public AdminUsuarioController(AdminUsuarioService service) {
         this.service = service;
+    }
+
+    @PostMapping
+    public ResponseEntity<UsuarioResponse> crear(
+        @AuthenticationPrincipal Jwt jwt,
+        @Valid @RequestBody AdminUsuarioCreateRequest request
+    ) {
+        UsuarioResponse creado = service.crear(
+            Long.valueOf(jwt.getSubject()), request
+        );
+        return ResponseEntity
+            .created(URI.create("/api/v1/admin/usuarios/" + creado.id()))
+            .body(creado);
     }
 
     @GetMapping

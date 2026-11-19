@@ -62,8 +62,7 @@ class ClinicaHttpIntegrationTests {
     private static final Path PUBLIC_KEY_FILE = createPublicKeyFile();
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-        new PostgreSQLContainer<>("postgres:17");
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17");
 
     @Autowired
     MockMvc mockMvc;
@@ -92,19 +91,17 @@ class ClinicaHttpIntegrationTests {
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add(
-            "app.jwt.public-key",
-            () -> PUBLIC_KEY_FILE.toUri().toString()
-        );
+                "app.jwt.public-key",
+                () -> PUBLIC_KEY_FILE.toUri().toString());
     }
 
     @Test
     void healthYFlywayEstanDisponiblesSobrePostgres() {
         ResponseEntity<String> health = exchange(
-            HttpMethod.GET,
-            "/actuator/health",
-            null,
-            null
-        );
+                HttpMethod.GET,
+                "/actuator/health",
+                null,
+                null);
 
         assertEquals(HttpStatus.OK, health.getStatusCode());
         assertTrue(health.getBody().contains("\"status\":\"UP\""));
@@ -114,22 +111,20 @@ class ClinicaHttpIntegrationTests {
     @Test
     void adminPuedeRegistrarVacunaYSeGuardaLaAuditoria() {
         when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
-            .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
+                .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         String fecha = java.time.LocalDate.now(
-            java.time.ZoneId.of("America/Santiago")
-        ).minusDays(1).toString();
+                java.time.ZoneId.of("America/Santiago")).minusDays(1).toString();
         ResponseEntity<String> response = post(
-            "/api/v1/clinica/gestion/vacunas",
-            token("ADMIN", Instant.now().plusSeconds(120)),
-            """
-                {
-                  "mascotaId": 42,
-                  "nombreVacuna": "Vacuna de prueba",
-                  "fechaAplicacion": "%s",
-                  "profesionalResponsable": "Dra. Ejemplo"
-                }
-                """.formatted(fecha)
-        );
+                "/api/v1/clinica/gestion/vacunas",
+                token("ADMIN", Instant.now().plusSeconds(120)),
+                """
+                        {
+                          "mascotaId": 42,
+                          "nombreVacuna": "Vacuna de prueba",
+                          "fechaAplicacion": "%s",
+                          "profesionalResponsable": "Dra. Ejemplo"
+                        }
+                        """.formatted(fecha));
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         Vacuna guardada = vacunaRepository.findAll().get(0);
@@ -142,22 +137,20 @@ class ClinicaHttpIntegrationTests {
     @Test
     void validaFechaFuturaDeVacunaEnLaApi() {
         when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
-            .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
+                .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         String fechaFutura = java.time.LocalDate.now(
-            java.time.ZoneId.of("America/Santiago")
-        ).plusDays(1).toString();
+                java.time.ZoneId.of("America/Santiago")).plusDays(1).toString();
         ResponseEntity<String> response = post(
-            "/api/v1/clinica/gestion/vacunas",
-            token("ADMIN", Instant.now().plusSeconds(120)),
-            """
-                {
-                  "mascotaId": 42,
-                  "nombreVacuna": "Vacuna de prueba",
-                  "fechaAplicacion": "%s",
-                  "profesionalResponsable": "Dra. Ejemplo"
-                }
-                """.formatted(fechaFutura)
-        );
+                "/api/v1/clinica/gestion/vacunas",
+                token("ADMIN", Instant.now().plusSeconds(120)),
+                """
+                        {
+                          "mascotaId": 42,
+                          "nombreVacuna": "Vacuna de prueba",
+                          "fechaAplicacion": "%s",
+                          "profesionalResponsable": "Dra. Ejemplo"
+                        }
+                        """.formatted(fechaFutura));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(0, vacunaRepository.count());
@@ -166,19 +159,16 @@ class ClinicaHttpIntegrationTests {
     @Test
     void rechazaJwtAusenteExpiradoEInvalido() {
         ResponseEntity<String> ausente = exchange(
-            HttpMethod.GET,
-            "/api/v1/clinica/mascotas/42/historial",
-            null,
-            null
-        );
+                HttpMethod.GET,
+                "/api/v1/clinica/mascotas/42/historial",
+                null,
+                null);
         ResponseEntity<String> expirado = get(
-            "/api/v1/clinica/mascotas/42/historial",
-            token("CLIENTE", Instant.now().minusSeconds(120))
-        );
+                "/api/v1/clinica/mascotas/42/historial",
+                token("CLIENTE", Instant.now().minusSeconds(120)));
         ResponseEntity<String> invalido = get(
-            "/api/v1/clinica/mascotas/42/historial",
-            "token-invalido"
-        );
+                "/api/v1/clinica/mascotas/42/historial",
+                "token-invalido");
 
         assertEquals(HttpStatus.UNAUTHORIZED, ausente.getStatusCode());
         assertEquals(HttpStatus.UNAUTHORIZED, expirado.getStatusCode());
@@ -188,26 +178,25 @@ class ClinicaHttpIntegrationTests {
     @Test
     void adminPuedeCrearAtencionYSeGuardaLaAuditoria() {
         when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
-            .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
+                .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         String body = """
-            {
-              "mascotaId": 42,
-              "fechaAtencion": "2026-10-12T10:30:00",
-              "motivo": "Control general",
-              "diagnostico": "Buen estado",
-              "profesionalResponsable": "Dra. Ejemplo"
-            }
-            """;
+                {
+                  "mascotaId": 42,
+                  "fechaAtencion": "2026-10-12T10:30:00",
+                  "motivo": "Control general",
+                  "diagnostico": "Buen estado",
+                  "profesionalResponsable": "Dra. Ejemplo"
+                }
+                """;
 
         ResponseEntity<String> response = post(
-            "/api/v1/clinica/gestion/atenciones",
-            token("ADMIN", Instant.now().plusSeconds(120)),
-            body
-        );
+                "/api/v1/clinica/gestion/atenciones",
+                token("ADMIN", Instant.now().plusSeconds(120)),
+                body);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertTrue(response.getHeaders().getLocation().toString()
-            .contains("/api/v1/clinica/atenciones/"));
+                .contains("/api/v1/clinica/atenciones/"));
         Atencion guardada = atencionRepository.findAll().get(0);
         assertEquals(42L, guardada.getMascotaId());
         assertEquals(7L, guardada.getRegistradoPor());
@@ -216,28 +205,55 @@ class ClinicaHttpIntegrationTests {
     }
 
     @Test
+    void recepcionPuedeConsultarHistorialYRegistrarAtencion() {
+        when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
+                .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
+
+        atencionRepository.saveAndFlush(atencion(42L));
+
+        ResponseEntity<String> historial = get(
+                "/api/v1/clinica/mascotas/42/historial",
+                token("RECEPCION", Instant.now().plusSeconds(120)));
+
+        String body = """
+                {
+                  "mascotaId": 42,
+                  "fechaAtencion": "2026-10-12T10:30:00",
+                  "motivo": "Control general",
+                  "diagnostico": "Buen estado",
+                  "profesionalResponsable": "Dra. Ejemplo"
+                }
+                """;
+
+        ResponseEntity<String> creada = post(
+                "/api/v1/clinica/gestion/atenciones",
+                token("RECEPCION", Instant.now().plusSeconds(120)),
+                body);
+
+        assertEquals(HttpStatus.OK, historial.getStatusCode());
+        assertTrue(historial.getBody().contains("\"tipo\":\"ATENCION\""));
+        assertEquals(HttpStatus.CREATED, creada.getStatusCode());
+    }
+
+    @Test
     void clienteConsultaSuHistorialPeroNoPuedeConsultarUnoAjenoNiEscribir() {
         Atencion propia = atencion(42L);
         atencionRepository.saveAndFlush(propia);
         doThrow(new org.springframework.web.server.ResponseStatusException(
-            HttpStatus.NOT_FOUND,
-            "Mascota no encontrada para este usuario"
-        )).when(mascotaClient)
-            .verificarPropiedad(eq(99L), eq(7L), anyString());
+                HttpStatus.NOT_FOUND,
+                "Mascota no encontrada para este usuario")).when(mascotaClient)
+                .verificarPropiedad(eq(99L), eq(7L), anyString());
 
         ResponseEntity<String> historial = get(
-            "/api/v1/clinica/mascotas/42/historial",
-            token("CLIENTE", Instant.now().plusSeconds(120))
-        );
+                "/api/v1/clinica/mascotas/42/historial",
+                token("CLIENTE", Instant.now().plusSeconds(120)));
         ResponseEntity<String> ajena = get(
-            "/api/v1/clinica/mascotas/99/historial",
-            token("CLIENTE", Instant.now().plusSeconds(120))
-        );
+                "/api/v1/clinica/mascotas/99/historial",
+                token("CLIENTE", Instant.now().plusSeconds(120)));
         ResponseEntity<String> escritura = post(
-            "/api/v1/clinica/gestion/atenciones",
-            token("CLIENTE", Instant.now().plusSeconds(120)),
-            "{}"
-        );
+                "/api/v1/clinica/gestion/atenciones",
+                token("CLIENTE", Instant.now().plusSeconds(120)),
+                "{}");
 
         assertEquals(HttpStatus.OK, historial.getStatusCode());
         assertTrue(historial.getBody().contains("\"tipo\":\"ATENCION\""));
@@ -252,48 +268,43 @@ class ClinicaHttpIntegrationTests {
         vacuna.setMascotaId(42L);
         vacuna.setNombreVacuna("Vacuna de prueba");
         vacuna.setFechaAplicacion(
-            java.time.LocalDate.of(2026, 11, 1)
-        );
+                java.time.LocalDate.of(2026, 11, 1));
         vacuna.setProfesionalResponsable("Dra. Ejemplo");
         vacuna.registrar(7L);
         vacunaRepository.saveAndFlush(vacuna);
 
         ResponseEntity<String> response = get(
-            "/api/v1/clinica/mascotas/42/historial",
-            token("CLIENTE", Instant.now().plusSeconds(120))
-        );
+                "/api/v1/clinica/mascotas/42/historial",
+                token("CLIENTE", Instant.now().plusSeconds(120)));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().indexOf("VACUNA")
-            < response.getBody().indexOf("ATENCION"));
+        assertTrue(response.getBody().indexOf("VACUNA") < response.getBody().indexOf("ATENCION"));
     }
 
     @Test
     void rechazaCitasDeOtraMascota() {
         when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
-            .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
+                .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         when(citaClient.obtener(eq(73L), anyString()))
-            .thenReturn(new CitaClient.CitaRemota(
-                73L,
-                7L,
-                99L,
-                "CONFIRMADA"
-            ));
+                .thenReturn(new CitaClient.CitaRemota(
+                        73L,
+                        7L,
+                        99L,
+                        "CONFIRMADA"));
 
         ResponseEntity<String> response = post(
-            "/api/v1/clinica/gestion/atenciones",
-            token("ADMIN", Instant.now().plusSeconds(120)),
-            """
-                {
-                  "mascotaId": 42,
-                  "citaId": 73,
-                  "fechaAtencion": "2026-10-12T10:30:00",
-                  "motivo": "Control",
-                  "diagnostico": "Buen estado",
-                  "profesionalResponsable": "Dra. Ejemplo"
-                }
+                "/api/v1/clinica/gestion/atenciones",
+                token("ADMIN", Instant.now().plusSeconds(120)),
                 """
-        );
+                        {
+                          "mascotaId": 42,
+                          "citaId": 73,
+                          "fechaAtencion": "2026-10-12T10:30:00",
+                          "motivo": "Control",
+                          "diagnostico": "Buen estado",
+                          "profesionalResponsable": "Dra. Ejemplo"
+                        }
+                        """);
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertEquals(0, atencionRepository.count());
@@ -302,39 +313,36 @@ class ClinicaHttpIntegrationTests {
     @Test
     void validaDatosYConflictoDeVersion() {
         ResponseEntity<String> invalido = post(
-            "/api/v1/clinica/gestion/atenciones",
-            token("ADMIN", Instant.now().plusSeconds(120)),
-            "{}"
-        );
+                "/api/v1/clinica/gestion/atenciones",
+                token("ADMIN", Instant.now().plusSeconds(120)),
+                "{}");
         when(mascotaClient.verificarParaPersonal(eq(42L), anyString()))
-            .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
+                .thenReturn(new MascotaClient.MascotaRemota(42L, "7", "Luna"));
         ResponseEntity<String> creado = post(
-            "/api/v1/clinica/gestion/atenciones",
-            token("ADMIN", Instant.now().plusSeconds(120)),
-            """
-                {
-                  "mascotaId": 42,
-                  "fechaAtencion": "2026-10-12T10:30:00",
-                  "motivo": "Control",
-                  "diagnostico": "Buen estado",
-                  "profesionalResponsable": "Dra. Ejemplo"
-                }
+                "/api/v1/clinica/gestion/atenciones",
+                token("ADMIN", Instant.now().plusSeconds(120)),
                 """
-        );
+                        {
+                          "mascotaId": 42,
+                          "fechaAtencion": "2026-10-12T10:30:00",
+                          "motivo": "Control",
+                          "diagnostico": "Buen estado",
+                          "profesionalResponsable": "Dra. Ejemplo"
+                        }
+                        """);
         long id = atencionRepository.findAll().get(0).getId();
         ResponseEntity<String> conflicto = put(
-            "/api/v1/clinica/gestion/atenciones/" + id,
-            token("ADMIN", Instant.now().plusSeconds(120)),
-            """
-                {
-                  "version": 99,
-                  "fechaAtencion": "2026-10-12T10:30:00",
-                  "motivo": "Control",
-                  "diagnostico": "Buen estado",
-                  "profesionalResponsable": "Dra. Ejemplo"
-                }
+                "/api/v1/clinica/gestion/atenciones/" + id,
+                token("ADMIN", Instant.now().plusSeconds(120)),
                 """
-        );
+                        {
+                          "version": 99,
+                          "fechaAtencion": "2026-10-12T10:30:00",
+                          "motivo": "Control",
+                          "diagnostico": "Buen estado",
+                          "profesionalResponsable": "Dra. Ejemplo"
+                        }
+                        """);
 
         assertEquals(HttpStatus.BAD_REQUEST, invalido.getStatusCode());
         assertEquals(HttpStatus.CREATED, creado.getStatusCode());
@@ -347,15 +355,13 @@ class ClinicaHttpIntegrationTests {
         long id = guardada.getId();
         String admin = token("ADMIN", Instant.now().plusSeconds(120));
         ResponseEntity<String> sinMotivo = patch(
-            "/api/v1/clinica/gestion/atenciones/" + id + "/anulacion",
-            admin,
-            "{\"motivo\":\" \",\"version\":0}"
-        );
+                "/api/v1/clinica/gestion/atenciones/" + id + "/anulacion",
+                admin,
+                "{\"motivo\":\" \",\"version\":0}");
         ResponseEntity<String> anulada = patch(
-            "/api/v1/clinica/gestion/atenciones/" + id + "/anulacion",
-            admin,
-            "{\"motivo\":\"Duplicado\",\"version\":0}"
-        );
+                "/api/v1/clinica/gestion/atenciones/" + id + "/anulacion",
+                admin,
+                "{\"motivo\":\"Duplicado\",\"version\":0}");
 
         assertEquals(HttpStatus.BAD_REQUEST, sinMotivo.getStatusCode());
         assertEquals(HttpStatus.OK, anulada.getStatusCode());
@@ -368,13 +374,12 @@ class ClinicaHttpIntegrationTests {
     @Test
     void fallaEnFormaControladaCuandoPacientesNoResponde() {
         doThrow(new DependenciaRemotaException("Pacientes no disponible"))
-            .when(mascotaClient)
-            .verificarPropiedad(eq(42L), eq(7L), anyString());
+                .when(mascotaClient)
+                .verificarPropiedad(eq(42L), eq(7L), anyString());
 
         ResponseEntity<String> response = get(
-            "/api/v1/clinica/mascotas/42/historial",
-            token("CLIENTE", Instant.now().plusSeconds(120))
-        );
+                "/api/v1/clinica/mascotas/42/historial",
+                token("CLIENTE", Instant.now().plusSeconds(120)));
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
     }
@@ -382,9 +387,8 @@ class ClinicaHttpIntegrationTests {
     @Test
     void swaggerDescribeRutasYEsquemaBearer() {
         ResponseEntity<String> response = get(
-            "/v3/api-docs",
-            token("ADMIN", Instant.now().plusSeconds(120))
-        );
+                "/v3/api-docs",
+                token("ADMIN", Instant.now().plusSeconds(120)));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().contains("/api/v1/clinica/gestion/vacunas"));
@@ -396,35 +400,31 @@ class ClinicaHttpIntegrationTests {
     }
 
     private ResponseEntity<String> post(
-        String path,
-        String token,
-        String body
-    ) {
+            String path,
+            String token,
+            String body) {
         return exchange(HttpMethod.POST, path, token, body);
     }
 
     private ResponseEntity<String> put(
-        String path,
-        String token,
-        String body
-    ) {
+            String path,
+            String token,
+            String body) {
         return exchange(HttpMethod.PUT, path, token, body);
     }
 
     private ResponseEntity<String> patch(
-        String path,
-        String token,
-        String body
-    ) {
+            String path,
+            String token,
+            String body) {
         return exchange(HttpMethod.PATCH, path, token, body);
     }
 
     private ResponseEntity<String> exchange(
-        HttpMethod method,
-        String path,
-        String token,
-        String body
-    ) {
+            HttpMethod method,
+            String path,
+            String token,
+            String body) {
         MockHttpServletRequestBuilder request = request(method, path);
         if (token != null) {
             request.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
@@ -440,9 +440,9 @@ class ClinicaHttpIntegrationTests {
                 responseHeaders.setLocation(URI.create(location));
             }
             return ResponseEntity
-                .status(HttpStatus.valueOf(result.getResponse().getStatus()))
-                .headers(responseHeaders)
-                .body(result.getResponse().getContentAsString());
+                    .status(HttpStatus.valueOf(result.getResponse().getStatus()))
+                    .headers(responseHeaders)
+                    .body(result.getResponse().getContentAsString());
         } catch (Exception exception) {
             throw new IllegalStateException("No se pudo ejecutar MockMvc", exception);
         }
@@ -450,34 +450,31 @@ class ClinicaHttpIntegrationTests {
 
     private String token(String role, Instant expiresAt) {
         JwtEncoder encoder = new NimbusJwtEncoder(
-            new ImmutableJWKSet<>(new JWKSet(
-                new RSAKey.Builder((RSAPublicKey) TEST_KEY_PAIR.getPublic())
-                    .privateKey((RSAPrivateKey) TEST_KEY_PAIR.getPrivate())
-                    .build()
-            ))
-        );
+                new ImmutableJWKSet<>(new JWKSet(
+                        new RSAKey.Builder((RSAPublicKey) TEST_KEY_PAIR.getPublic())
+                                .privateKey((RSAPrivateKey) TEST_KEY_PAIR.getPrivate())
+                                .build())));
         Instant now = Instant.now();
         return encoder.encode(JwtEncoderParameters.from(
-            org.springframework.security.oauth2.jwt.JwsHeader
-                .with(SignatureAlgorithm.RS256)
-                .build(),
-            JwtClaimsSet.builder()
-                .issuer("gaty-perry-auth")
-                .subject("7")
-                .audience(java.util.List.of("gaty-perry-api"))
-                .issuedAt(expiresAt.isAfter(now) ? now : expiresAt.minusSeconds(60))
-                .expiresAt(expiresAt)
-                .claim("rol", role)
-                .build()
-        )).getTokenValue();
+                org.springframework.security.oauth2.jwt.JwsHeader
+                        .with(SignatureAlgorithm.RS256)
+                        .build(),
+                JwtClaimsSet.builder()
+                        .issuer("gaty-perry-auth")
+                        .subject("7")
+                        .audience(java.util.List.of("gaty-perry-api"))
+                        .issuedAt(expiresAt.isAfter(now) ? now : expiresAt.minusSeconds(60))
+                        .expiresAt(expiresAt)
+                        .claim("rol", role)
+                        .build()))
+                .getTokenValue();
     }
 
     private Atencion atencion(Long mascotaId) {
         Atencion atencion = new Atencion();
         atencion.setMascotaId(mascotaId);
         atencion.setFechaAtencion(
-            java.time.LocalDateTime.of(2026, 10, 12, 10, 30)
-        );
+                java.time.LocalDateTime.of(2026, 10, 12, 10, 30));
         atencion.setMotivo("Control");
         atencion.setDiagnostico("Buen estado");
         atencion.setProfesionalResponsable("Dra. Ejemplo");
@@ -498,14 +495,13 @@ class ClinicaHttpIntegrationTests {
     private static Path createPublicKeyFile() {
         try {
             Path file = Files.createTempFile("clinica-test-public-", ".pem");
-            String encoded = Base64.getMimeEncoder(64, new byte[] {'\n'})
-                .encodeToString(TEST_KEY_PAIR.getPublic().getEncoded());
+            String encoded = Base64.getMimeEncoder(64, new byte[] { '\n' })
+                    .encodeToString(TEST_KEY_PAIR.getPublic().getEncoded());
             Files.writeString(
-                file,
-                "-----BEGIN PUBLIC KEY-----\n"
-                    + encoded
-                    + "\n-----END PUBLIC KEY-----\n"
-            );
+                    file,
+                    "-----BEGIN PUBLIC KEY-----\n"
+                            + encoded
+                            + "\n-----END PUBLIC KEY-----\n");
             file.toFile().deleteOnExit();
             return file;
         } catch (IOException exception) {
