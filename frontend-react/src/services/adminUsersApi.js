@@ -41,12 +41,16 @@ export async function getAdminUsers() {
 }
 
 export async function createAdminUser(form) {
+  if (form.password !== form.confirmPassword) {
+    throw new Error('Las contraseñas no coinciden.')
+  }
   const created = await request(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       nombre: form.name.trim(), apellidos: form.lastName.trim(), run: form.run.trim(),
       email: form.email.trim(), telefono: form.phone.trim(), password: form.password,
+      confirmPassword: form.confirmPassword,
       region: form.region.trim(), comuna: form.commune.trim(), direccion: form.address.trim(),
       rol: form.role.toUpperCase(), activo: form.active,
     }),

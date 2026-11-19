@@ -9,6 +9,7 @@ import cl.gatyperry.auth.usuarios.repository.UsuarioRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -49,7 +50,7 @@ class AdminUsuarioServiceTests {
 
         UsuarioResponse respuesta = service.crear(1L, new AdminUsuarioCreateRequest(
             "Camila", "Soto", "12.345.678-5", "CAMILA@example.test",
-            "+56912345678", "claveSegura123", "O'Higgins", "Rancagua",
+            "+56912345678", "claveSegura123", "claveSegura123", "O'Higgins", "Rancagua",
             "Centro", Rol.RECEPCION, true
         ));
 
@@ -71,7 +72,7 @@ class AdminUsuarioServiceTests {
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
             () -> service.crear(1L, new AdminUsuarioCreateRequest(
                 "Camila", "Soto", "12.345.678-5", "camila@example.test",
-                "+56912345678", "claveSegura123", "O'Higgins", "Rancagua",
+                "+56912345678", "claveSegura123", "claveSegura123", "O'Higgins", "Rancagua",
                 null, Rol.RECEPCION, true
             )));
 
@@ -93,6 +94,58 @@ class AdminUsuarioServiceTests {
             "Nombre", "Apellido", email, "+56912345678",
             "O'Higgins", "Rancagua", "Dirección", rol, activo
         );
+    }
+
+    private AdminUsuarioCreateRequest nuevoUsuario(Rol rol) {
+        return new AdminUsuarioCreateRequest(
+            "Nuevo", "Usuario", "12.345.678-5", "nuevo@example.com",
+            "+56912345678", "clave-segura", "clave-segura",
+            "O'Higgins", "Rancagua", "Dirección", rol, true
+        );
+    }
+
+    @Test
+    void creaUsuarioConRolYGuardaSoloLaContrasenaHasheada() {
+        Usuario admin = usuario(1L, Rol.ADMIN, true);
+        when(repository.findById(1L)).thenReturn(Optional.of(admin));
+        when(repository.existsByRun("123456785")).thenReturn(false);
+        when(repository.existsByEmailIgnoreCase("nuevo@example.com"))
+            .thenReturn(false);
+        when(passwordEncoder.encode("clave-segura")).thenReturn("hash-seguro");
+        when(repository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario creado = invocation.getArgument(0);
+            creado.setId(2L);
+            return creado;
+        });
+
+        UsuarioResponse resultado = service.crear(1L, nuevoUsuario(Rol.RECEPCION));
+        ArgumentCaptor<Usuario> usuarioCaptor = ArgumentCaptor.forClass(Usuario.class);
+        verify(repository).save(usuarioCaptor.capture());
+
+        assertEquals(2L, resultado.id());
+        assertEquals(Rol.RECEPCION, resultado.rol());
+        assertEquals("123456785", resultado.run());
+        assertEquals("hash-seguro", usuarioCaptor.getValue().getPasswordHash());
+        verify(passwordEncoder).encode("clave-segura");
+    }
+
+    @Test
+    void impideDesactivarAlUltimoAdministradorActivo() {
+        Usuario admin = usuario(2L, Rol.ADMIN, true);
+        when(repository.findById(1L))
+            .thenReturn(Optional.of(usuario(1L, Rol.ADMIN, true)));
+        when(repository.findById(2L)).thenReturn(Optional.of(admin));
+        when(repository
+            .findAllByRolAndActivoTrueOrderByApellidosAscNombreAsc(Rol.ADMIN))
+            .thenReturn(java.util.List.of(admin));
+
+        ResponseStatusException error = assertThrows(
+            ResponseStatusException.class,
+            () -> service.desactivar(1L, 2L)
+        );
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(repository, never()).save(admin);
     }
 
     @Test
@@ -197,7 +250,8 @@ class AdminUsuarioServiceTests {
             .thenReturn(Optional.of(usuario(1L, Rol.ADMIN, true)));
         when(repository.findById(2L))
             .thenReturn(Optional.of(usuario(2L, Rol.ADMIN, true)));
-        when(repository.countByRolAndActivoTrue(Rol.ADMIN)).thenReturn(1L);
+        when(repository.findAllByRolAndActivoTrueOrderByApellidosAscNombreAsc(Rol.ADMIN))
+            .thenReturn(java.util.List.of(usuario(1L, Rol.ADMIN, true)));
 
         ResponseStatusException error = assertThrows(
             ResponseStatusException.class,

@@ -35,8 +35,11 @@ public class AdminUsuarioController {
         @AuthenticationPrincipal Jwt jwt,
         @Valid @RequestBody AdminUsuarioCreateRequest request
     ) {
-        UsuarioResponse creado = service.crear(Long.valueOf(jwt.getSubject()), request);
-        return ResponseEntity.created(URI.create("/api/v1/admin/usuarios/" + creado.id()))
+        UsuarioResponse creado = service.crear(
+            Long.valueOf(jwt.getSubject()), request
+        );
+        return ResponseEntity
+            .created(URI.create("/api/v1/admin/usuarios/" + creado.id()))
             .body(creado);
     }
 

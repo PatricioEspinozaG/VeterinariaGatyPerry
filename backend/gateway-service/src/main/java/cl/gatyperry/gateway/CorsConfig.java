@@ -11,7 +11,7 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
                 .allowedOrigins(
-                        "http://gatyperry-patricio.s3-website-us-east-1.amazonaws.com"
+                        "http://gatyperry-patricio.s3-website-us-east-1.amazonaws.com", "http://localhost:5173"
                 )
                 .allowedMethods(
                         "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"

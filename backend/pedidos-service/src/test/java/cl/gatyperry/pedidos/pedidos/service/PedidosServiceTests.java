@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import cl.gatyperry.pedidos.pedidos.dto.EntregaRequest;
 import cl.gatyperry.pedidos.pedidos.dto.LineaPedidoRequest;
 import cl.gatyperry.pedidos.pedidos.dto.PedidoRequest;
+import cl.gatyperry.pedidos.pedidos.model.EstadoPedido;
 import cl.gatyperry.pedidos.pedidos.model.Pedido;
 import cl.gatyperry.pedidos.pedidos.model.PedidoItem;
 import cl.gatyperry.pedidos.pedidos.repository.PedidoRepository;
@@ -28,6 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -169,6 +171,131 @@ class PedidosServiceTests {
         var response = service.obtener(id, 17L, true);
 
         assertEquals(id, response.id());
+    }
+
+    @Test
+    void listarGestionIncluyeDatosDeEntrega() {
+        Pedido pedido = pedido(UUID.randomUUID().toString(), 8400, 0);
+        pedido.setUserId(17L);
+        when(repository.findAllByOrderByCreadoEnDesc())
+            .thenReturn(List.of(pedido));
+
+        var response = service.listarGestion();
+
+        assertEquals(1, response.size());
+        assertEquals("Ana", response.get(0).customerName());
+        assertEquals("ana@example.com", response.get(0).customerEmail());
+        assertEquals("Calle 1", response.get(0).address());
+    }
+
+    @Test
+    void permiteAvanzarPedidoDeEnvioPorElFlujoDefinido() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        pedido.setMetodoEntrega("envio");
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+        when(repository.saveAndFlush(pedido)).thenReturn(pedido);
+
+        var preparacion = service.cambiarEstado(
+            id, EstadoPedido.EN_PREPARACION, 0L
+        );
+        assertEquals("EN_PREPARACION", preparacion.status());
+
+        pedido.setVersion(1L);
+        var despacho = service.cambiarEstado(
+            id, EstadoPedido.EN_CAMINO, 1L
+        );
+        assertEquals("EN_CAMINO", despacho.status());
+
+        pedido.setVersion(2L);
+        var entregado = service.cambiarEstado(
+            id, EstadoPedido.ENTREGADO, 2L
+        );
+        assertEquals("ENTREGADO", entregado.status());
+    }
+
+    @Test
+    void noPermiteEstadoDeRetiroParaUnPedidoDeEnvio() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        pedido.setMetodoEntrega("envio");
+        pedido.setEstado("EN_PREPARACION");
+        pedido.setVersion(1L);
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+
+        ResponseStatusException error = assertThrows(
+            ResponseStatusException.class,
+            () -> service.cambiarEstado(
+                id, EstadoPedido.LISTO_PARA_RETIRO, 1L
+            )
+        );
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(repository, never()).saveAndFlush(any(Pedido.class));
+    }
+
+    @Test
+    void permiteAvanzarPedidoDeRetiroHastaEntregado() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        pedido.setMetodoEntrega("retiro");
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+        when(repository.saveAndFlush(pedido)).thenReturn(pedido);
+
+        var preparacion = service.cambiarEstado(
+            id, EstadoPedido.EN_PREPARACION, 0L
+        );
+        assertEquals("EN_PREPARACION", preparacion.status());
+
+        pedido.setVersion(1L);
+        var listo = service.cambiarEstado(
+            id, EstadoPedido.LISTO_PARA_RETIRO, 1L
+        );
+        assertEquals("LISTO_PARA_RETIRO", listo.status());
+
+        pedido.setVersion(2L);
+        var entregado = service.cambiarEstado(
+            id, EstadoPedido.ENTREGADO, 2L
+        );
+        assertEquals("ENTREGADO", entregado.status());
+    }
+
+    @Test
+    void rechazaCambiosDeEstadoConVersionObsoleta() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        pedido.setVersion(3L);
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+
+        ResponseStatusException error = assertThrows(
+            ResponseStatusException.class,
+            () -> service.cambiarEstado(
+                id, EstadoPedido.EN_PREPARACION, 2L
+            )
+        );
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(repository, never()).saveAndFlush(any(Pedido.class));
+    }
+
+    @Test
+    void convierteConflictoOptimistaDuranteElGuardadoEnConflictoHttp() {
+        String id = UUID.randomUUID().toString();
+        Pedido pedido = pedido(id, 8400, 0);
+        when(repository.buscarConItems(id)).thenReturn(Optional.of(pedido));
+        when(repository.saveAndFlush(pedido))
+            .thenThrow(new ObjectOptimisticLockingFailureException(
+                Pedido.class, id
+            ));
+
+        ResponseStatusException error = assertThrows(
+            ResponseStatusException.class,
+            () -> service.cambiarEstado(
+                id, EstadoPedido.EN_PREPARACION, 0L
+            )
+        );
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
     }
 
     private Pedido pedido(String id, long subtotal, long envio) {

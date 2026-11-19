@@ -13,9 +13,11 @@ public record AdminUsuarioCreateRequest(
     @NotBlank @Email @Size(max = 254) String email,
     @NotBlank @Size(max = 20) String telefono,
     @NotBlank @Size(min = 8, max = 64) String password,
+    @NotBlank @Size(min = 8, max = 64) String confirmPassword,
     @NotBlank @Size(max = 80) String region,
     @NotBlank @Size(max = 80) String comuna,
     @Size(max = 200) String direccion,
     @NotNull Rol rol,
     @NotNull Boolean activo
-) {}
+) {
+}

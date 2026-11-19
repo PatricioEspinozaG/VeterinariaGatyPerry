@@ -30,6 +30,8 @@ import PetForm from './components/PetForm.jsx'
 import AppointmentForm from './components/AppointmentForm.jsx'
 import ClientAppointmentsList from './components/ClientAppointmentsList.jsx'
 import DetalleConsejo from './pages/DetalleConsejo.jsx'
+import AdminClinicalPanel from './pages/AdminClinicalPanel.jsx'
+import OrdersManagementPanel from './pages/OrdersManagementPanel.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
 import AdminProductsPage from './pages/AdminProductsPage.jsx'
 import UserPanel from './pages/UserPanel.jsx'
@@ -441,6 +443,24 @@ function App() {
                 setProducts={setProducts}
                 currentUser={currentUser}
               />,
+            )}
+          />
+          <Route
+            path="/admin/clinica"
+            element={protectedPage(
+              <AdminClinicalPanel currentUser={currentUser} />,
+            )}
+          />
+          <Route
+            path="/admin/pedidos"
+            element={protectedPage(
+              <OrdersManagementPanel currentUser={currentUser} />,
+            )}
+          />
+          <Route
+            path="/recepcion/pedidos"
+            element={protectedPage(
+              <OrdersManagementPanel currentUser={currentUser} />,
             )}
           />
           <Route

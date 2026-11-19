@@ -1,5 +1,26 @@
 # React + Vite
 
+## Conexión local de autenticación
+
+El frontend se conecta por defecto a `http://localhost:8081` (auth-service).
+Puedes cambiar esa dirección definiendo `VITE_AUTH_API_URL` en un archivo
+`.env.local` de este directorio. Para que las cookies de sesión funcionen,
+abre frontend y backend usando `localhost`; auth-service permite por defecto
+el origen de Vite `http://localhost:5173`. Cambia `FRONTEND_ORIGIN` en
+`backend/.env` si usas otro origen. Consulta `backend/POSTGRES_LOCAL.md` para
+levantar los servicios locales.
+
+La gestión de mascotas usa `pacientes-service` en `http://localhost:8082`.
+Puedes cambiar esa dirección con `VITE_PACIENTES_API_URL` en `.env.local`.
+La gestión de citas usa `citas-service` en `http://localhost:8083` y admite
+la variable `VITE_CITAS_API_URL` en el mismo archivo.
+El catálogo público usa `productos-service` en `http://localhost:8084`; puedes
+configurar `VITE_PRODUCTOS_API_URL` en `.env.local`.
+El registro de pedidos usa `pedidos-service` en `http://localhost:8085`; puedes
+configurar `VITE_PEDIDOS_API_URL` en `.env.local`.
+El historial clínico usa `clinica-service` en `http://localhost:8086`; puedes
+configurar `VITE_CLINICA_API_URL` en `.env.local`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

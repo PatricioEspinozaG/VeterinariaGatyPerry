@@ -5,6 +5,7 @@ import cl.gatyperry.auth.usuarios.dto.UsuarioResponse;
 import cl.gatyperry.auth.usuarios.model.Rol;
 import cl.gatyperry.auth.usuarios.model.Usuario;
 import cl.gatyperry.auth.usuarios.repository.UsuarioRepository;
+import cl.gatyperry.auth.usuarios.validation.RunValidator;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,8 +33,8 @@ public class UsuarioService {
             );
         }
 
-        String run = normalizarRun(request.run());
-        if (!esRunValido(run)) {
+        String run = RunValidator.normalizar(request.run());
+        if (!RunValidator.esValido(run)) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST, "El RUN no es válido"
             );
@@ -105,30 +106,4 @@ public class UsuarioService {
         return UsuarioResponse.from(usuario);
     }
 
-    static String normalizarRun(String run) {
-        return run.trim()
-            .toUpperCase(Locale.ROOT)
-            .replaceAll("[.\\s-]", "");
-    }
-
-    static boolean esRunValido(String run) {
-        if (!run.matches("\\d{7,8}[0-9K]")) {
-            return false;
-        }
-
-        int suma = 0;
-        int factor = 2;
-
-        for (int i = run.length() - 2; i >= 0; i--) {
-            suma += Character.digit(run.charAt(i), 10) * factor;
-            factor = factor == 7 ? 2 : factor + 1;
-        }
-
-        int resultado = 11 - (suma % 11);
-        char digitoEsperado = resultado == 11
-            ? '0'
-            : resultado == 10 ? 'K' : Character.forDigit(resultado, 10);
-
-        return run.charAt(run.length() - 1) == digitoEsperado;
-    }
 }

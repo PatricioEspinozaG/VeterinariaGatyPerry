@@ -12,7 +12,8 @@ public record PedidoResponse(
     Long total,
     String deliveryMethod,
     String status,
-    Instant createdAt
+    Instant createdAt,
+    Long version
 ) {
     public static PedidoResponse from(Pedido pedido) {
         List<LineaPedidoResponse> lineas = pedido.getItems().stream()
@@ -32,7 +33,8 @@ public record PedidoResponse(
             pedido.getTotal(),
             pedido.getMetodoEntrega(),
             pedido.getEstado(),
-            pedido.getCreadoEn()
+            pedido.getCreadoEn(),
+            pedido.getVersion()
         );
     }
 }

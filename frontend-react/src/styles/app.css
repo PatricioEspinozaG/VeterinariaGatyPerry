@@ -1046,6 +1046,14 @@
   .admin-main-content > .appointments-list-embedded { flex: 1 1 100%; width: 100%; min-width: 0; }
   .admin-appointments-content > .container { width: 100%; max-width: none; padding: 0; }
   .admin-view-card { width: 100%; max-width: 960px; flex: 1 1 auto; }
+  .admin-view-card.orders-view-card { max-width: 1280px; }
+  .admin-order-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .admin-form.admin-order-filters label { min-width: 0; margin: 0; }
   .user-panel-content { display: block; }
   .user-panel-content > .admin-view-card { max-width: none; }
   .user-summary-stats { justify-content: flex-start; margin-block: 1.5rem; }
@@ -1161,6 +1169,15 @@
   .user-mobile-card-table tbody td.user-card-actions { display: block; }
   .user-mobile-card-table tbody td.user-card-actions::before { display: block; margin-bottom: 0.5rem; }
   .user-mobile-card-table tbody td.user-card-actions .btn { width: 100%; }
+  .orders-view-card .user-mobile-card-table tbody td.action-cell { display: block; }
+  .orders-view-card .user-mobile-card-table tbody td.action-cell::before {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .orders-view-card .user-mobile-card-table tbody td.action-cell .btn {
+    width: 100%;
+    margin: 0;
+  }
   .user-mobile-card-table tbody td[colspan],
   .user-appointments-table tbody td[colspan] { display: block; text-align: center; }
   .user-mobile-card-table tbody td[colspan]::before,
@@ -1194,6 +1211,7 @@
   .action-buttons { flex-wrap: wrap; gap: 0.4rem; }
   .action-buttons .btn { flex: 1 1 auto; min-width: 5rem; margin: 0; }
   .admin-section-heading { align-items: flex-start; flex-direction: column }
+  .admin-order-filters { grid-template-columns: minmax(0, 1fr); }
   .admin-user-form { grid-template-columns: 1fr }
   .admin-table .table-responsive,
   .admin-appointments-content .table-responsive { overflow-x: visible; }

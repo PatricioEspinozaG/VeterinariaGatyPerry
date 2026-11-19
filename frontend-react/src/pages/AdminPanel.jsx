@@ -11,7 +11,8 @@ import { createAdminUser, deactivateAdminUser, getAdminUsers, updateAdminUser } 
 import '../styles/app.css'
 
 const emptyUserForm = {
-  name: '', lastName: '', run: '', email: '', phone: '', password: '',
+  name: '', lastName: '', run: '', email: '', phone: '', password: '', confirmPassword: '',
+
   region: "O'Higgins", commune: 'Rancagua', address: '', role: 'cliente', active: true,
 }
 
@@ -215,7 +216,12 @@ export default function AdminPanel({ products, setProducts, currentUser, section
       <label>RUN<input value={userForm.run} onChange={(event) => setUserForm({ ...userForm, run: event.target.value })} required readOnly={Boolean(editingUser)} maxLength="16" /></label>
       <label>Correo electrónico<input type="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} required maxLength="254" /></label>
       <label>Teléfono<input value={userForm.phone} onChange={(event) => setUserForm({ ...userForm, phone: event.target.value })} required maxLength="20" /></label>
-      {!editingUser && <label>Contraseña<input type="password" value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} required minLength="8" maxLength="64" autoComplete="new-password" /></label>}
+      {!editingUser && (
+        <>
+          <label>Contraseña<input type="password" value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} required minLength="8" maxLength="64" autoComplete="new-password" /></label>
+          <label>Confirmar contraseña<input type="password" value={userForm.confirmPassword} onChange={(event) => setUserForm({ ...userForm, confirmPassword: event.target.value })} required minLength="8" maxLength="64" autoComplete="new-password" /></label>
+        </>
+      )}
       <label>Región<input value={userForm.region} onChange={(event) => setUserForm({ ...userForm, region: event.target.value })} required maxLength="80" /></label>
       <label>Comuna<input value={userForm.commune} onChange={(event) => setUserForm({ ...userForm, commune: event.target.value })} required maxLength="80" /></label>
       <label>Dirección<input value={userForm.address} onChange={(event) => setUserForm({ ...userForm, address: event.target.value })} maxLength="200" /></label>

@@ -2,6 +2,7 @@ package cl.gatyperry.pacientes.mascotas.service;
 
 import cl.gatyperry.pacientes.mascotas.dto.MascotaParaCitaResponse;
 import cl.gatyperry.pacientes.mascotas.repository.MascotaRepository;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,14 @@ public class MascotaGestionService {
 
     public MascotaGestionService(MascotaRepository repository) {
         this.repository = repository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<MascotaParaCitaResponse> listarPorCliente(Long userId) {
+        return repository.findAllByUserIdOrderByNombreAsc(userId.toString())
+            .stream()
+            .map(MascotaParaCitaResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
