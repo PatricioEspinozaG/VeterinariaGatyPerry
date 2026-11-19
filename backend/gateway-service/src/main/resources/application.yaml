@@ -11,36 +11,50 @@ spring:
               uri: ${AUTH_BASE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/v1/auth,/api/v1/auth/**
+              filters:
+                - RemoveRequestHeader=Origin
 
             - id: admin
               uri: ${AUTH_BASE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/v1/admin,/api/v1/admin/**
+              filters:
+                - RemoveRequestHeader=Origin
 
             - id: pacientes
               uri: ${PACIENTES_BASE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/v1/mascotas,/api/v1/mascotas/**
+              filters:
+                - RemoveRequestHeader=Origin
 
             - id: citas
               uri: ${CITAS_BASE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/v1/citas,/api/v1/citas/**
+              filters:
+                - RemoveRequestHeader=Origin
 
             - id: productos
               uri: ${PRODUCTOS_BASE_URL:http://localhost:8084}
               predicates:
                 - Path=/api/v1/productos,/api/v1/productos/**
+              filters:
+                - RemoveRequestHeader=Origin
 
             - id: pedidos
               uri: ${PEDIDOS_BASE_URL:http://localhost:8085}
               predicates:
                 - Path=/api/v1/pedidos,/api/v1/pedidos/**
+              filters:
+                - RemoveRequestHeader=Origin
 
             - id: clinica
               uri: ${CLINICA_BASE_URL:http://localhost:8086}
               predicates:
                 - Path=/api/v1/clinica,/api/v1/clinica/**
+              filters:
+                - RemoveRequestHeader=Origin
 
 server:
   port: 8080
